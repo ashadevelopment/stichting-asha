@@ -3,7 +3,7 @@
 /* Standaard kleuren */
 :root {
   --background: #f9fafb; /* Lichte grijs (bg-gray-50) */
-  --foreground: #7e7e7e;
+  --foreground: #171717;
 }
 
 /* Theming voor inline instellingen */
@@ -17,7 +17,7 @@
 /* Donkere modus instellingen */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #a5a4a4; /* Zwarte achtergrond voor donkere modus */
+    --background: #0a0a0a; /* Zwarte achtergrond voor donkere modus */
     --foreground: #ededed; /* Lichtgrijze tekst voor donkere modus */
   }
 }
