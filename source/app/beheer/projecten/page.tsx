@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { FolderPlus, FileText, Download } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import Image from 'next/image'
 
 interface Project {
   _id?: string
@@ -21,28 +22,22 @@ export default function ProjectenPage() {
   const [documentFile, setDocumentFile] = useState<File | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
 
-  // Cloudinary upload functie
-  const uploadToCloudinary = async (file: File) => {
+  // Upload image to local /uploads folder
+  const uploadLocally = async (file: File) => {
     const formData = new FormData()
     formData.append("file", file)
-    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
-  
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`, {
+
+    const res = await fetch("/api/upload", {
       method: "POST",
-      body: formData,
+      body: formData
     })
-  
+
+    if (!res.ok) throw new Error("❌ Local upload failed")
+
     const data = await res.json()
-    console.log("🌩️ Cloudinary response:", data)
-  
-    if (!res.ok) {
-      throw new Error("❌ Cloudinary upload failed")
-    }
-  
-    return data.secure_url as string
+    return data.url as string
   }
 
-  // Fetch bestaande projecten (optioneel)
   useEffect(() => {
     const fetchProjects = async () => {
       const res = await fetch('/api/projects')
@@ -59,12 +54,12 @@ export default function ProjectenPage() {
     let documentUrl = ''
 
     if (imageFile) {
-        console.log("📷 Upload image:", imageFile)
-        imageUrl = await uploadToCloudinary(imageFile)
-        console.log("✅ Image URL van Cloudinary:", imageUrl)
+      imageUrl = await uploadLocally(imageFile)
     }
 
-    if (documentFile) documentUrl = await uploadToCloudinary(documentFile)
+    if (documentFile) {
+      documentUrl = await uploadLocally(documentFile)
+    }
 
     const newProject: Omit<Project, "_id"> = {
       title,
@@ -73,9 +68,7 @@ export default function ProjectenPage() {
       document: documentUrl || undefined,
       author: session?.user?.name || 'Onbekend',
     }
-    console.log("🚀 Verstuurd project:", newProject)
 
-    // Verstuur project naar je database via een API route
     const res = await fetch('/api/projects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,7 +77,7 @@ export default function ProjectenPage() {
 
     if (res.ok) {
       const saved = await res.json()
-      setProjects([saved, ...projects]) // Nieuw project aan lijst toevoegen
+      setProjects([saved, ...projects])
       setTitle('')
       setDescription('')
       setImageFile(null)
@@ -100,10 +93,7 @@ export default function ProjectenPage() {
         <FolderPlus size={24} /> Projecten
       </h2>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-3xl space-y-6 mb-10"
-      >
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-3xl space-y-6 mb-10">
         <div>
           <label className="block text-sm font-medium mb-1">Projectnaam</label>
           <input
@@ -155,7 +145,6 @@ export default function ProjectenPage() {
         </button>
       </form>
 
-      {/* Lijst van projecten */}
       <div className="space-y-4">
         {projects.length === 0 ? (
           <p className="text-sm text-gray-500 italic">Nog geen projecten toegevoegd.</p>
@@ -169,10 +158,12 @@ export default function ProjectenPage() {
                 <FileText size={18} /> {project.title}
               </h3>
               {project.image && (
-                <img
+                <Image
                   src={project.image}
                   alt="Project omslag"
-                  className="w-full h-40 object-cover rounded-md mb-4"
+                  width={600}
+                  height={300}
+                  className="rounded-md mb-4 object-cover"
                 />
               )}
               <p className="text-sm text-gray-700 mb-2">{project.description}</p>

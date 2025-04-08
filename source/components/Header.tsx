@@ -78,8 +78,8 @@ export function Header({ className = "" }: HeaderProps) {
             ) : session ? (
               <>
                 <Link 
-                  href="beheer/dashboard" 
-                  className={`transition-colors duration-300 ${isActive('/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                  href="/beheer/dashboard" 
+                  className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
                 >
                   {session.user?.name}
                 </Link>
