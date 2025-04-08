@@ -56,20 +56,7 @@ export default function Contact() {
     setErrorMessage("");
 
     try {
-      // Assuming you have the supabase logic here for form submission
-      // const { error } = await supabase
-      //   .from("volunteers")
-      //   .insert([
-      //     {
-      //       first_name: form.firstName,
-      //       last_name: form.lastName,
-      //       email: form.email,
-      //       phone_number: form.phoneNumber,
-      //       message: form.message,
-      //       status: "pending"
-      //     },
-      //   ]);
-
+     
       // For now, we will simulate success response
       setSubmitStatus("success");
       setForm({
