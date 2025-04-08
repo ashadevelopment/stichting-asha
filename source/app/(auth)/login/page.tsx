@@ -25,7 +25,7 @@ export default function LoginPage() {
     if (res?.error) {
       setError("Ongeldige gegevens of gebruiker bestaat niet.");
     } else {
-      router.push("/dashboard");
+      router.push("beheer/dashboard");
     }
   };
 

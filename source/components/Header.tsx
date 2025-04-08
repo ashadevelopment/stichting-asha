@@ -63,6 +63,12 @@ export function Header({ className = "" }: HeaderProps) {
             >
               Contact
             </Link>
+            <Link 
+              href="/fotoboek" 
+              className={`transition-colors duration-300 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+              Fotoboek
+              </Link>
           </nav>
 
           {/* Right: Auth Controls */}
@@ -72,7 +78,7 @@ export function Header({ className = "" }: HeaderProps) {
             ) : session ? (
               <>
                 <Link 
-                  href="/dashboard" 
+                  href="beheer/dashboard" 
                   className={`transition-colors duration-300 ${isActive('/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
                 >
                   {session.user?.name}
@@ -81,7 +87,7 @@ export function Header({ className = "" }: HeaderProps) {
                   href="/api/auth/signout" 
                   className="ml-4 text-[#2E376F]"
                 >
-                  Sign out
+                  Uitloggen
                 </Link>
               </>
             ) : (
@@ -89,7 +95,7 @@ export function Header({ className = "" }: HeaderProps) {
                 href="/login" 
                 className={`transition-colors duration-300 ${isActive('/login') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
               >
-                Login
+                Inloggen
               </Link>
             )}
           </div>
