@@ -14,19 +14,42 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        await dbConnect()
+        try {
+          // Maak verbinding met de database
+          await dbConnect()
+          
+          // Zoek gebruiker (let op: MongoDB is case-sensitive voor email)
+          // Converteer email naar lowercase voor consistentie
+          const email = credentials?.email.toLowerCase()
+          console.log(`Trying to find user with email: ${email}`)
+          
+          const user = await User.findOne({ email: email })
+          console.log(`User found: ${user ? 'Yes' : 'No'}`)
+          
+          if (!user) {
+            console.log("Gebruiker niet gevonden")
+            throw new Error("Ongeldige gegevens of gebruiker bestaat niet")
+          }
 
-        const user = await User.findOne({ email: credentials!.email })
-        if (!user) throw new Error("User not found")
+          // Verificatie van wachtwoord
+          const isValid = await compare(credentials!.password, user.password)
+          console.log(`Password valid: ${isValid ? 'Yes' : 'No'}`)
+          
+          if (!isValid) {
+            console.log("Ongeldig wachtwoord")
+            throw new Error("Ongeldige gegevens of gebruiker bestaat niet")
+          }
 
-        const isValid = await compare(credentials!.password, user.password)
-        if (!isValid) throw new Error("Invalid password")
-
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          role: user.role
+          // Return gebruikersdata voor sessie
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role
+          }
+        } catch (error) {
+          console.error("Auth error:", error)
+          throw error
         }
       }
     })
@@ -35,12 +58,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.id = user.id
       }
       return token
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.role = token.role as string
+        session.user.id = token.id as string
       }
       return session
     }
@@ -48,6 +73,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login"
   },
+  debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET
 }
 
