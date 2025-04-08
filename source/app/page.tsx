@@ -5,15 +5,12 @@ import { FolderKanban, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-
   const router = useRouter();
 
-
   return (
-    <div className="relative w-full h-[1800px] overflow-hidden m-0 p-0 top-0 left-0">
-
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
       {/* SVG Curve Background */}
-      <div className="absolute top-[0px] left-[150px] w-[calc(100%+300px)] h-[850px] z-0">
+      <div className="absolute top-0 left-0 md:left-[50px] lg:left-[150px] w-full md:w-[calc(100%+150px)] lg:w-[calc(100%+300px)] h-[400px] md:h-[600px] lg:h-[850px] z-0">
         <svg
           viewBox="0 0 3100 1700"
           preserveAspectRatio="xMidYMid slice"
@@ -44,70 +41,60 @@ export default function Home() {
         </svg>
       </div>
 
-      {/* Main Content Positioned */}
-        <div className="relative z-10 flex flex-col lg:flex-row justify-center items-start gap-20 px-10 mt-[700px]">
-
-        {/* Stichting Asha Block - LEFT & ABOVE */}
-        <div className="absolute top-[-20rem] left-[100px] max-w-xl">
-          <h2 className="text-3xl font-bold text-[#1E2A78] mb-4">Stichting Asha</h2>
-          <p className="text-lg text-gray-700 mb-8 leading-relaxed">
-            Stichting Asha (Asha betekent ‘hoop’ in het Hindi) is een vrijwilligersorganisatie van Surinaamse Hindostanen in de gemeente Utrecht.
+      {/* Hoofdinhoud specifiek voor mobiel verder naar beneden geplaatst */}
+      <div className="relative w-full z-10 pt-[250px] md:pt-[280px] lg:pt-[400px]">
+        {/* Stichting Asha Block */}
+        <div className="mx-6 md:ml-[50px] lg:ml-[100px] max-w-[90%] md:max-w-lg lg:max-w-xl mb-10 md:mb-20">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] mb-2 md:mb-4">Stichting Asha</h2>
+          <p className="text-sm md:text-base lg:text-lg text-gray-700 mb-4 md:mb-8 leading-relaxed">
+            Stichting Asha (Asha betekent 'hoop' in het Hindi) is een vrijwilligersorganisatie van Surinaamse Hindostanen in de gemeente Utrecht.
             Opgericht in 1976, zet de stichting zich in om via haar activiteiten een waardevolle bijdrage te leveren aan het integratie- en participatiebeleid van de gemeente.
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <button
               onClick={() => router.push("/projecten")}
-              className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 px-5 rounded-md text-base transition-all"
+              className="flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all"
             >
-              <FolderKanban size={18} />
+              <FolderKanban className="w-4 h-4 md:w-[18px] md:h-[18px]" />
               Projecten
             </button>
             <button
               onClick={() => router.push("/agenda")}
-              className="flex items-center gap-2 border border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white font-semibold py-3 px-5 rounded-md text-base transition-all"
+              className="flex items-center justify-center gap-2 border border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all"
             >
-              <Calendar size={18} />
+              <Calendar className="w-4 h-4 md:w-[18px] md:h-[18px]" />
               Agenda
             </button>
           </div>
         </div>
 
-        {/* Bestuur Members - RIGHT SIDE */}
-        <div className="absolute top-[2rem] right-[100px] max-w-md w-full flex flex-col gap-6">
-          {/* Member 1 */}
-          <div className="flex items-center justify-end gap-4">
-            <div className="flex flex-col text-right">
-              <p className="font-bold text-xl text-gray-900">Ronald Kalka</p>
-              <p className="text-base text-gray-600">Voorzitter</p>
-              <p className="text-base text-gray-500">06 123456789</p>
-            </div>
-            <Image
-              src="/ronald.png"
-              alt="Ronald Kalka"
-              width={120}
-              height={120}
-              className="rounded-full object-cover"
-            />
+        {/* Information Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-6 lg:px-10 mt-16 md:mt-24 lg:mt-32 mb-10">
+          {/* Visie */}
+          <div className="bg-white shadow-lg rounded-lg p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-semibold text-[#1E2A78] mb-2 md:mb-4">Visie</h2>
+            <p className="text-sm md:text-base text-gray-700">
+              Stichting Asha vindt het belangrijk dat de Hindostaanse gemeenschap in Utrecht de eigen cultuur en identiteit beleeft. Zo kunnen de leden van de gemeenschap de kracht opdoen om zich verder te ontwikkelen. Bovendien bevordert cultuur- en identiteitsbeleving een vlotte inburgering in de Nederlandse samenleving.
+            </p>
           </div>
 
-          {/* Member 2 */}
-          <div className="flex items-center justify-end gap-4">
-            <div className="flex flex-col text-right">
-              <p className="font-bold text-xl text-gray-900">Radj Ramcharan</p>
-              <p className="text-base text-gray-600">Secretaris</p>
-              <p className="text-base text-gray-500">06 123456789</p>
-            </div>
-            <Image
-              src="/radj.png"
-              alt="Radj Ramcharan"
-              width={120}
-              height={120}
-              className="rounded-full object-cover"
-            />
+          {/* Missie */}
+          <div className="bg-white shadow-lg rounded-lg p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-semibold text-[#1E2A78] mb-2 md:mb-4">Missie</h2>
+            <p className="text-sm md:text-base text-gray-700">
+              Door het organiseren van projecten en activiteiten voor de Hindostaanse gemeenschap en andere groepen in de Utrechtse samenleving, wil Stichting Asha een bijdrage leveren aan de multiculturele samenleving. Samenwerkingen met de gemeente, onderwijsinstellingen, het bedrijfsleven en welzijnsorganisaties is daardoor essentieel.
+            </p>
+          </div>
+
+          {/* Media */}
+          <div className="bg-white shadow-lg rounded-lg p-4 md:p-6 md:col-span-2 lg:col-span-1">
+            <h2 className="text-xl md:text-2xl font-semibold text-[#1E2A78] mb-2 md:mb-4">Media</h2>
+            <p className="text-sm md:text-base text-gray-700">
+              Stichting Asha wordt voortdurend door de Media benaderd. Met name de projecten sollicitatie Helpdesk, ouderen en huiswerkbegeleiding haalt veelvuldig de media. Verder zijn de praktijkvoorbeelden interessant, een verzameling daarvan ziet u bij onze projecten.
+            </p>
           </div>
         </div>
       </div>
     </div>
   );
-};
-
+}
