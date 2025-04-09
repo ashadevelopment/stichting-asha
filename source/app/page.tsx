@@ -58,26 +58,26 @@ export default function Home() {
       {/* Notice Display */}
       <div className="relative z-20">
         {isLoading ? (
-          <div className="p-6 max-w-xl mx-auto bg-gray-100 rounded-md shadow-md mt-10 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
-            <div className="h-4 bg-gray-200 rounded w-full"></div>
+          <div className="p-4 sm:p-6 max-w-sm sm:max-w-xl mx-auto bg-gray-100 rounded-md shadow-md mt-6 sm:mt-10 animate-pulse">
+            <div className="h-5 sm:h-6 bg-gray-200 rounded w-3/4 mb-2 sm:mb-3"></div>
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-full"></div>
           </div>
         ) : error ? (
-          <p className="text-center text-gray-500 mt-10">{error}</p>
+          <p className="text-center text-gray-500 mt-6 sm:mt-10">{error}</p>
         ) : notice ? (
-          <div className="p-6 max-w-xl mx-auto bg-yellow-200 rounded-md shadow-md mt-10">
-            <h2 className="text-xl font-bold text-yellow-900 mb-0 flex items-center gap-2 mb-2">
-              <AlertTriangle className="w-5 h-5"/> 
+          <div className="p-4 sm:p-6 max-w-sm sm:max-w-xl mx-auto bg-yellow-100 border-2 border-yellow-400 rounded-md shadow-md mt-6 sm:mt-10">
+            <h2 className="text-base sm:text-xl font-bold text-yellow-900 flex items-center gap-2 mb-1 sm:mb-2">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
               {notice.title}
             </h2>
-            <p className="text-yellow-800">{notice.message}</p>
-            <div className="mt-3 text-xs text-yellow-700 flex justify-between">
+            <p className="text-sm sm:text-base text-yellow-800">{notice.message}</p>
+            <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-yellow-700 flex flex-col sm:flex-row justify-between gap-1 sm:gap-0">
               <span>Door: {notice.author}</span>
               <span>Verloopt op: {new Date(notice.expirationDate).toLocaleDateString('nl-NL')}</span>
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-500 mt-10"></p>
+          <p className="text-center text-gray-500 mt-6 sm:mt-10"></p>
         )}
       </div>
 
