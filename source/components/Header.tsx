@@ -3,6 +3,8 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogOut } from "lucide-react";
+
 
 type HeaderProps = {
   className?: string;
@@ -79,7 +81,7 @@ export function Header({ className = "" }: HeaderProps) {
               <>
                 <Link 
                   href="/beheer/dashboard" 
-                  className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                  className={`transition-colors duration-300 mt-5 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
                 >
                   Dashboard
                 </Link>
@@ -87,7 +89,7 @@ export function Header({ className = "" }: HeaderProps) {
                   href="/api/auth/signout" 
                   className="ml-4 text-[#2E376F]"
                 >
-                  Uitloggen
+                 Uitloggen <LogOut className="w-5 h-5 inline-block m-2" />
                 </Link>
               </>
             ) : (
