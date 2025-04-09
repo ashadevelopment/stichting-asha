@@ -3,6 +3,7 @@
 import { ImagePlus, Trash2, Save } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import ConfirmationDialog from '../../../components/ConfirmationDialog'
 
 interface Photo {
   _id: string
@@ -22,7 +23,12 @@ export default function FotoboekPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [imageData, setImageData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  
+  // Bevestigingsdialoog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [photoToDelete, setPhotoToDelete] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPhotos()
@@ -35,6 +41,7 @@ export default function FotoboekPage() {
       setPhotos(data)
     } catch (error) {
       console.error('Error fetching photos:', error)
+      setError('Fout bij het ophalen van foto\'s')
     }
   }
 
@@ -63,25 +70,27 @@ export default function FotoboekPage() {
 
       const uploadData = await uploadRes.json()
       if (uploadData.error) {
-        setMessage(`Upload fout: ${uploadData.error}`)
+        setError(`Upload fout: ${uploadData.error}`)
         return
       }
 
       setImageData(uploadData)
     } catch (error) {
       console.error('Upload error:', error)
-      setMessage('Fout bij uploaden')
+      setError('Fout bij uploaden')
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title || !imageData) {
-      setMessage('Titel en afbeelding zijn verplicht')
+      setError('Titel en afbeelding zijn verplicht')
       return
     }
 
     setLoading(true)
+    setError('') // Reset error
+    
     try {
       const response = await fetch('/api/photos', {
         method: 'POST',
@@ -100,39 +109,63 @@ export default function FotoboekPage() {
         setDescription('')
         setPreview(null)
         setImageData(null)
-        setMessage('Foto succesvol toegevoegd')
+        setSuccessMessage('Foto succesvol toegevoegd')
+        // Toon het succeesbericht voor 3 seconden
+        setTimeout(() => setSuccessMessage(''), 3000)
+        
         fetchPhotos()
       } else {
         const error = await response.json()
-        setMessage(`Fout: ${error.error}`)
+        setError(`Fout: ${error.error}`)
       }
     } catch (error) {
       console.error('Error:', error)
-      setMessage('Er is een fout opgetreden')
+      setError('Er is een fout opgetreden')
     } finally {
       setLoading(false)
     }
   }
 
-  const deletePhoto = async (id: string) => {
-    if (confirm('Weet je zeker dat je deze foto wilt verwijderen?')) {
-      try {
-        const response = await fetch(`/api/photos/${id}`, {
-          method: 'DELETE'
-        })
+  // Initieer verwijderen - open de bevestigingsdialoog
+  const initiateDeletePhoto = (id: string) => {
+    setPhotoToDelete(id)
+    setIsDialogOpen(true)
+  }
 
-        if (response.ok) {
-          setMessage('Foto succesvol verwijderd')
-          fetchPhotos()
-        } else {
-          const error = await response.json()
-          setMessage(`Fout: ${error.error}`)
-        }
-      } catch (error) {
-        console.error('Error deleting photo:', error)
-        setMessage('Fout bij verwijderen van foto')
+  // Bevestig verwijderen
+  const confirmDelete = async () => {
+    if (!photoToDelete) return
+    
+    try {
+      const response = await fetch(`/api/photos/${photoToDelete}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setSuccessMessage('Foto succesvol verwijderd')
+        // Toon het succeesbericht voor 3 seconden
+        setTimeout(() => setSuccessMessage(''), 3000)
+        
+        // Update de lijst van foto's
+        setPhotos(photos.filter(photo => photo._id !== photoToDelete))
+      } else {
+        const error = await response.json()
+        setError(`Fout: ${error.error}`)
       }
+    } catch (error) {
+      console.error('Error deleting photo:', error)
+      setError('Fout bij verwijderen van foto')
+    } finally {
+      // Sluit de dialoog
+      setIsDialogOpen(false)
+      setPhotoToDelete(null)
     }
+  }
+  
+  // Annuleer verwijderen
+  const cancelDelete = () => {
+    setIsDialogOpen(false)
+    setPhotoToDelete(null)
   }
 
   return (
@@ -141,9 +174,15 @@ export default function FotoboekPage() {
         <ImagePlus size={24} /> Fotoboek beheer
       </h2>
 
-      {message && (
-        <div className="bg-blue-50 text-blue-700 p-4 mb-4 rounded border border-blue-200">
-          {message}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
+          {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md mb-4 transition-opacity duration-300">
+          {successMessage}
         </div>
       )}
 
@@ -160,16 +199,39 @@ export default function FotoboekPage() {
               required
             />
           </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Beschrijving (optioneel)</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded h-24 resize-none"
+            />
+          </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium mb-1">Afbeelding</label>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="mb-2" />
-
-            {preview && (
-              <div className="border border-gray-200 p-2 rounded mt-2">
-                <img src={preview} alt="Preview" className="max-h-64 object-contain rounded" />
-              </div>
-            )}
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                <ImagePlus size={18} />
+                <span>Kies een afbeelding</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                />
+              </label>
+              
+              {preview ? (
+                <div className="border border-gray-200 p-2 rounded">
+                  <p className="text-xs text-gray-500 mb-2">Voorbeeld:</p>
+                  <img src={preview} alt="Preview" className="max-h-64 object-contain rounded" />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Nog geen afbeelding geselecteerd</p>
+              )}
+            </div>
           </div>
 
           <button
@@ -201,7 +263,7 @@ export default function FotoboekPage() {
                 {photo.description && <p className="text-sm text-gray-600">{photo.description}</p>}
                 
                 <button
-                  onClick={() => deletePhoto(photo._id)}
+                  onClick={() => initiateDeletePhoto(photo._id)}
                   className="mt-2 text-red-500 flex items-center gap-1 text-sm hover:text-red-700"
                 >
                   <Trash2 size={16} /> Verwijderen
@@ -211,6 +273,15 @@ export default function FotoboekPage() {
           </div>
         )}
       </div>
+      
+      {/* Bevestigingsdialoog voor verwijderen */}
+      <ConfirmationDialog 
+        isOpen={isDialogOpen}
+        title="Foto verwijderen"
+        message="Weet u zeker dat u deze foto wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   )
 }

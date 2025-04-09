@@ -9,11 +9,8 @@ import { authOptions } from "../auth/[...nextauth]/route"
 export async function GET() {
   try {
     await connectDB()
-    const projects = await Project.find().sort({ projectDate: -1 }).select({
-      // Exclude large base64 data when fetching list
-      'image.data': 0,
-      'document.data': 0
-    })
+    // Verwijder de select() om alle data inclusief image.data en document.data te sturen
+    const projects = await Project.find().sort({ projectDate: -1 })
     return NextResponse.json(projects)
   } catch (err) {
     console.error("Error fetching projects:", err)
@@ -55,12 +52,7 @@ export async function POST(req: Request) {
     
     const project = await Project.create(projectData)
     
-    // Verwijder grote base64 data voor de response
-    const responseProject = project.toObject()
-    delete responseProject.image?.data
-    delete responseProject.document?.data
-    
-    return NextResponse.json(responseProject, { status: 201 })
+    return NextResponse.json(project, { status: 201 })
   } catch (err) {
     console.error("Error creating project:", err)
     return NextResponse.json({ error: "Fout bij aanmaken van project" }, { status: 500 })

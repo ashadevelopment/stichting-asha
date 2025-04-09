@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, FileText, Download, Tag, Calendar, Trash2 } from 'lucide-react';
+import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -16,7 +16,9 @@ export default function ProjectenPage() {
   const [tags, setTags] = useState('');
   const [projectDate, setProjectDate] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentName, setDocumentName] = useState<string>('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -58,7 +60,9 @@ export default function ProjectenPage() {
     setTags('');
     setProjectDate('');
     setImageFile(null);
+    setImagePreview(null);
     setDocumentFile(null);
+    setDocumentName('');
     setIsEditing(false);
     setCurrentProject(null);
   };
@@ -67,6 +71,12 @@ export default function ProjectenPage() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -74,6 +84,7 @@ export default function ProjectenPage() {
     const file = e.target.files?.[0];
     if (file) {
       setDocumentFile(file);
+      setDocumentName(file.name);
     }
   };
 
@@ -153,6 +164,9 @@ export default function ProjectenPage() {
         setProjects([savedProject, ...projects]);
         setSuccessMessage('Project succesvol toegevoegd');
       }
+      
+      // Laat het succesbercht 3 seconden zien
+      setTimeout(() => setSuccessMessage(''), 3000);
 
       // Reset form
       resetForm();
@@ -168,8 +182,43 @@ export default function ProjectenPage() {
     setDescription(project.description);
     setLongDescription(project.longDescription || '');
     setTags(project.tags?.join(', ') || '');
-    setProjectDate(project.projectDate);
+    
+    // Converteer de projectDate naar het juiste formaat voor het date-inputveld (YYYY-MM-DD)
+    if (project.projectDate) {
+      try {
+        const date = new Date(project.projectDate);
+        // Controleer of het een geldige datum is
+        if (!isNaN(date.getTime())) {
+          // Converteer naar YYYY-MM-DD formaat voor het HTML date input element
+          setProjectDate(date.toISOString().split('T')[0]);
+        } else {
+          setProjectDate('');
+        }
+      } catch (error) {
+        console.error("Fout bij het verwerken van de datum:", error);
+        setProjectDate('');
+      }
+    } else {
+      setProjectDate('');
+    }
+    
     setIsEditing(true);
+    
+    // Reset file inputs
+    setImageFile(null);
+    setImagePreview(null);
+    setDocumentFile(null);
+    setDocumentName('');
+    
+    // Als het project een afbeelding heeft, toon een preview
+    if (project.image && project.image.data) {
+      setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
+    }
+    
+    // Als het project een document heeft, toon de bestandsnaam
+    if (project.document && project.document.filename) {
+      setDocumentName(project.document.filename);
+    }
   };
 
   // Functie voor verwijderen van een project
@@ -200,6 +249,7 @@ export default function ProjectenPage() {
       }
       
       setSuccessMessage('Project succesvol verwijderd');
+      setTimeout(() => setSuccessMessage(''), 3000);
       setIsDialogOpen(false);
       setProjectToDelete(null);
     } catch (error: any) {
@@ -304,22 +354,56 @@ export default function ProjectenPage() {
 
         <div>
           <label className="block text-sm font-medium mb-1">Afbeelding (Optioneel)</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="text-sm"
-          />
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+              <ImagePlus size={18} />
+              <span>Kies een afbeelding</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+            
+            {imagePreview ? (
+              <div className="border border-gray-200 p-2 rounded">
+                <p className="text-xs text-gray-500 mb-2">Voorbeeld:</p>
+                <img 
+                  src={imagePreview} 
+                  alt="Afbeelding voorbeeld" 
+                  className="max-h-48 object-contain rounded" 
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Nog geen afbeelding geselecteerd</p>
+            )}
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">Document (Optioneel)</label>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx"
-            onChange={handleDocumentChange}
-            className="text-sm"
-          />
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+              <Upload size={18} />
+              <span>Kies een document</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                onChange={handleDocumentChange}
+                className="hidden"
+              />
+            </label>
+            
+            {documentName ? (
+              <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
+                <FileText size={18} className="text-blue-600" />
+                <span>{documentName}</span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Nog geen document geselecteerd</p>
+            )}
+          </div>
         </div>
 
         <button
@@ -354,25 +438,29 @@ export default function ProjectenPage() {
                   />
                 )}
                 
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg">{project.title}</h3>
-                  
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditProject(project)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Bewerk project"
-                    >
-                      <FileText size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(project._id)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Verwijder project"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                <div className="mb-2">
+                  {/* Actieknoppen bovenaan rechts plaatsen, altijd zichtbaar */}
+                  <div className="flex justify-end mb-1">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditProject(project)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Bewerk project"
+                      >
+                        <FileText size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(project._id)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Verwijder project"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
+                  
+                  {/* Titel op eigen regel voor volledige breedte */}
+                  <h3 className="font-semibold text-lg break-words">{project.title}</h3>
                 </div>
                 
                 <p className="text-sm text-gray-700 mb-2">{project.description}</p>

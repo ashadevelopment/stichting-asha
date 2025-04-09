@@ -54,22 +54,6 @@ export default function Projecten() {
     fetchProjects();
   }, []);
 
-  // Function to fetch file URL
-  const getFileUrl = async (project: Project, type: 'image' | 'document') => {
-    try {
-      const res = await fetch(`/api/projects/${project._id}/file?type=${type}`);
-      if (!res.ok) {
-        console.error('Fout bij ophalen bestand');
-        return null;
-      }
-      const fileData = await res.json();
-      return `data:${fileData.contentType};base64,${fileData.data}`;
-    } catch (err) {
-      console.error('Fout bij ophalen bestandsgegevens:', err);
-      return null;
-    }
-  };
-
   // Modal handlers
   const openProjectModal = (project: Project) => {
     setSelectedProject(project);
@@ -112,10 +96,9 @@ export default function Projecten() {
                 className="bg-white shadow-lg rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105"
                 onClick={() => openProjectModal(project)}
               >
-                {project.image && (
+                {project.image && project.image.data && (
                   <div className="h-48 overflow-hidden">
-                    {/* Lazy load image */}
-                    <LazyImage 
+                    <img 
                       src={`data:${project.image.contentType};base64,${project.image.data}`} 
                       alt={project.title} 
                       className="w-full h-full object-cover"
@@ -123,19 +106,21 @@ export default function Projecten() {
                   </div>
                 )}
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#1E2A78]">{project.title}</h3>
+                  <h3 className="text-xl font-semibold text-[#1E2A78] break-words min-h-[3.5rem]">{project.title}</h3>
                   <div className="flex items-center text-gray-500 text-sm mt-2">
-                    <Calendar size={16} className="mr-2" />
-                    {project.projectDate 
-                      ? format(
-                          // Ensure it's a valid date, fallback to current date if invalid
-                          isNaN(new Date(project.projectDate).getTime()) 
-                            ? new Date() 
-                            : new Date(project.projectDate), 
-                          'd MMMM yyyy', 
-                          { locale: nl }
-                        )
-                      : format(new Date(), 'd MMMM yyyy', { locale: nl })}
+                    <Calendar size={16} className="mr-2 shrink-0" />
+                    <span className="truncate">
+                      {project.projectDate 
+                        ? format(
+                            // Ensure it's a valid date, fallback to current date if invalid
+                            isNaN(new Date(project.projectDate).getTime()) 
+                              ? new Date() 
+                              : new Date(project.projectDate), 
+                            'd MMMM yyyy', 
+                            { locale: nl }
+                          )
+                        : format(new Date(), 'd MMMM yyyy', { locale: nl })}
+                    </span>
                   </div>
                   <p className="text-gray-600 mt-2 line-clamp-3">{project.description}</p>
                 </div>
@@ -177,7 +162,7 @@ export default function Projecten() {
             </button>
 
             {/* Project Image */}
-            {selectedProject.image && (
+            {selectedProject.image && selectedProject.image.data && (
               <div className="w-full h-64 md:h-96 overflow-hidden">
                 <img 
                   src={`data:${selectedProject.image.contentType};base64,${selectedProject.image.data}`}
@@ -189,7 +174,7 @@ export default function Projecten() {
 
             {/* Project Details */}
             <div className="p-8">
-              <h2 className="text-3xl font-bold text-[#1E2A78] mb-4">{selectedProject.title}</h2>
+              <h2 className="text-3xl font-bold text-[#1E2A78] mb-4 break-words">{selectedProject.title}</h2>
               
               {/* Date and Tags */}
               <div className="flex items-center justify-between mb-4">
@@ -235,7 +220,7 @@ export default function Projecten() {
               )}
 
               {/* Document Download */}
-              {selectedProject.document && (
+              {selectedProject.document && selectedProject.document.data && (
                 <div className="mt-6">
                   <a
                     href={`data:${selectedProject.document.contentType};base64,${selectedProject.document.data}`}
@@ -251,44 +236,6 @@ export default function Projecten() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// Simple lazy image component to improve performance
-function LazyImage({ 
-  src, 
-  alt, 
-  className 
-}: { 
-  src: string, 
-  alt: string, 
-  className?: string 
-}) {
-  const [imageSrc, setImageSrc] = useState('/placeholder.png');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      setImageSrc(src);
-      setIsLoading(false);
-    };
-  }, [src]);
-
-  return (
-    <div className={`relative ${className}`}>
-      {isLoading && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-          <span className="text-gray-500">Laden...</span>
-        </div>
-      )}
-      <img 
-        src={imageSrc} 
-        alt={alt} 
-        className={`w-full h-full object-cover ${isLoading ? 'opacity-0' : 'opacity-100'}`} 
-      />
     </div>
   );
 }
