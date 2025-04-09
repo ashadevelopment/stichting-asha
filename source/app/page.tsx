@@ -77,7 +77,7 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-500 mt-10">Geen actieve mededelingen.</p>
+          <p className="text-center text-gray-500 mt-10"></p>
         )}
       </div>
 

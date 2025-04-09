@@ -10,10 +10,6 @@ const NoticeSchema = new Schema(
       type: String, 
       required: true 
     },
-    roles: {
-      type: [String],
-      default: ['gebruiker']
-    },
     expirationDate: { 
       type: Date, 
       required: true 
