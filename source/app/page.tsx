@@ -1,14 +1,39 @@
 "use client";
 
 import Image from "next/image";
-import { FolderKanban, Calendar } from "lucide-react";
+import { FolderKanban, Calendar, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { use, useEffect, useState } from "react";
+import { NoticeType } from "../.next/types/notice";
+import Notice from "./lib/models/Notice";
+import connectDB  from "./lib/mongodb";
 
-export default function Home() {
+
+
+export default async function Home() {
+  await connectDB();
   const router = useRouter();
+  const { data: session } = useSession();
+  const notice = await Notice.findOne({ isActive: true })
+  .sort({ createdAt: -1 })
+  .lean<NoticeType>(); 
+
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
+
+      <div>
+        {notice ? (
+            <div className="p-6 max-w-xl mx-auto bg-yellow-200 rounded-md shadow-md mt-10">
+              <h2 className="text-xl font-bold text-yellow-900 mb-2">{notice.title}</h2>
+              <p className="text-yellow-800">{notice.message}</p>
+            </div>
+          ) : (
+            <p className="text-center text-gray-500 mt-10">No active notice.</p>
+          )}
+      </div>
+
       {/* SVG Curve Background */}
       <div className="absolute top-0 left-0 md:left-[50px] lg:left-[150px] w-full md:w-[calc(100%+150px)] lg:w-[calc(100%+300px)] h-[400px] md:h-[600px] lg:h-[850px] z-0">
         <svg
