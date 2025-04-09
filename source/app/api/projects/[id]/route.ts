@@ -1,21 +1,10 @@
 import { NextResponse } from "next/server";
 import connectDB from "../../lib/mongodb";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]/route";
 
 export async function POST(req: Request) {
   try {
     // Ensure database connection
     await connectDB();
-
-    // Check if user is authenticated
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Authenticatie vereist" }, 
-        { status: 403 }
-      );
-    }
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
@@ -33,7 +22,6 @@ export async function POST(req: Request) {
       filename: file.name,
       contentType: file.type,
       size: buffer.length,
-      data: buffer.toString('base64'), // Convert to base64 for storage
       message: "Bestand gereed voor opslag"
     });
   } catch (err) {
