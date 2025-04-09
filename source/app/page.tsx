@@ -4,34 +4,81 @@ import Image from "next/image";
 import { FolderKanban, Calendar, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { use, useEffect, useState } from "react";
-import { NoticeType } from "../.next/types/notice";
-import Notice from "./lib/models/Notice";
-import connectDB  from "./lib/mongodb";
+import { useEffect, useState } from "react";
 
+// Define the NoticeType interface
+interface NoticeType {
+  _id: string;
+  title: string;
+  message: string;
+  roles: string[];
+  expirationDate: string;
+  author: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
-
-export default async function Home() {
-  await connectDB();
+export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
-  const notice = await Notice.findOne({ isActive: true })
-  .sort({ createdAt: -1 })
-  .lean<NoticeType>(); 
+  const [notice, setNotice] = useState<NoticeType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch notice on component mount
+  useEffect(() => {
+    const fetchNotice = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/notices/latest');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch latest notice');
+        }
+        
+        const data = await response.json();
+        if (data) {
+          setNotice(data);
+        }
+      } catch (err) {
+        console.error('Error fetching notice:', err);
+        setError('Could not load notice');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotice();
+  }, []);
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
 
-      <div>
-        {notice ? (
-            <div className="p-6 max-w-xl mx-auto bg-yellow-200 rounded-md shadow-md mt-10">
-              <h2 className="text-xl font-bold text-yellow-900 mb-2">{notice.title}</h2>
-              <p className="text-yellow-800">{notice.message}</p>
+      {/* Notice Display */}
+      <div className="relative z-20">
+        {isLoading ? (
+          <div className="p-6 max-w-xl mx-auto bg-gray-100 rounded-md shadow-md mt-10 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-3/4 mb-3"></div>
+            <div className="h-4 bg-gray-200 rounded w-full"></div>
+          </div>
+        ) : error ? (
+          <p className="text-center text-gray-500 mt-10">{error}</p>
+        ) : notice ? (
+          <div className="p-6 max-w-xl mx-auto bg-yellow-200 rounded-md shadow-md mt-10">
+            <h2 className="text-xl font-bold text-yellow-900 mb-0 flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-5 h-5"/> 
+              {notice.title}
+            </h2>
+            <p className="text-yellow-800">{notice.message}</p>
+            <div className="mt-3 text-xs text-yellow-700 flex justify-between">
+              <span>Door: {notice.author}</span>
+              <span>Verloopt op: {new Date(notice.expirationDate).toLocaleDateString('nl-NL')}</span>
             </div>
-          ) : (
-            <p className="text-center text-gray-500 mt-10">No active notice.</p>
-          )}
+          </div>
+        ) : (
+          <p className="text-center text-gray-500 mt-10">Geen actieve mededelingen.</p>
+        )}
       </div>
 
       {/* SVG Curve Background */}
