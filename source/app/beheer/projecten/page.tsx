@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, FileText, Download, Tag, Calendar } from 'lucide-react';
+import { FolderPlus, FileText, Download, Tag, Calendar, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
-import { IProject } from '../../lib/types';
+import ConfirmationDialog from '../../../components/ConfirmationDialog';
+import { Project } from '../../lib/types';
 
 export default function ProjectenPage() {
   const { data: session } = useSession();
@@ -16,12 +17,16 @@ export default function ProjectenPage() {
   const [projectDate, setProjectDate] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [projects, setProjects] = useState<IProject[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentProject, setCurrentProject] = useState<IProject | null>(null);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Confirmation Dialog State
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -105,7 +110,7 @@ export default function ProjectenPage() {
     }
 
     // Prepare project data
-    const projectData: IProject = {
+    const projectData: Project = {
       title,
       description,
       longDescription,
@@ -157,7 +162,7 @@ export default function ProjectenPage() {
     }
   };
 
-  const handleEditProject = (project: IProject) => {
+  const handleEditProject = (project: Project) => {
     setCurrentProject(project);
     setTitle(project.title);
     setDescription(project.description);
@@ -165,6 +170,48 @@ export default function ProjectenPage() {
     setTags(project.tags?.join(', ') || '');
     setProjectDate(project.projectDate);
     setIsEditing(true);
+  };
+
+  // Functie voor verwijderen van een project
+  const handleDeleteClick = (projectId: string) => {
+    setProjectToDelete(projectId);
+    setIsDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return;
+    
+    try {
+      const res = await fetch(`/api/projects/${projectToDelete}`, {
+        method: 'DELETE'
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Fout bij verwijderen van project');
+      }
+      
+      // Verwijder het project uit de lokale state
+      setProjects(projects.filter(p => p._id !== projectToDelete));
+      
+      // Reset formulier indien het verwijderde project momenteel wordt bewerkt
+      if (currentProject?._id === projectToDelete) {
+        resetForm();
+      }
+      
+      setSuccessMessage('Project succesvol verwijderd');
+      setIsDialogOpen(false);
+      setProjectToDelete(null);
+    } catch (error: any) {
+      console.error('Error deleting project:', error);
+      setError(error.message || 'Er is een fout opgetreden bij het verwijderen van het project');
+      setIsDialogOpen(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setIsDialogOpen(false);
+    setProjectToDelete(null);
   };
 
   // Render check for administrators
@@ -310,13 +357,22 @@ export default function ProjectenPage() {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-semibold text-lg">{project.title}</h3>
                   
-                  <button
-                    onClick={() => handleEditProject(project)}
-                    className="text-blue-600 hover:text-blue-800"
-                    title="Bewerk project"
-                  >
-                    <FileText size={18} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditProject(project)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Bewerk project"
+                    >
+                      <FileText size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(project._id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Verwijder project"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
                 
                 <p className="text-sm text-gray-700 mb-2">{project.description}</p>
@@ -356,6 +412,15 @@ export default function ProjectenPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Dialog for Deleting Project */}
+      <ConfirmationDialog 
+        isOpen={isDialogOpen}
+        title="Project Verwijderen"
+        message="Weet u zeker dat u dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
