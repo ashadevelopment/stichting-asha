@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FolderKanban, Calendar, AlertTriangle } from "lucide-react";
+import { FolderKanban, Calendar, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -19,12 +19,52 @@ interface NoticeType {
   updatedAt: string;
 }
 
+// Define Project interface
+interface Project {
+  _id: string;
+  title: string;
+  description: string;
+  image?: {
+    contentType: string;
+    data: string;
+  };
+  projectDate: string;
+}
+
+// Define Photo interface
+interface Photo {
+  _id: string;
+  title: string;
+  description?: string;
+  image: {
+    data: string;
+    contentType: string;
+  };
+}
+
+// Define CarouselItem interface for unified handling
+interface CarouselItem {
+  type: 'project' | 'photo';
+  id: string;
+  title: string;
+  description?: string;
+  imageData?: string;
+  imageContentType?: string;
+  date?: string;
+}
+
 export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
   const [notice, setNotice] = useState<NoticeType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Carousel states
+  const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
+  const [carouselLoading, setCarouselLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [carouselError, setCarouselError] = useState<string | null>(null);
 
   // Fetch notice on component mount
   useEffect(() => {
@@ -51,6 +91,99 @@ export default function Home() {
 
     fetchNotice();
   }, []);
+
+  // Fetch projects and photos for carousel
+  useEffect(() => {
+    const fetchCarouselContent = async () => {
+      try {
+        setCarouselLoading(true);
+        
+        // Fetch projects
+        const projectsResponse = await fetch('/api/projects');
+        if (!projectsResponse.ok) {
+          throw new Error('Failed to fetch projects');
+        }
+        const projectsData: Project[] = await projectsResponse.json();
+        
+        // Fetch photos
+        const photosResponse = await fetch('/api/photos');
+        if (!photosResponse.ok) {
+          throw new Error('Failed to fetch photos');
+        }
+        const photosData: Photo[] = await photosResponse.json();
+        
+        // Combine and transform data
+        const projectItems: CarouselItem[] = projectsData
+          .filter(project => project.image && project.image.data)
+          .map(project => ({
+            type: 'project',
+            id: project._id,
+            title: project.title,
+            description: project.description,
+            imageData: project.image?.data,
+            imageContentType: project.image?.contentType,
+            date: project.projectDate
+          }));
+        
+        const photoItems: CarouselItem[] = photosData.map(photo => ({
+          type: 'photo',
+          id: photo._id,
+          title: photo.title,
+          description: photo.description,
+          imageData: photo.image.data,
+          imageContentType: photo.image.contentType
+        }));
+        
+        // Interleave projects and photos
+        const combined: CarouselItem[] = [];
+        const maxLength = Math.max(projectItems.length, photoItems.length);
+        
+        for (let i = 0; i < maxLength; i++) {
+          if (i < projectItems.length) combined.push(projectItems[i]);
+          if (i < photoItems.length) combined.push(photoItems[i]);
+        }
+        
+        setCarouselItems(combined);
+      } catch (err) {
+        console.error('Error fetching carousel content:', err);
+        setCarouselError('Could not load carousel content');
+      } finally {
+        setCarouselLoading(false);
+      }
+    };
+
+    fetchCarouselContent();
+  }, []);
+
+  // Carousel navigation
+  const goToNext = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === carouselItems.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const goToPrev = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? carouselItems.length - 1 : prevIndex - 1
+    );
+  };
+
+  // Auto-rotate carousel
+  useEffect(() => {
+    if (carouselItems.length > 0) {
+      const interval = setInterval(goToNext, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [carouselItems.length]);
+
+  // Handle carousel item click
+  const handleCarouselItemClick = (item: CarouselItem) => {
+    if (item.type === 'project') {
+      router.push(`/projecten?id=${item.id}`);
+    } else {
+      router.push('/fotoboek');
+    }
+  };
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
@@ -164,6 +297,136 @@ export default function Home() {
             <p className="text-sm md:text-base text-gray-700">
               Stichting Asha wordt voortdurend door de Media benaderd. Met name de projecten sollicitatie Helpdesk, ouderen en huiswerkbegeleiding haalt veelvuldig de media. Verder zijn de praktijkvoorbeelden interessant, een verzameling daarvan ziet u bij onze projecten.
             </p>
+          </div>
+        </div>
+
+        {/* Projects and Photos Carousel Banner */}
+        <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-62 mb-16">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Projecten & Foto's</h2>
+            
+            {carouselLoading ? (
+              <div className="flex justify-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+              </div>
+            ) : carouselError ? (
+              <p className="text-center text-white/80">{carouselError}</p>
+            ) : carouselItems.length === 0 ? (
+              <p className="text-center text-white/80">Geen projecten of foto's beschikbaar</p>
+            ) : (
+              <div className="relative">
+                {/* Carousel Navigation */}
+                <button 
+                  onClick={goToPrev}
+                  className="absolute top-1/2 left-[-6rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-2 rounded-full text-white"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                
+                <button 
+                  onClick={goToNext}
+                  className="absolute top-1/2 right-[-6rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-2 rounded-full text-white"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight size={24} />
+                </button>
+
+                {/* Carousel Items */}
+                <div className="overflow-hidden">
+                  <div className="flex flex-wrap md:flex-nowrap gap-6 md:gap-8">
+                    {/* Current item */}
+                    {carouselItems[currentIndex] && (
+                      <div 
+                        className="w-full md:w-2/3 bg-white/10 backdrop-blur-md rounded-lg overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
+                        onClick={() => handleCarouselItemClick(carouselItems[currentIndex])}
+                      >
+                        <div className="h-64 md:h-80 lg:h-96 overflow-hidden">
+                          {carouselItems[currentIndex].imageData && (
+                            <img 
+                              src={`data:${carouselItems[currentIndex].imageContentType};base64,${carouselItems[currentIndex].imageData}`}
+                              alt={carouselItems[currentIndex].title}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="p-6">
+                          <div className="flex items-center mb-2">
+                            <span className="bg-yellow-400 text-xs font-medium text-white px-2 py-1 rounded">
+                              {carouselItems[currentIndex].type === 'project' ? 'Project' : 'Foto'}
+                            </span>
+                            {carouselItems[currentIndex].date && (
+                              <span className="ml-2 text-white/80 text-sm">
+                                {new Date(carouselItems[currentIndex].date).toLocaleDateString('nl-NL')}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-xl font-bold text-white">{carouselItems[currentIndex].title}</h3>
+                          {carouselItems[currentIndex].description && (
+                            <p className="text-white/80 mt-2 line-clamp-2">{carouselItems[currentIndex].description}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Preview items (only shown on md+ screens) */}
+                    <div className="hidden md:flex md:w-1/3 flex-col gap-4">
+                      {[
+                        (currentIndex + 1) % carouselItems.length,
+                        (currentIndex + 2) % carouselItems.length
+                      ].map((index) => (
+                        <div
+                          key={`preview-${carouselItems[index].id}`}
+                          className="bg-white/10 backdrop-blur-md rounded-lg overflow-hidden cursor-pointer h-[calc(50%-0.5rem)] transition-transform duration-300 hover:scale-[1.02]"
+                          onClick={() => setCurrentIndex(index)}
+                        >
+                          <div className="h-32">
+                            {carouselItems[index].imageData && (
+                              <img 
+                                src={`data:${carouselItems[index].imageContentType};base64,${carouselItems[index].imageData}`}
+                                alt={carouselItems[index].title}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <h4 className="text-sm font-medium text-white">{carouselItems[index].title}</h4>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dots navigation */}
+                <div className="flex justify-center mt-6 gap-2">
+                  {carouselItems.map((_, index) => (
+                    <button
+                      key={`dot-${index}`}
+                      className={`h-2 rounded-full transition-all ${index === currentIndex ? 'w-6 bg-white' : 'w-2 bg-white/50'}`}
+                      onClick={() => setCurrentIndex(index)}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Call to action buttons */}
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+              <button
+                onClick={() => router.push("/projecten")}
+                className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 px-6 rounded-md transition-all"
+              >
+                Bekijk alle projecten
+              </button>
+              <button
+                onClick={() => router.push("/fotoboek")}
+                className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-md transition-all"
+              >
+                Ga naar fotoboek
+              </button>
+            </div>
           </div>
         </div>
       </div>
