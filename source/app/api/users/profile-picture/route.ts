@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     
     // Allow users to update their own picture, or admins/developers to update any picture
-    const isAdmin = ['beheerder', 'developer'].includes(session.user.role as string);
+    const isAdmin = ['Beheerder', 'Developer'].includes(session.user.role as string);
     const isSelf = session.user.id === userId;
     
     if (!isAdmin && !isSelf) {

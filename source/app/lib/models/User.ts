@@ -8,8 +8,8 @@ const UserSchema = new Schema({
   password: String,
   role: {
     type: String,
-    enum: ['beheerder', 'developer', 'vrijwilliger', 'stagiair', 'user'],
-    default: 'user',
+    enum: ['Beheerder', 'Developer', 'Vrijwilliger', 'Stagiair', 'User'],
+    default: 'User',
   },
   function: String,
   phoneNumber: String,

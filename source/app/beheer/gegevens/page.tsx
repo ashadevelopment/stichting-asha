@@ -91,7 +91,7 @@ export default function PersoonlijkeGegevensPage() {
             className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
           />
           <p className="mt-2 text-sm text-gray-500 flex items-center gap-1">
-            <BadgeInfo size={14} /> Rol:{' '}
+            <BadgeInfo size={14} /> {' '}
             <span className="italic capitalize">{user?.role || 'Onbekend'}</span>
           </p>
         </div>
