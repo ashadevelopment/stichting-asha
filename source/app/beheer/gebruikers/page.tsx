@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import UserModals from './modals'
+import Avatar from '../../../components/Avatar'
 
 interface Gebruiker {
   _id: string
@@ -186,14 +187,12 @@ export default function GebruikersPage() {
                   filteredUsers.map((user) => (
                     <tr key={user._id} className="hover:bg-gray-50 text-sm">
                       <td className="px-4 py-3 border-b">
-                        {user.profilePicture?.data ? (
-                          <div className="w-10 h-10 rounded-full overflow-hidden">
-                            <img 
-                              src={`/api/users/profile-picture?userId=${user._id}`} 
-                              alt={user.fullName} 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
+                        {user.profilePicture?.data && user.profilePicture?.contentType ? (
+                          <Avatar
+                          userId={user._id}
+                          initial={user.initial}
+                          size={50}
+                        />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium">
                             {user.initial}

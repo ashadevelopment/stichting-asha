@@ -4,6 +4,7 @@ import User from '../../../lib/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../api/auth/[...nextauth]/route';
 import bcrypt from 'bcryptjs';
+import Avatar from '../../../../components/Avatar';
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,14 +67,11 @@ export async function POST(request: NextRequest) {
     
     // Process profile picture if exists
     if (profilePicture) {
-      const buffer = Buffer.from(await profilePicture.arrayBuffer());
-      const base64Data = buffer.toString('base64');
-      
-      userData.profilePicture = {
-        data: base64Data,
-        contentType: profilePicture.type,
-        filename: profilePicture.name
-      };
+
+      // use Avatar component to generate a default avatar USE <Avatar /> component
+        const avatar = Avatar({ name: `${firstName} ${lastName}`, size: 128 });
+        userData.avatar = avatar; // Assuming Avatar returns a base64 string or similar
+
     }
     
     // Create user
