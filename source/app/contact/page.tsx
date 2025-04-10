@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Avatar from '../../components/Avatar';
 
 interface ContactPerson {
   _id: string;
@@ -157,36 +158,28 @@ export default function Contact() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {contacts.map((contact) => (
-                <div key={contact._id} className="bg-gray-50 p-4 rounded-lg flex items-center">
-                  {contact.profilePicture?.data ? (
-                    <img
-                      src={`/api/users/profile-picture?userId=${contact._id}`}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'; // hide broken image
-                      }}
-                      alt={getFullName(contact)}
-                      className="w-16 h-16 rounded-full mr-4 object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full mr-4 flex items-center justify-center bg-gradient-to-br from-gray-400 to-gray-600 text-white font-bold text-xl uppercase">
-                      {contact.initial}
-                    </div>
+              <div key={contact._id} className="bg-gray-50 p-4 rounded-lg flex items-center">
+                <Avatar 
+                  userId={contact._id}
+                  name={getFullName(contact)}
+                  initial={contact.initial}
+                  size={64}
+                />
+                <div className="ml-4">
+                  <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>
+                  {contact.function && (
+                    <p className="text-gray-600">Functie: {contact.function}</p>
                   )}
-                  <div>
-                    <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>
-                    {contact.function && (
-                      <p className="text-gray-600">Functie: {contact.function}</p>
-                    )}
-                    <p className="text-gray-600">Telefoonnummer: {contact.phoneNumber || "Geen telefoonnummer"}</p>
-                    <p className="text-gray-600">
-                      E-mail:{" "}
-                      <a href={`mailto:${contact.email}`} className="text-blue-500">
-                        {contact.email}
-                      </a>
-                    </p>
-                  </div>
+                  <p className="text-gray-600">Telefoonnummer: {contact.phoneNumber || "Geen telefoonnummer"}</p>
+                  <p className="text-gray-600">
+                    E-mail:{" "}
+                    <a href={`mailto:${contact.email}`} className="text-blue-500">
+                      {contact.email}
+                    </a>
+                  </p>
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
           )}
         </div>

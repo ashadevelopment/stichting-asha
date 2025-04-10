@@ -1,20 +1,54 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
 import { Lock, RefreshCw, User2, Phone, Mail, MapPin, BadgeInfo } from 'lucide-react'
+import ProfilePictureUpload from '../../../components/ProfilePictureUpload'
 
 export default function PersoonlijkeGegevensPage() {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
+  const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   const user = session?.user
 
+  const handleProfileUpdate = async () => {
+    // Refresh session data after profile update
+    await update()
+    setMessage({ type: 'success', text: 'Profile picture updated successfully' })
+    
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      setMessage(null)
+    }, 3000)
+  }
+
   return (
-    <div className="p-6 bg-white rounded-xl shadow-sm text-gray-800 text-[16px]">
+    <div className="p-6 bg-white rounded-xl shadow-sm text-gray-800">
       {/* Titel */}
       <div className="flex items-center gap-2 mb-6">
         <User2 size={20} className="text-blue-600" />
         <h2 className="text-2xl font-semibold">Persoonlijke Gegevens</h2>
       </div>
+
+      {/* Profile picture section */}
+      <div className="flex justify-center mb-8">
+        {user?.id && (
+          <ProfilePictureUpload 
+            userId={user.id} 
+            name={user.name || undefined}
+            onSuccess={handleProfileUpdate}
+          />
+        )}
+      </div>
+
+      {message && (
+        <div className={`mb-4 p-3 rounded ${
+          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {message.text}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         <div>
