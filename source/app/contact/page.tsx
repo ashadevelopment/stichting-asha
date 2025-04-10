@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ContactPerson {
-  id: string;
+  _id: string;
+  firstName: string;
+  lastName: string;
   name: string;
   function: string;
   email: string;
-  phone_number: string;
-  picture_url: string;
+  phoneNumber: string;
+  profilePicture?: {
+    data: string;
+    contentType: string;
+  };
+  initial: string;
 }
 
 interface VolunteerForm {
@@ -21,27 +27,9 @@ interface VolunteerForm {
   motivationLetter: File | null;
 }
 
-const defaultContacts: ContactPerson[] = [
-  {
-    id: "1",
-    name: "Radj Ramcharan",
-    function: "Secretaris",
-    email: "radj@example.com",
-    phone_number: "0612345678",
-    picture_url: "https://www.stichtingasha.nl/img/radjround2-modified.png",
-  },
-  {
-    id: "2",
-    name: "Ronald Kalka",
-    function: "Voorzitter",
-    email: "ronald@example.com",
-    phone_number: "0623456789",
-    picture_url: "https://www.stichtingasha.nl/img/ronaldkalkaround1-modified.png",
-  },
-];
-
 export default function Contact() {
-  const [contacts] = useState<ContactPerson[]>(defaultContacts);
+  const [contacts, setContacts] = useState<ContactPerson[]>([]);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<VolunteerForm>({
     firstName: "",
     lastName: "",
@@ -53,6 +41,22 @@ export default function Contact() {
   });
   const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchContacts() {
+      try {
+        const response = await fetch("/api/contacts");
+        const data = await response.json();
+        setContacts(data.contactPersons || []);
+      } catch (error) {
+        console.error("Error fetching contacts:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchContacts();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'cv' | 'motivationLetter') => {
     if (e.target.files && e.target.files[0]) {
@@ -72,16 +76,6 @@ export default function Contact() {
       formData.append("email", form.email);
       formData.append("phoneNumber", form.phoneNumber);
       formData.append("message", form.message);
-
-      console.log("Form data before appending files:", {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        phoneNumber: form.phoneNumber,
-        message: form.message,
-        hasCV: form.cv !== null,
-        hasMotivationLetter: form.motivationLetter !== null,
-      });
       
       if (form.cv) {
         formData.append("cv", form.cv);
@@ -97,7 +91,6 @@ export default function Contact() {
       });
       
       const responseData = await response.json();
-      console.log("Response:", response.status, responseData);
       
       if (!response.ok) {
         throw new Error(responseData.error || "Er is iets misgegaan bij het versturen");
@@ -116,7 +109,6 @@ export default function Contact() {
       
       // Reset file inputs
       const fileInputs = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
-      
       fileInputs.forEach((input: HTMLInputElement) => {
         input.value = '';
       });
@@ -132,42 +124,82 @@ export default function Contact() {
     }
   };
 
+  // Helper function to get user's full name
+  const getFullName = (contact: ContactPerson) => {
+    if (contact.firstName && contact.lastName) {
+      return `${contact.firstName} ${contact.lastName}`;
+    }
+    return contact.name || "Geen naam";
+  };
+
+  // Helper function to get profile picture URL
+  const getProfilePicture = (contact: ContactPerson) => {
+    if (contact.profilePicture?.data && contact.profilePicture.contentType) {
+      return `data:${contact.profilePicture.contentType};base64,${contact.profilePicture.data}`;
+    }
+    return "/images/default-profile.png";  // Fallback image
+  };
+
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
       <div className="container mx-auto py-10 px-4 bg-[#F2F2F2]">
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">Contactpersonen</h2>
+          <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">Contact Personen</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="bg-gray-50 p-4 rounded-lg flex items-center">
-                <img
-                  src={contact.picture_url}
-                  alt={contact.name}
-                  className="w-16 h-16 rounded-full mr-4"
-                />
-                <div>
-                  <h3 className="text-xl font-semibold text-black">{contact.name}</h3>
-                  <p className="text-gray-600">Functie: {contact.function}</p>
-                  <p className="text-gray-600">Telefoonnummer: {contact.phone_number}</p>
-                  <p className="text-gray-600">
-                    E-mail:{" "}
-                    <a href={`mailto:${contact.email}`} className="text-blue-500">
-                      {contact.email}
-                    </a>
-                  </p>
+          {loading ? (
+            <div className="flex justify-center p-6">
+              <p>Contactpersonen laden...</p>
+            </div>
+          ) : contacts.length === 0 ? (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-gray-600">Geen contact personen gevonden.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {contacts.map((contact) => (
+                <div key={contact._id} className="bg-gray-50 p-4 rounded-lg flex items-center">
+                  {contact.profilePicture?.data ? (
+                    <img
+                      src={`/api/users/profile-picture?userId=${contact._id}`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'; // hide broken image
+                      }}
+                      alt={getFullName(contact)}
+                      className="w-16 h-16 rounded-full mr-4 object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full mr-4 flex items-center justify-center bg-gradient-to-br from-gray-400 to-gray-600 text-white font-bold text-xl uppercase">
+                      {contact.initial}
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>
+                    {contact.function && (
+                      <p className="text-gray-600">Functie: {contact.function}</p>
+                    )}
+                    <p className="text-gray-600">Telefoonnummer: {contact.phoneNumber || "Geen telefoonnummer"}</p>
+                    <p className="text-gray-600">
+                      E-mail:{" "}
+                      <a href={`mailto:${contact.email}`} className="text-blue-500">
+                        {contact.email}
+                      </a>
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* The rest of your component (volunteer form) remains unchanged */}
         <div className="bg-white shadow-lg rounded-lg p-6">
           <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">
             Meld je aan als Vrijwilliger
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Form fields remain unchanged */}
+            {/* ... */}
             <div>
               <label htmlFor="firstName" className="block text-[#1E2A78]">
                 Voornaam:
