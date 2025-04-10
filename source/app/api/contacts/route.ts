@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     
     // Check if user is authorized (beheerder or developer)
-    if (!session || !session.user || !['beheerder', 'developer'].includes(session.user.role as string)) {
+    if (!session || !session.user || !['Beheerder', 'Developer'].includes(session.user.role as string)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
