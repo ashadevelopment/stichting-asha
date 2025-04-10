@@ -17,6 +17,8 @@ interface VolunteerForm {
   email: string;
   phoneNumber: string;
   message: string;
+  cv: File | null;
+  motivationLetter: File | null;
 }
 
 const defaultContacts: ContactPerson[] = [
@@ -46,9 +48,17 @@ export default function Contact() {
     email: "",
     phoneNumber: "",
     message: "",
+    cv: null,
+    motivationLetter: null,
   });
   const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'cv' | 'motivationLetter') => {
+    if (e.target.files && e.target.files[0]) {
+      setForm({ ...form, [fieldName]: e.target.files[0] });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +66,31 @@ export default function Contact() {
     setErrorMessage("");
 
     try {
-     
-      // For now, we will simulate success response
+      const formData = new FormData();
+      formData.append("firstName", form.firstName);
+      formData.append("lastName", form.lastName);
+      formData.append("email", form.email);
+      formData.append("phoneNumber", form.phoneNumber);
+      formData.append("message", form.message);
+      
+      if (form.cv) {
+        formData.append("cv", form.cv);
+      }
+      
+      if (form.motivationLetter) {
+        formData.append("motivationLetter", form.motivationLetter);
+      }
+      
+      const response = await fetch("/api/volunteers/apply", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Er is iets misgegaan bij het versturen");
+      }
+      
       setSubmitStatus("success");
       setForm({
         firstName: "",
@@ -65,13 +98,22 @@ export default function Contact() {
         email: "",
         phoneNumber: "",
         message: "",
+        cv: null,
+        motivationLetter: null,
       });
+      
+      // Reset file inputs
+      const fileInputs = document.querySelectorAll('input[type="file"]');
+      fileInputs.forEach((input: HTMLInputElement) => {
+        input.value = '';
+      });
+      
     } catch (error: any) {
       console.error("Error submitting form:", error);
       setErrorMessage(
         error.message === "duplicate key value violates unique constraint" 
           ? "Dit e-mailadres is al gebruikt voor een aanmelding."
-          : "Er is een fout opgetreden bij het versturen van het formulier. Probeer het later opnieuw."
+          : error.message || "Er is een fout opgetreden bij het versturen van het formulier. Probeer het later opnieuw."
       );
       setSubmitStatus("error");
     }
@@ -188,9 +230,41 @@ export default function Contact() {
               />
             </div>
 
+            <div>
+              <label htmlFor="cv" className="block text-[#1E2A78]">
+                CV (PDF):
+              </label>
+              <input
+                type="file"
+                id="cv"
+                onChange={(e) => handleFileChange(e, 'cv')}
+                accept=".pdf,.doc,.docx"
+                className="w-full p-2 border border-gray-300 rounded-md text-black"
+                required
+                disabled={submitStatus === "loading"}
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload je CV als PDF of Word document</p>
+            </div>
+
+            <div>
+              <label htmlFor="motivationLetter" className="block text-[#1E2A78]">
+                Motivatiebrief (PDF):
+              </label>
+              <input
+                type="file"
+                id="motivationLetter"
+                onChange={(e) => handleFileChange(e, 'motivationLetter')}
+                accept=".pdf,.doc,.docx"
+                className="w-full p-2 border border-gray-300 rounded-md text-black"
+                required
+                disabled={submitStatus === "loading"}
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload je motivatiebrief als PDF of Word document</p>
+            </div>
+
             <button
               type="submit"
-              className="bg-[#1E2A78] text-white py-2 px-4 rounded-md hover:bg-[#1E2A78] transition-colors disabled:opacity-50"
+              className="bg-[#1E2A78] text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
               disabled={submitStatus === "loading"}
             >
               {submitStatus === "loading" ? "Bezig met versturen..." : "Verstuur"}
