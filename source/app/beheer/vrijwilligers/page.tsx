@@ -103,14 +103,23 @@ export default function VrijwilligersPage() {
     }
   }
 
-  const openFile = (fileData: string, fileType: string, fileName: string) => {
-    const linkSource = `data:${fileType};base64,${fileData}`
-    const downloadLink = document.createElement('a')
-    
-    downloadLink.href = linkSource
-    downloadLink.download = fileName
-    downloadLink.click()
-  }
+  const openFile = async (volunteerId: string, fileType: 'cv' | 'motivationLetter') => {
+    try {
+      const response = await fetch(`/api/volunteers/${volunteerId}/file?type=${fileType}`);
+      if (!response.ok) throw new Error('Could not fetch file');
+      
+      const fileData = await response.json();
+      const linkSource = `data:${fileData.contentType};base64,${fileData.data}`;
+      const downloadLink = document.createElement('a');
+      
+      downloadLink.href = linkSource;
+      downloadLink.download = fileData.filename;
+      downloadLink.click();
+    } catch (err) {
+      console.error('Error opening file:', err);
+      alert('Fout bij het openen van het bestand. Probeer het opnieuw.');
+    }
+  };
 
   if (loading) return (
     <div className="text-gray-800 px-6 py-4">
@@ -162,27 +171,27 @@ export default function VrijwilligersPage() {
               <p className="text-sm text-gray-600">Telefoon: {volunteer.phoneNumber}</p>
               <p className="text-sm text-gray-600">Bericht: {volunteer.message}</p>
               <p className="text-sm text-gray-600">Aangemeld op: {new Date(volunteer.createdAt).toLocaleDateString('nl-NL')}</p>
-              <div className="mt-2 space-x-3">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <button 
                   onClick={() => handleApprove(volunteer._id)}
-                  className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center gap-1 inline-flex"
+                  className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center gap-1 flex-inline"
                 >
                   <Check size={16} /> Goedkeuren
                 </button>
                 <button 
                   onClick={() => handleDeny(volunteer._id)}
-                  className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center gap-1 inline-flex"
+                  className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center gap-1 flex-inline"
                 >
                   <X size={16} /> Afkeuren
                 </button>
                 <button 
-                  onClick={() => openFile(volunteer.cv.data, volunteer.cv.contentType, volunteer.cv.filename)}
+                  onClick={() => openFile(volunteer._id, 'cv')}
                   className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                 >
                   Bekijk CV
                 </button>
                 <button 
-                  onClick={() => openFile(volunteer.motivationLetter.data, volunteer.motivationLetter.contentType, volunteer.motivationLetter.filename)}
+                  onClick={() => openFile(volunteer._id, 'motivationLetter')}
                   className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                 >
                   Bekijk Motivatie
@@ -210,13 +219,13 @@ export default function VrijwilligersPage() {
               <p className="text-sm text-gray-600">Telefoon: {volunteer.phoneNumber}</p>
               <div className="mt-2 space-x-3">
                 <button 
-                  onClick={() => openFile(volunteer.cv.data, volunteer.cv.contentType, volunteer.cv.filename)}
+                  onClick={() => openFile(volunteer._id, 'cv')}
                   className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                 >
                   Bekijk CV
                 </button>
                 <button 
-                  onClick={() => openFile(volunteer.motivationLetter.data, volunteer.motivationLetter.contentType, volunteer.motivationLetter.filename)}
+                  onClick={() => openFile(volunteer._id, 'motivationLetter')}
                   className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
                 >
                   Bekijk Motivatie
