@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Camera, Trash, Upload } from 'lucide-react';
 import Avatar from './Avatar';
 
@@ -20,7 +20,25 @@ export default function ProfilePictureUpload({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasImage, setHasImage] = useState<boolean>(false);
+  const [refreshKey, setRefreshKey] = useState(Date.now());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user has an image on component mount
+  useEffect(() => {
+    const checkUserImage = async () => {
+      try {
+        const response = await fetch(`/api/users/profile-picture?userId=${userId}&check=true`);
+        setHasImage(response.ok);
+      } catch (error) {
+        console.error("Error checking profile picture:", error);
+        setHasImage(false);
+      }
+    };
+    
+    if (userId) {
+      checkUserImage();
+    }
+  }, [userId, refreshKey]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -44,11 +62,16 @@ export default function ProfilePictureUpload({
         }
         
         setHasImage(true);
+        setRefreshKey(Date.now()); // Force refresh of Avatar
         if (onSuccess) onSuccess();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
         setLoading(false);
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     }
   };
@@ -72,12 +95,17 @@ export default function ProfilePictureUpload({
       }
       
       setHasImage(false);
+      setRefreshKey(Date.now()); // Force refresh of Avatar
       if (onSuccess) onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAvatarError = () => {
+    setHasImage(false);
   };
 
   return (
@@ -88,7 +116,7 @@ export default function ProfilePictureUpload({
           name={name} 
           initial={initial} 
           size={120} 
-          onError={() => setHasImage(false)}
+          onError={handleAvatarError}
         />
         
         {/* Camera icon to trigger file upload */}
@@ -96,6 +124,7 @@ export default function ProfilePictureUpload({
           onClick={() => fileInputRef.current?.click()}
           className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700"
           disabled={loading}
+          type="button"
         >
           <Camera size={16} />
         </button>
@@ -114,6 +143,7 @@ export default function ProfilePictureUpload({
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 disabled:bg-blue-300"
           disabled={loading}
+          type="button"
         >
           <Upload size={16} />
           {hasImage ? 'Change' : 'Upload'}
@@ -124,6 +154,7 @@ export default function ProfilePictureUpload({
             onClick={handleDelete}
             className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:bg-red-300"
             disabled={loading}
+            type="button"
           >
             <Trash size={16} />
             Delete
