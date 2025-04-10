@@ -103,7 +103,8 @@ export default function Contact() {
       });
       
       // Reset file inputs
-      const fileInputs = document.querySelectorAll('input[type="file"]');
+      const fileInputs = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
+      
       fileInputs.forEach((input: HTMLInputElement) => {
         input.value = '';
       });
