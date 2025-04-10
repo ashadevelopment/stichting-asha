@@ -28,7 +28,7 @@ export default function DashboardPage() {
             Welkom, {session?.user?.name || 'Beheerder'}
           </h1>
           {/* Alleen de rol tonen, zonder label */}
-          <p className="text-sm text-gray-500 italic">
+          <p className="text-sm text-gray-500 italic capitalize">
             {session?.user?.role || 'Onbekend'}
           </p>
         </div>

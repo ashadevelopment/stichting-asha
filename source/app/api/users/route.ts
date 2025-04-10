@@ -1,4 +1,3 @@
-// app/api/users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../lib/mongodb';
 import User from '../../lib/models/User';
@@ -6,7 +5,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../api/auth/[...nextauth]/route';
 
 // GET endpoint to retrieve users
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -20,10 +19,22 @@ export async function GET() {
     
     await dbConnect();
     
-    // Get all users (for contact selection)
-    const users = await User.find({}, 'firstName lastName name email function phoneNumber profilePicture');
+    // Get all users with relevant fields
+    const users = await User.find({}, 'firstName lastName name email role function phoneNumber profilePicture');
     
-    return NextResponse.json({ users });
+    // Transform the users data to include virtual fields
+    const transformedUsers = users.map(user => {
+      const userData = user.toJSON();
+      if (userData.profilePicture && userData.profilePicture.data) {
+        userData.profilePicture = {
+          ...userData.profilePicture,
+          data: userData.profilePicture.data ? true : null // Just indicate if there's data
+        };
+      }
+      return userData;
+    });
+    
+    return NextResponse.json({ users: transformedUsers });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
