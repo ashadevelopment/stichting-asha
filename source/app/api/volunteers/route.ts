@@ -26,7 +26,12 @@ export async function GET(req: Request) {
     const status = url.searchParams.get('status') || 'pending';
     
     // Find volunteers based on status
-    const volunteers = await Volunteer.find({ status }).select('-cv.data -motivationLetter.data');
+    let volunteers;
+    if (status === 'all') {
+      volunteers = await Volunteer.find().select('-cv.data -motivationLetter.data');
+    } else {
+      volunteers = await Volunteer.find({ status }).select('-cv.data -motivationLetter.data');
+    }
     
     return NextResponse.json(volunteers);
   } catch (error) {

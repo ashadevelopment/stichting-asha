@@ -28,14 +28,20 @@ export default function VrijwilligersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [needsRefresh, setNeedsRefresh] = useState(false);
 
   useEffect(() => {
-    fetchVolunteers()
-  }, [])
+    if (needsRefresh) {
+      fetchVolunteers();
+      setNeedsRefresh(false);
+    }
+  }, [needsRefresh]);
 
   const fetchVolunteers = async () => {
     try {
-      const response = await fetch('/api/volunteers')
+      setLoading(true);
+      // Explicitly request all volunteers (or you could fetch by status separately)
+      const response = await fetch('/api/volunteers?status=all')
       if (!response.ok) throw new Error('Fout bij ophalen vrijwilligers')
       const data = await response.json()
       setVolunteers(data)
@@ -49,16 +55,19 @@ export default function VrijwilligersPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      const response = await fetch(`/api/volunteers/${id}/approve`, {
+      const response = await fetch(`/api/volunteers/${id}`, {
         method: 'PUT',
-      })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'approve' })
+      });
       
       if (!response.ok) throw new Error('Fout bij goedkeuren vrijwilliger')
       
-      // Update local state to reflect the change
-      setVolunteers(prev => 
-        prev.map(vol => vol._id === id ? {...vol, status: 'approved'} : vol)
-      )
+      // Use setNeedsRefresh to trigger a refresh after approval
+      setNeedsRefresh(true);
+    
     } catch (err) {
       setError('Er is een fout opgetreden bij het goedkeuren')
       console.error(err)
@@ -67,16 +76,18 @@ export default function VrijwilligersPage() {
 
   const handleDeny = async (id: string) => {
     try {
-      const response = await fetch(`/api/volunteers/${id}/deny`, {
+      const response = await fetch(`/api/volunteers/${id}`, {
         method: 'PUT',
-      })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'reject' })
+      });
       
       if (!response.ok) throw new Error('Fout bij afkeuren vrijwilliger')
       
-      // Update local state to reflect the change
-      setVolunteers(prev => 
-        prev.map(vol => vol._id === id ? {...vol, status: 'denied'} : vol)
-      )
+      // Use setNeedsRefresh to trigger a refresh after denial
+      setNeedsRefresh(true);
     } catch (err) {
       setError('Er is een fout opgetreden bij het afkeuren')
       console.error(err)

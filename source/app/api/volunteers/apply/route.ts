@@ -7,6 +7,16 @@ export async function POST(req: Request) {
     await connectDB();
     
     const formData = await req.formData();
+
+    console.log("Form data received:", {
+      firstName: formData.get("firstName"),
+      lastName: formData.get("lastName"),
+      email: formData.get("email"),
+      phoneNumber: formData.get("phoneNumber"),
+      message: formData.get("message"),
+      hasCV: formData.has("cv"),
+      hasMotivationLetter: formData.has("motivationLetter")
+    });
     
     // Get form fields
     const firstName = formData.get("firstName") as string;
@@ -69,6 +79,7 @@ export async function POST(req: Request) {
     }
     
     // Create new volunteer application
+    console.log("Creating volunteer record...");
     const volunteer = await Volunteer.create({
       firstName,
       lastName,
@@ -79,6 +90,8 @@ export async function POST(req: Request) {
       motivationLetter: motivationData,
       status: 'pending'
     });
+    
+    console.log("Volunteer created successfully:", volunteer._id);
     
     return NextResponse.json(
       { message: "Aanmelding succesvol ontvangen" }, 

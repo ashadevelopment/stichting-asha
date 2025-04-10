@@ -72,6 +72,16 @@ export default function Contact() {
       formData.append("email", form.email);
       formData.append("phoneNumber", form.phoneNumber);
       formData.append("message", form.message);
+
+      console.log("Form data before appending files:", {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phoneNumber: form.phoneNumber,
+        message: form.message,
+        hasCV: form.cv !== null,
+        hasMotivationLetter: form.motivationLetter !== null,
+      });
       
       if (form.cv) {
         formData.append("cv", form.cv);
@@ -86,9 +96,11 @@ export default function Contact() {
         body: formData,
       });
       
+      const responseData = await response.json();
+      console.log("Response:", response.status, responseData);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Er is iets misgegaan bij het versturen");
+        throw new Error(responseData.error || "Er is iets misgegaan bij het versturen");
       }
       
       setSubmitStatus("success");

@@ -42,4 +42,7 @@ const VolunteerSchema = new Schema(
   { timestamps: true }
 )
 
+VolunteerSchema.index({ email: 1 });
+VolunteerSchema.index({ status: 1 });
+
 export default mongoose.models.Volunteer || mongoose.model("Volunteer", VolunteerSchema)

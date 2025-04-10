@@ -6,7 +6,7 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -32,7 +32,7 @@ export async function GET(
       );
     }
     
-    const volunteer = await Volunteer.findById(params.id);
+    const volunteer = await Volunteer.findById(context.params.id);
     
     if (!volunteer) {
       return NextResponse.json(

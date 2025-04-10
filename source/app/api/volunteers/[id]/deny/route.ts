@@ -1,13 +1,12 @@
-// /api/volunteers/[id]/deny/route.ts
 import { NextResponse } from 'next/server';
 import dbConnect from '../../../../lib/mongodb';
 import Volunteer from '../../../../lib/models/Volunteer'; // Adjust path if necessary
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  const { id } = params;
+  const { id } = context.params;
 
   try {
     await dbConnect();

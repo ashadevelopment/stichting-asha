@@ -121,7 +121,7 @@ export async function PUT(
 // DELETE a volunteer
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -136,7 +136,7 @@ export async function DELETE(
     
     await connectDB();
     
-    const volunteer = await Volunteer.findByIdAndDelete(params.id);
+    const volunteer = await Volunteer.findByIdAndDelete(context.params.id);
     
     if (!volunteer) {
       return NextResponse.json(
