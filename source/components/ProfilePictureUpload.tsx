@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Trash, Upload } from 'lucide-react';
+import { Trash, Upload } from 'lucide-react';
 import Avatar from './Avatar';
 
 interface ProfilePictureUploadProps {
@@ -8,6 +8,7 @@ interface ProfilePictureUploadProps {
   initial?: string;
   onSuccess?: () => void;
   className?: string;
+  size?: number; // Add size prop
 }
 
 export default function ProfilePictureUpload({ 
@@ -15,7 +16,8 @@ export default function ProfilePictureUpload({
   name, 
   initial, 
   onSuccess, 
-  className = '' 
+  className = '',
+  size = 120
 }: ProfilePictureUploadProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,24 +112,18 @@ export default function ProfilePictureUpload({
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      <div className="relative">
+      <div 
+        className="cursor-pointer"
+        onClick={() => fileInputRef.current?.click()}
+      >
         <Avatar 
           userId={userId} 
           name={name} 
           initial={initial} 
-          size={120} 
+          size={size} 
           onError={handleAvatarError}
+          refreshTrigger={refreshKey}
         />
-        
-        {/* Camera icon to trigger file upload */}
-        <button 
-          onClick={() => fileInputRef.current?.click()}
-          className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700"
-          disabled={loading}
-          type="button"
-        >
-          <Camera size={16} />
-        </button>
       </div>
       
       <input

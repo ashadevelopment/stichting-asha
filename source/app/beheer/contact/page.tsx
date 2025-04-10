@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Mail, User, UserCheck, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
+import Avatar from '../../../components/Avatar'
 
 interface UserProfile {
   _id: string;
@@ -25,6 +26,7 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{text: string, type: 'success' | 'error' | 'info'} | null>(null);
+  const [refreshTrigger] = useState(Date.now());
 
   // Fetch users and current contacts on component mount
   useEffect(() => {
@@ -65,14 +67,6 @@ export default function ContactPage() {
       return `${user.firstName} ${user.lastName}`;
     }
     return user.name || "Geen naam";
-  };
-
-  // Helper function to get profile picture URL
-  const getProfilePicture = (user: UserProfile) => {
-    if (user.profilePicture?.data) {
-      return `data:${user.profilePicture.contentType};base64,${user.profilePicture.data}`;
-    }
-    return "/images/default-profile.png";  // Fallback image
   };
 
   // Handler for toggling user selection
@@ -167,21 +161,14 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {currentContacts.map(contact => (
               <div key={contact._id} className="border border-gray-200 rounded-lg p-4 flex items-center">
-                {contact.profilePicture?.data ? (
-                    <img
-                      src={`/api/users/profile-picture?userId=${contact._id}`}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                      alt={getFullName(contact)}
-                      className="w-16 h-16 rounded-full mr-4 object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full mr-4 flex items-center justify-center bg-gradient-to-br from-gray-400 to-gray-600 text-white font-bold text-xl uppercase">
-                      {contact.initial}
-                    </div>
-                )}
-                <div>
+                <Avatar
+                  userId={contact._id}
+                  name={getFullName(contact)}
+                  initial={contact.initial}
+                  size={64}
+                  refreshTrigger={refreshTrigger}
+                />
+                <div className="ml-4">
                   <h4 className="text-lg font-medium">{getFullName(contact)}</h4>
                   <p className="text-gray-600">{contact.function || 'Geen functie'}</p>
                   <p className="text-gray-600">{contact.email}</p>
@@ -218,27 +205,20 @@ export default function ContactPage() {
                   onClick={() => toggleUserSelection(user._id)}
                 >
                   <div className="relative">
-                    {user.profilePicture?.data ? (
-                      <img
-                        src={`/api/users/profile-picture?userId=${user._id}`}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'; // hide broken image
-                        }}
-                        alt={getFullName(user)}
-                        className="w-16 h-16 rounded-full mr-4 object-cover"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full mr-4 flex items-center justify-center bg-gradient-to-br from-gray-400 to-gray-600 text-white font-bold text-xl uppercase">
-                        {user.initial}
-                      </div>
-                    )}
+                    <Avatar
+                      userId={user._id}
+                      name={getFullName(user)}
+                      initial={user.initial}
+                      size={64}
+                      refreshTrigger={refreshTrigger}
+                    />
                     {selectedUsers.includes(user._id) && (
                       <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center">
                         <CheckCircle size={14} />
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="ml-4">
                     <h4 className="text-lg font-medium">{getFullName(user)}</h4>
                     <p className="text-gray-600">{user.function || 'Geen functie'}</p>
                     <p className="text-gray-600">{user.email}</p>

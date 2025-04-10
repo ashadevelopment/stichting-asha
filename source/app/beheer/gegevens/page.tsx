@@ -9,12 +9,14 @@ export default function PersoonlijkeGegevensPage() {
   const { data: session, update } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(Date.now())
 
   const user = session?.user
 
   const handleProfileUpdate = async () => {
     // Refresh session data after profile update
     await update()
+    setRefreshTrigger(Date.now())
     setMessage({ type: 'success', text: 'Profile picture updated successfully' })
     
     // Clear message after 3 seconds
@@ -38,6 +40,7 @@ export default function PersoonlijkeGegevensPage() {
             userId={user.id} 
             name={user.name || undefined}
             onSuccess={handleProfileUpdate}
+            size={120}
           />
         )}
       </div>
@@ -50,8 +53,9 @@ export default function PersoonlijkeGegevensPage() {
         </div>
       )}
 
+      {/* Rest of the form remains unchanged */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        <div>
+      <div>
           <label className="block mb-1 text-sm font-medium">Voornaam</label>
           <input
             type="text"

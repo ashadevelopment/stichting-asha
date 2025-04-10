@@ -1,10 +1,12 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { useState } from 'react'
 import Avatar from '../../../components/Avatar'
 
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const [refreshTrigger] = useState(Date.now())
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto mt-10">
@@ -15,6 +17,7 @@ export default function DashboardPage() {
             userId={session.user.id}
             name={session.user.name || undefined}
             size={64}
+            refreshTrigger={refreshTrigger}
           />
         ) : (
           <Avatar size={64} />

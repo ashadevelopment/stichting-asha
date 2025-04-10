@@ -42,6 +42,7 @@ export default function Contact() {
   });
   const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [refreshTrigger] = useState(Date.now());
 
   useEffect(() => {
     async function fetchContacts() {
@@ -133,14 +134,6 @@ export default function Contact() {
     return contact.name || "Geen naam";
   };
 
-  // Helper function to get profile picture URL
-  const getProfilePicture = (contact: ContactPerson) => {
-    if (contact.profilePicture?.data && contact.profilePicture.contentType) {
-      return `data:${contact.profilePicture.contentType};base64,${contact.profilePicture.data}`;
-    }
-    return "/images/default-profile.png";  // Fallback image
-  };
-
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
       <div className="container mx-auto py-10 px-4 bg-[#F2F2F2]">
@@ -164,6 +157,7 @@ export default function Contact() {
                   name={getFullName(contact)}
                   initial={contact.initial}
                   size={64}
+                  refreshTrigger={refreshTrigger}
                 />
                 <div className="ml-4">
                   <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>
@@ -184,9 +178,9 @@ export default function Contact() {
           )}
         </div>
 
-        {/* The rest of your component (volunteer form) remains unchanged */}
+        {/* The volunteer form remains unchanged */}
         <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">
+        <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">
             Meld je aan als Vrijwilliger
           </h2>
 

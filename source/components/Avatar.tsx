@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AvatarProps {
   userId?: string;
@@ -7,13 +7,29 @@ interface AvatarProps {
   initial?: string;
   size?: number;
   onError?: () => void;
+  refreshTrigger?: number; // Add this to force re-render
 }
 
-export default function Avatar({ userId, name, src, initial, size = 40, onError }: AvatarProps) {
+export default function Avatar({ 
+  userId, 
+  name, 
+  src, 
+  initial, 
+  size = 40, 
+  onError,
+  refreshTrigger = 0 
+}: AvatarProps) {
   const [imageError, setImageError] = useState(false);
   
-  // If we have a userId, we'll try to load from the API
-  const apiSrc = userId && !imageError ? `/api/users/profile-picture?userId=${userId}&t=${Date.now()}` : undefined;
+  // Reset error state when refreshTrigger changes
+  useEffect(() => {
+    setImageError(false);
+  }, [refreshTrigger]);
+  
+  // If we have a userId, we'll try to load from the API with a cache-busting parameter
+  const apiSrc = userId && !imageError ? 
+    `/api/users/profile-picture?userId=${userId}&t=${refreshTrigger || Date.now()}` : 
+    undefined;
   
   // Get initial from name if not provided
   const displayInitial = initial || (name && name.charAt(0).toUpperCase()) || 'U';
@@ -41,8 +57,6 @@ export default function Avatar({ userId, name, src, initial, size = 40, onError 
     if (onError) onError();
   };
 
-  // If there's a src or apiSrc and no error, show image
-  // Otherwise show the initial fallback
   return (
     <>
       {!imageError && (src || apiSrc) ? (
