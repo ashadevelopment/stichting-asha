@@ -72,7 +72,7 @@ export default function PersoonlijkeGegevensPage() {
           />
         </div>
         <div>
-          <label className="block mb-1 text-sm font-medium flex items-center gap-1">
+          <label className="mb-1 text-sm font-medium flex items-center gap-1">
             <Mail size={14} /> E-mailadres
           </label>
           <input
@@ -82,7 +82,7 @@ export default function PersoonlijkeGegevensPage() {
           />
         </div>
         <div>
-          <label className="block mb-1 text-sm font-medium flex items-center gap-1">
+          <label className="mb-1 text-sm font-medium flex items-center gap-1">
             <Phone size={14} /> Telefoonnummer
           </label>
           <input
@@ -96,7 +96,7 @@ export default function PersoonlijkeGegevensPage() {
           </p>
         </div>
         <div className="md:col-span-2">
-          <label className="block mb-1 text-sm font-medium flex items-center gap-1">
+          <label className="mb-1 text-sm font-medium flex items-center gap-1">
             <MapPin size={14} /> Adres
           </label>
           <input
