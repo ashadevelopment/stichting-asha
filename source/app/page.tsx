@@ -429,6 +429,188 @@ export default function Home() {
             </div>
           </div>
         </div>
+        {/* Partners Logos Scroll */}
+        <div className="w-full py-12 md:py-50 mb-12">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8">Onze Partners</h2>
+            
+            {/* Scrolling container */}
+            <div className="relative overflow-hidden">
+              <div className="flex animate-scroll">
+                {/* First set of logos */}
+                <div className="flex gap-12 items-center">
+                  {/* Replace these with your actual partner logo paths */}
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/MBO.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/Gemeente-Utrecht.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/dock.jpg" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/roc.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/buurtteam.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/ucentraal.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/hogeschool-utrecht.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/uni-utrecht.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/cosbo.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+                
+                {/* Duplicate set for seamless scrolling */}
+                <div className="flex gap-8 items-center">
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/MBO.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo3.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo4.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo5.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo6.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo7.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo8.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0">
+                    <Image 
+                      src="/partners/logo9.png" 
+                      alt="Partner Logo" 
+                      width={80} 
+                      height={80} 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
