@@ -5,6 +5,7 @@ import { FolderKanban, Calendar, AlertTriangle, ChevronLeft, ChevronRight } from
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import Footer from "../components/Footer";
 
 // Define the NoticeType interface
 interface NoticeType {
@@ -499,6 +500,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

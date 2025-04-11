@@ -156,7 +156,7 @@ export default function Contact() {
                   userId={contact._id}
                   name={getFullName(contact)}
                   initial={contact.initial}
-                  size={64}
+                  size={90}
                   refreshTrigger={refreshTrigger}
                 />
                 <div className="ml-4">

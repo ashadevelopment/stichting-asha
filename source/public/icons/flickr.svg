@@ -1,0 +1,5 @@
+<!-- flickr.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 120 120">
+  <circle cx="35" cy="60" r="20" fill="#ff0084"/>
+  <circle cx="85" cy="60" r="20" fill="#0063dc"/>
+</svg>
