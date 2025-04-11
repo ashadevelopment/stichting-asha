@@ -1,5 +1,11 @@
 import mongoose, { Schema } from "mongoose"
 
+const FileSchema = new Schema({
+  filename: String,
+  contentType: String,
+  data: String  // Base64 encoded
+});
+
 const VolunteerSchema = new Schema(
   {
     firstName: { 
@@ -14,6 +20,7 @@ const VolunteerSchema = new Schema(
       type: String, 
       required: true,
       unique: true
+      // Geen expliciete index-definitie hier om dubbele indices te voorkomen
     },
     phoneNumber: { 
       type: String, 
@@ -24,14 +31,12 @@ const VolunteerSchema = new Schema(
       required: true 
     },
     cv: {
-      filename: String,
-      contentType: String,
-      data: String  // Base64 encoded
+      type: FileSchema,
+      required: true
     },
     motivationLetter: {
-      filename: String,
-      contentType: String,
-      data: String  // Base64 encoded
+      type: FileSchema,
+      required: true
     },
     status: {
       type: String,
@@ -40,8 +45,10 @@ const VolunteerSchema = new Schema(
     }
   },
   { timestamps: true }
-)
+);
 
+// Voeg individuele indexen toe op een consistente manier
+// We gebruiken alleen schema.index() en geen index: true in de velden
 VolunteerSchema.index({ email: 1 });
 VolunteerSchema.index({ status: 1 });
 

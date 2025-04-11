@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Avatar from '../../components/Avatar';
+import { Send, Upload, FileText } from 'lucide-react';
 
 interface ContactPerson {
   _id: string;
@@ -18,28 +19,19 @@ interface ContactPerson {
   initial: string;
 }
 
-interface VolunteerForm {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  message: string;
-  cv: File | null;
-  motivationLetter: File | null;
-}
-
 export default function Contact() {
   const [contacts, setContacts] = useState<ContactPerson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<VolunteerForm>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
-    message: "",
-    cv: null,
-    motivationLetter: null,
-  });
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [message, setMessage] = useState('');
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvFileName, setCvFileName] = useState('');
+  const [motivationFile, setMotivationFile] = useState<File | null>(null);
+  const [motivationFileName, setMotivationFileName] = useState('');
+  
   const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [refreshTrigger] = useState(Date.now());
@@ -60,31 +52,47 @@ export default function Contact() {
     fetchContacts();
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'cv' | 'motivationLetter') => {
-    if (e.target.files && e.target.files[0]) {
-      setForm({ ...form, [fieldName]: e.target.files[0] });
+  const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCvFile(file);
+      setCvFileName(file.name);
     }
-  };
+  }
+
+  const handleMotivationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMotivationFile(file);
+      setMotivationFileName(file.name);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus("loading");
     setErrorMessage("");
 
+    if (!firstName || !lastName || !email || !phoneNumber || !message || !cvFile || !motivationFile) {
+      setErrorMessage('Alle velden zijn verplicht');
+      setSubmitStatus("error");
+      return;
+    }
+
     try {
       const formData = new FormData();
-      formData.append("firstName", form.firstName);
-      formData.append("lastName", form.lastName);
-      formData.append("email", form.email);
-      formData.append("phoneNumber", form.phoneNumber);
-      formData.append("message", form.message);
+      formData.append("firstName", firstName);
+      formData.append("lastName", lastName);
+      formData.append("email", email);
+      formData.append("phoneNumber", phoneNumber);
+      formData.append("message", message);
       
-      if (form.cv) {
-        formData.append("cv", form.cv);
+      if (cvFile) {
+        formData.append("cv", cvFile);
       }
       
-      if (form.motivationLetter) {
-        formData.append("motivationLetter", form.motivationLetter);
+      if (motivationFile) {
+        formData.append("motivationLetter", motivationFile);
       }
       
       const response = await fetch("/api/volunteers/apply", {
@@ -98,22 +106,17 @@ export default function Contact() {
         throw new Error(responseData.error || "Er is iets misgegaan bij het versturen");
       }
       
+      // Reset form
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPhoneNumber('');
+      setMessage('');
+      setCvFile(null);
+      setCvFileName('');
+      setMotivationFile(null);
+      setMotivationFileName('');
       setSubmitStatus("success");
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phoneNumber: "",
-        message: "",
-        cv: null,
-        motivationLetter: null,
-      });
-      
-      // Reset file inputs
-      const fileInputs = Array.from(document.querySelectorAll('input[type="file"]')) as HTMLInputElement[];
-      fileInputs.forEach((input: HTMLInputElement) => {
-        input.value = '';
-      });
       
     } catch (error: any) {
       console.error("Error submitting form:", error);
@@ -178,144 +181,178 @@ export default function Contact() {
           )}
         </div>
 
-        {/* The volunteer form remains unchanged */}
+        {/* Improved Volunteer Form */}
         <div className="bg-white shadow-lg rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">
+          <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">
             Meld je aan als Vrijwilliger
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Form fields remain unchanged */}
-            {/* ... */}
-            <div>
-              <label htmlFor="firstName" className="block text-[#1E2A78]">
-                Voornaam:
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                value={form.firstName}
-                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                required
-                disabled={submitStatus === "loading"}
-              />
+          {submitStatus === "error" && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 p-4 rounded-md">
+              {errorMessage}
             </div>
-
-            <div>
-              <label htmlFor="lastName" className="block text-[#1E2A78]">
-                Achternaam:
-              </label>
-              <input
-                type="text"
-                id="lastName"
-                value={form.lastName}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                required
-                disabled={submitStatus === "loading"}
-              />
+          )}
+          
+          {submitStatus === "success" ? (
+            <div className="bg-green-50 border border-green-200 p-6 rounded-md text-center space-y-4">
+              <h3 className="text-xl font-bold text-green-700">Aanmelding succesvol!</h3>
+              <p className="text-gray-600">
+                Bedankt voor je aanmelding als vrijwilliger. We nemen zo snel mogelijk contact met je op.
+              </p>
+              <button 
+                onClick={() => setSubmitStatus("idle")}
+                className="mt-4 bg-[#1E2A78] text-white px-4 py-2 rounded hover:bg-blue-800 transition-colors"
+              >
+                Nieuw formulier
+              </button>
             </div>
-
-            <div>
-              <label htmlFor="email" className="block text-[#1E2A78]">
-                E-mailadres:
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                required
-                disabled={submitStatus === "loading"}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="phoneNumber" className="block text-[#1E2A78]">
-                Telefoonnummer:
-              </label>
-              <input
-                type="tel"
-                id="phoneNumber"
-                value={form.phoneNumber}
-                onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                required
-                disabled={submitStatus === "loading"}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="message" className="block text-[#1E2A78]">
-                Bericht:
-              </label>
-              <textarea
-                id="message"
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                rows={4}
-                required
-                disabled={submitStatus === "loading"}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="cv" className="block text-[#1E2A78]">
-                CV (PDF):
-              </label>
-              <input
-                type="file"
-                id="cv"
-                onChange={(e) => handleFileChange(e, 'cv')}
-                accept=".pdf,.doc,.docx"
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                required
-                disabled={submitStatus === "loading"}
-              />
-              <p className="text-xs text-gray-500 mt-1">Upload je CV als PDF of Word document</p>
-            </div>
-
-            <div>
-              <label htmlFor="motivationLetter" className="block text-[#1E2A78]">
-                Motivatiebrief (PDF):
-              </label>
-              <input
-                type="file"
-                id="motivationLetter"
-                onChange={(e) => handleFileChange(e, 'motivationLetter')}
-                accept=".pdf,.doc,.docx"
-                className="w-full p-2 border border-gray-300 rounded-md text-black"
-                required
-                disabled={submitStatus === "loading"}
-              />
-              <p className="text-xs text-gray-500 mt-1">Upload je motivatiebrief als PDF of Word document</p>
-            </div>
-
-            <button
-              type="submit"
-              className="bg-[#1E2A78] text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50"
-              disabled={submitStatus === "loading"}
-            >
-              {submitStatus === "loading" ? "Bezig met versturen..." : "Verstuur"}
-            </button>
-
-            {submitStatus === "success" && (
-              <div className="bg-green-50 border border-green-200 p-4 rounded-md">
-                <p className="text-green-700">
-                  Bedankt voor je aanmelding! We nemen zo spoedig mogelijk contact met je op.
-                </p>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-[#1E2A78]">
+                    Voornaam:
+                  </label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md text-black"
+                    required
+                    disabled={submitStatus === "loading"}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="lastName" className="block text-[#1E2A78]">
+                    Achternaam:
+                  </label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md text-black"
+                    required
+                    disabled={submitStatus === "loading"}
+                  />
+                </div>
               </div>
-            )}
 
-            {submitStatus === "error" && (
-              <div className="bg-red-50 border border-red-200 p-4 rounded-md">
-                <p className="text-red-700">{errorMessage}</p>
+              <div>
+                <label htmlFor="email" className="block text-[#1E2A78]">
+                  E-mailadres:
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-black"
+                  required
+                  disabled={submitStatus === "loading"}
+                />
               </div>
-            )}
-          </form>
+
+              <div>
+                <label htmlFor="phoneNumber" className="block text-[#1E2A78]">
+                  Telefoonnummer:
+                </label>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-black"
+                  required
+                  disabled={submitStatus === "loading"}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="message" className="block text-[#1E2A78]">
+                  Bericht:
+                </label>
+                <textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-black"
+                  rows={4}
+                  required
+                  disabled={submitStatus === "loading"}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#1E2A78]">
+                  CV:
+                </label>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                    <Upload size={18} />
+                    <span>Kies een CV bestand</span>
+                    <input 
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleCvChange}
+                      className="hidden"
+                      required={!cvFile}
+                      disabled={submitStatus === "loading"}
+                    />
+                  </label>
+                  
+                  {cvFileName ? (
+                    <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
+                      <FileText size={18} className="text-blue-600" />
+                      <span>{cvFileName}</span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Upload je CV als PDF of Word document</p>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-[#1E2A78]">
+                  Motivatiebrief:
+                </label>
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                    <Upload size={18} />
+                    <span>Kies een motivatiebrief</span>
+                    <input 
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleMotivationChange}
+                      className="hidden"
+                      required={!motivationFile}
+                      disabled={submitStatus === "loading"}
+                    />
+                  </label>
+                  
+                  {motivationFileName ? (
+                    <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
+                      <FileText size={18} className="text-blue-600" />
+                      <span>{motivationFileName}</span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Upload je motivatiebrief als PDF of Word document</p>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-[#1E2A78] text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                disabled={submitStatus === "loading"}
+              >
+                <Send size={18} />
+                {submitStatus === "loading" ? "Bezig met versturen..." : "Verstuur aanmelding"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { UserCheck, FileText, Check, X, User } from 'lucide-react'
+import { UserCheck, FileText, Check, X, User, Upload } from 'lucide-react'
 
 interface Volunteer {
   _id: string
@@ -20,7 +20,7 @@ interface Volunteer {
     contentType: string
     data: string
   }
-  status: 'pending' | 'approved' | 'denied'
+  status: 'pending' | 'approved' | 'rejected'
   createdAt: string
 }
 
@@ -28,8 +28,15 @@ export default function VrijwilligersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [needsRefresh, setNeedsRefresh] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('')
+  const [needsRefresh, setNeedsRefresh] = useState(false)
 
+  // Fetch volunteers when component mounts
+  useEffect(() => {
+    fetchVolunteers();
+  }, []);
+
+  // Also fetch when needs refresh changes
   useEffect(() => {
     if (needsRefresh) {
       fetchVolunteers();
@@ -40,7 +47,7 @@ export default function VrijwilligersPage() {
   const fetchVolunteers = async () => {
     try {
       setLoading(true);
-      // Explicitly request all volunteers (or you could fetch by status separately)
+      // Explicitly request all volunteers
       const response = await fetch('/api/volunteers?status=all')
       if (!response.ok) throw new Error('Fout bij ophalen vrijwilligers')
       const data = await response.json()
@@ -65,7 +72,12 @@ export default function VrijwilligersPage() {
       
       if (!response.ok) throw new Error('Fout bij goedkeuren vrijwilliger')
       
-      // Use setNeedsRefresh to trigger a refresh after approval
+      // Show success message
+      setSuccessMessage('Vrijwilliger succesvol goedgekeurd')
+      // Clear the success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000)
+      
+      // Trigger a refresh after approval
       setNeedsRefresh(true);
     
     } catch (err) {
@@ -86,7 +98,12 @@ export default function VrijwilligersPage() {
       
       if (!response.ok) throw new Error('Fout bij afkeuren vrijwilliger')
       
-      // Use setNeedsRefresh to trigger a refresh after denial
+      // Show success message
+      setSuccessMessage('Vrijwilliger succesvol afgewezen')
+      // Clear the success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000)
+      
+      // Trigger a refresh after denial
       setNeedsRefresh(true);
     } catch (err) {
       setError('Er is een fout opgetreden bij het afkeuren')
@@ -108,6 +125,11 @@ export default function VrijwilligersPage() {
       
       // Remove from local state
       setVolunteers(prev => prev.filter(vol => vol._id !== id))
+      
+      // Show success message
+      setSuccessMessage('Vrijwilliger succesvol verwijderd')
+      // Clear the success message after 3 seconds
+      setTimeout(() => setSuccessMessage(''), 3000)
     } catch (err) {
       setError('Er is een fout opgetreden bij het verwijderen')
       console.error(err)
@@ -128,7 +150,7 @@ export default function VrijwilligersPage() {
       downloadLink.click();
     } catch (err) {
       console.error('Error opening file:', err);
-      alert('Fout bij het openen van het bestand. Probeer het opnieuw.');
+      setError('Fout bij het openen van het bestand. Probeer het opnieuw.');
     }
   };
 
@@ -143,27 +165,30 @@ export default function VrijwilligersPage() {
     </div>
   )
 
-  if (error) return (
-    <div className="text-gray-800 px-6 py-4">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <UserCheck size={24} /> Vrijwilligers
-      </h2>
-      <div className="bg-red-50 border border-red-400 p-4 rounded-xl text-red-700">
-        {error}
-      </div>
-    </div>
-  )
-
   // Filter volunteers by status
   const pendingVolunteers = volunteers.filter(vol => vol.status === 'pending')
   const approvedVolunteers = volunteers.filter(vol => vol.status === 'approved')
-  const deniedVolunteers = volunteers.filter(vol => vol.status === 'denied')
+  const deniedVolunteers = volunteers.filter(vol => vol.status === 'rejected')
 
   return (
     <div className="text-gray-800 px-6 py-4">
       <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
         <UserCheck size={24} /> Vrijwilligers
       </h2>
+
+      {/* Error Message - in consistent style with other admin pages */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* Success Message - in consistent style with other admin pages */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md mb-4 transition-opacity duration-300">
+          {successMessage}
+        </div>
+      )}
 
       {/* Aanmeldingen */}
       <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-4 mb-8">
