@@ -4,10 +4,6 @@
 :root {
   --background: #f9fafb; /* Lichte grijs (bg-gray-50) */
   --foreground: #171717;
-}
-
-/* Theming voor inline instellingen */
-@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
