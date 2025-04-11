@@ -46,3 +46,21 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-in-out;
 }
+
+@keyframes scrollX {
+  0% {
+    transform: translateX(0%);
+  }
+  50% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-scroll-x {
+  animation: scrollX 60s ease-in-out infinite;
+  display: flex;
+  width: max-content;
+}

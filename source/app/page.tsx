@@ -53,6 +53,12 @@ interface CarouselItem {
   date?: string;
 }
 
+interface PartnerLogo {
+  id: number;
+  src: string;
+  alt: string;
+}
+
 export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -65,6 +71,10 @@ export default function Home() {
   const [carouselLoading, setCarouselLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [carouselError, setCarouselError] = useState<string | null>(null);
+
+  const [partnerLogos, setPartnerLogos] = useState<PartnerLogo[]>([]);
+  const [partnerLogosLoading, setPartnerLogosLoading] = useState(true);
+  const [partnerLogosError, setPartnerLogosError] = useState<string | null>(null);
 
   // Fetch notice on component mount
   useEffect(() => {
@@ -153,6 +163,28 @@ export default function Home() {
     };
 
     fetchCarouselContent();
+  }, []);
+
+  useEffect(() => {
+    const fetchPartnerLogos = async () => {
+      try {
+        setPartnerLogosLoading(true);
+        const response = await fetch('/api/partners');
+        if (!response.ok) {
+          throw new Error('Failed to fetch partner logos');
+        }
+        const data = await response.json();
+        console.log('Fetched partner logos:', data);
+        setPartnerLogos(data);
+      } catch (err) {
+        console.error('Error fetching partner logos:', err);
+        setPartnerLogosError('Could not load partner logos');
+      } finally {
+        setPartnerLogosLoading(false);
+      }
+    };
+  
+    fetchPartnerLogos();
   }, []);
 
   // Carousel navigation
@@ -426,6 +458,43 @@ export default function Home() {
               >
                 Ga naar fotoboek
               </button>
+            </div>
+          </div>
+        </div>
+        {/* Partner Logos Carousel */}
+        <div className="flex items-center justify-center mt-50 mb-10 md:mb-20">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] mb-2">Onze Partners</h2>
+        </div>
+
+        <div className="w-full flex justify-center mb-50">
+          <div className="partner-logos-container relative w-[80%] overflow-hidden py-5">
+            <div className="partner-logos-track flex animate-scroll-x gap-10">
+              {partnerLogos.map((logo) => (
+                <div
+                  key={`logo-${logo.id}`}
+                  className="partner-logo flex-shrink-0 w-40 h-20 mx-4 flex items-center justify-center"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ))}
+
+              {/* Duplicate set */}
+              {partnerLogos.map((logo) => (
+                <div
+                  key={`logo-dup-${logo.id}`}
+                  className="partner-logo flex-shrink-0 w-40 h-20 mx-4 flex items-center justify-center"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>
