@@ -3,7 +3,7 @@ import mongoose, { Schema } from "mongoose"
 const FileSchema = new Schema({
   filename: String,
   contentType: String,
-  data: String  // Base64 encoded
+  data: String 
 });
 
 const VolunteerSchema = new Schema(
@@ -20,7 +20,6 @@ const VolunteerSchema = new Schema(
       type: String, 
       required: true,
       unique: true
-      // Geen expliciete index-definitie hier om dubbele indices te voorkomen
     },
     phoneNumber: { 
       type: String, 

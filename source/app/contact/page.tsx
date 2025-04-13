@@ -95,16 +95,18 @@ export default function Contact() {
         formData.append("motivationLetter", motivationFile);
       }
       
-      const response = await fetch("/api/volunteers/apply", {
+      // Updated to use the correct API endpoint
+      const response = await fetch("/api/volunteers", {
         method: "POST",
         body: formData,
       });
       
-      const responseData = await response.json();
-      
       if (!response.ok) {
+        const responseData = await response.json();
         throw new Error(responseData.error || "Er is iets misgegaan bij het versturen");
       }
+      
+      const responseData = await response.json();
       
       // Reset form
       setFirstName('');
@@ -121,7 +123,7 @@ export default function Contact() {
     } catch (error: any) {
       console.error("Error submitting form:", error);
       setErrorMessage(
-        error.message === "duplicate key value violates unique constraint" 
+        error.message.includes("duplicate") 
           ? "Dit e-mailadres is al gebruikt voor een aanmelding."
           : error.message || "Er is een fout opgetreden bij het versturen van het formulier. Probeer het later opnieuw."
       );
