@@ -140,7 +140,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2]">
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2] pt-24 md:pt-20">
       <div className="container mx-auto py-10 px-4 bg-[#F2F2F2]">
         <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
           <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">Contact Personen</h2>
