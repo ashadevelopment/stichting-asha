@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '../../../lib/mongodb';
+import connectDB from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../api/auth/[...nextauth]/route';
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    await dbConnect();
+    await connectDB();
     
     // Get minimal user data for selection lists
     const users = await User.find({}, '_id firstName lastName name email role');

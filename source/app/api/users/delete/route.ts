@@ -1,78 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '../../../lib/mongodb';
+import connectDB from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../api/auth/[...nextauth]/route';
 
-export async function POST(request: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    
-    // Check if user is authorized
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    const { userId } = await request.json();
+    const body = await req.json();
+    const { userId } = body;
     
     if (!userId) {
       return NextResponse.json(
-        { error: 'Gebruiker ID is vereist' },
+        { message: 'User ID is required' },
         { status: 400 }
       );
     }
     
-    // Connect to database
-    await dbConnect();
+    await connectDB();
     
-    // Allow users to delete their own account, or admins to delete any account
-    const isAdmin = session.user.role === 'beheerder';
-    const isSelf = session.user.id === userId;
-    
-    if (!isAdmin && !isSelf) {
-      return NextResponse.json(
-        { error: 'Je hebt geen toestemming om deze gebruiker te verwijderen' },
-        { status: 403 }
-      );
-    }
-    
-    // Prevent deleting the last beheerder account
-    if (isAdmin) {
-      const user = await User.findById(userId);
-      
-      if (user && user.role === 'beheerder') {
-        const beheerderCount = await User.countDocuments({ role: 'beheerder' });
-        
-        if (beheerderCount <= 1) {
-          return NextResponse.json(
-            { error: 'Kan de laatste beheerder niet verwijderen' },
-            { status: 400 }
-          );
-        }
-      }
-    }
-    
-    // Delete user
     const deletedUser = await User.findByIdAndDelete(userId);
     
     if (!deletedUser) {
       return NextResponse.json(
-        { error: 'Gebruiker niet gevonden' },
+        { message: 'User not found' },
         { status: 404 }
       );
     }
     
-    return NextResponse.json({ 
-      message: 'Gebruiker succesvol verwijderd' 
-    });
-    
+    return NextResponse.json(
+      { message: 'User deleted successfully' },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error deleting user:', error);
     return NextResponse.json(
-      { error: 'Fout bij verwijderen van gebruiker' },
+      { message: 'Error deleting user' },
       { status: 500 }
     );
   }
