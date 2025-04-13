@@ -1,6 +1,6 @@
 // app/api/events/[id]/route.ts
 import { NextResponse } from "next/server"
-import connectDB from "../../../lib/mongodb"
+import dbConnect from "../../../lib/mongodb"
 import Event from "../../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
+    await dbConnect()
     const event = await Event.findById(params.id)
     
     if (!event) {
@@ -41,7 +41,7 @@ export async function PUT(
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const body = await req.json()
     
     // Validatie
@@ -85,7 +85,7 @@ export async function DELETE(
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const deletedEvent = await Event.findByIdAndDelete(params.id)
     
     if (!deletedEvent) {

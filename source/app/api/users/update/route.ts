@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
+import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
 import bcrypt from 'bcryptjs';
 
@@ -15,7 +15,7 @@ export async function PUT(req: NextRequest) {
       );
     }
     
-    await connectDB();
+    await dbConnect();
     
     // Find user
     const user = await User.findById(userId);

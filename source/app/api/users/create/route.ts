@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
+import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
 import bcrypt from 'bcryptjs';
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    await connectDB();
+    await dbConnect();
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });

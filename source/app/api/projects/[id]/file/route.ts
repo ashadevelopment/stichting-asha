@@ -1,6 +1,6 @@
 // app/api/projects/[id]/file/route.ts
 import { NextResponse } from "next/server"
-import connectDB from "../../../../lib/mongodb"
+import dbConnect from "../../../../lib/mongodb"
 import Project from "../../../../lib/models/Project"
 
 // GET bestandsinhoud voor een specifiek project
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
+    await dbConnect()
     
     // Bepaal of het om een afbeelding of document gaat
     const url = new URL(req.url)

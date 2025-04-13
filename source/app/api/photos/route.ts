@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import connectDB from "../../lib/mongodb"
+import dbConnect from "../../lib/mongodb"
 import Photo from "../../lib/models/Photo"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -7,7 +7,7 @@ import { authOptions } from "../auth/[...nextauth]/route"
 // GET all photos
 export async function GET() {
   try {
-    await connectDB()
+    await dbConnect()
     const photos = await Photo.find().sort({ displayOrder: 1, createdAt: -1 })
     return NextResponse.json(photos)
   } catch (err) {
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const body = await req.json()
     
     // Validation

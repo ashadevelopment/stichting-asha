@@ -1,6 +1,6 @@
 // app/api/projects/route.ts
 import { NextResponse } from "next/server"
-import connectDB from "../../lib/mongodb"
+import dbConnect from "../../lib/mongodb"
 import Project from "../../lib/models/Project"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -8,7 +8,7 @@ import { authOptions } from "../auth/[...nextauth]/route"
 // GET alle projecten
 export async function GET() {
   try {
-    await connectDB()
+    await dbConnect()
     // Verwijder de select() om alle data inclusief image.data en document.data te sturen
     const projects = await Project.find().sort({ projectDate: -1 })
     return NextResponse.json(projects)
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const body = await req.json()
     
     // Validatie

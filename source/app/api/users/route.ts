@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../lib/mongodb';
+import dbConnect from '../../lib/mongodb';
 import User from '../../lib/models/User';
 
 // Get all users
 export async function GET() {
   try {
-    await connectDB();
+    await dbConnect();
     const users = await User.find({});
     return NextResponse.json(users);
   } catch (error) {

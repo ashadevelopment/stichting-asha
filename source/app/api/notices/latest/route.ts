@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import connectDB from '../../../lib/mongodb';
+import dbConnect from '../../../lib/mongodb';
 import Notice from '../../../lib/models/Notice';
 
 export async function GET() {
   try {
-    await connectDB();
+    await dbConnect();
     
     // Find the most recent active notice
     const notice = await Notice.findOne({ isActive: true })

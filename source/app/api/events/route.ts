@@ -1,6 +1,6 @@
 // app/api/events/route.ts
 import { NextResponse } from "next/server"
-import connectDB from "../../lib/mongodb"
+import dbConnect from "../../lib/mongodb"
 import Event from "../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -8,7 +8,7 @@ import { authOptions } from "../auth/[...nextauth]/route"
 // GET alle evenementen
 export async function GET() {
   try {
-    await connectDB()
+    await dbConnect()
     const events = await Event.find().sort({ date: 1, time: 1 })
     return NextResponse.json(events)
   } catch (err) {
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const body = await req.json()
     
     // Validatie

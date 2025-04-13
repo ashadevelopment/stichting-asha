@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import connectDB from "../../../lib/mongodb"
+import dbConnect from "../../../lib/mongodb"
 import Photo from "../../../lib/models/Photo"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
@@ -21,7 +21,7 @@ export async function DELETE(
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const deletedPhoto = await Photo.findByIdAndDelete(params.id)
     
     if (!deletedPhoto) {
@@ -52,7 +52,7 @@ export async function PUT(
       )
     }
     
-    await connectDB()
+    await dbConnect()
     const body = await req.json()
     
     const updatedPhoto = await Photo.findByIdAndUpdate(
@@ -78,7 +78,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
+    await dbConnect()
     const photo = await Photo.findById(params.id)
     
     if (!photo) {

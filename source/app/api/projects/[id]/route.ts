@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import connectDB from "../../../lib/mongodb"
+import dbConnect from "../../../lib/mongodb"
 import Project from "../../../lib/models/Project"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
@@ -18,7 +18,7 @@ export async function DELETE(req: Request, context: { params: { id: string } }) 
       )
     }
     
-    await connectDB()
+    await dbConnect()
     
     // Wacht tot de parameters zijn opgehaald voordat je ze gebruikt
     const { id } = await context.params
@@ -50,7 +50,7 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
       )
     }
     
-    await connectDB()
+    await dbConnect()
     
     // Wacht tot de parameters zijn opgehaald voordat je ze gebruikt
     const { id } = await context.params
