@@ -17,6 +17,8 @@ interface UserProfile {
     contentType: string;
   };
   initial?: string;
+  role?: string;
+  fullName?: string;
 }
 
 export default function ContactPage() {
@@ -32,17 +34,33 @@ export default function ContactPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch all users
-        const usersResponse = await fetch('/api/users');
+        // Fetch all users - using the list API which has better formatting
+        const usersResponse = await fetch('/api/users/list');
         if (!usersResponse.ok) throw new Error('Failed to fetch users');
         const usersData = await usersResponse.json();
+        
+        // Filter to only include beheerder users
+        const beheerders = (usersData.users || []).filter((user: UserProfile) => 
+          user.role === 'beheerder'
+        );
         
         // Fetch current contact persons
         const contactsResponse = await fetch('/api/contacts');
         if (!contactsResponse.ok) throw new Error('Failed to fetch contacts');
         const contactsData = await contactsResponse.json();
         
-        setUsers(usersData.users || []);
+        // Get detailed info for current contacts to display properly
+        const contactsWithDetails = [];
+        for (const contact of (contactsData.contactPersons || [])) {
+          const userDetails = await fetch(`/api/users/${contact._id}`).then(res => res.json()).catch(() => null);
+          if (userDetails) {
+            contactsWithDetails.push(userDetails);
+          } else {
+            contactsWithDetails.push(contact);
+          }
+        }
+        
+        setUsers(beheerders);
         setCurrentContacts(contactsData.contactPersons || []);
         
         // Pre-select current contacts
@@ -63,6 +81,9 @@ export default function ContactPage() {
 
   // Helper function to get user's full name
   const getFullName = (user: UserProfile) => {
+    if (user.fullName) {
+      return user.fullName;
+    }
     if (user.firstName && user.lastName) {
       return `${user.firstName} ${user.lastName}`;
     }
@@ -191,6 +212,8 @@ export default function ContactPage() {
         
         {loading ? (
           <p className="text-gray-600">Gebruikers laden...</p>
+        ) : users.length === 0 ? (
+          <p className="text-yellow-600">Geen beheerders gevonden om als contactpersoon te selecteren.</p>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-7">
