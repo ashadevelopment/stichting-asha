@@ -64,7 +64,7 @@ export default function ContactPage() {
         setCurrentContacts(contactsData.contactPersons || []);
         
         // Pre-select current contacts
-        setSelectedUsers((contactsData.contactPersons || []).map((contact: UserProfile) => contact._id));
+        setSelectedUsers((contactsData.contactPersons || []).map((user: UserProfile) => user._id));
       } catch (error) {
         console.error('Error fetching data:', error);
         setStatusMessage({
@@ -180,21 +180,21 @@ export default function ContactPage() {
           <p className="text-gray-600">Geen contact personen ingesteld</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {currentContacts.map(contact => (
-              <div key={contact._id} className="border border-gray-200 rounded-lg p-4 flex items-center">
+            {currentContacts.map(user => (
+              <div key={user._id} className="border border-gray-200 rounded-lg p-4 flex items-center">
                 <ProfilePictureManager
-                  userId={contact._id}
-                  name={getFullName(contact)}
-                  initial={contact.initial}
+                  userId={user._id}
+                  name={getFullName(user)}
+                  initial={user.initial}
                   size={64}
                   editable={false}
                   showButtons={false}
                 />
                 <div className="ml-4">
-                  <h4 className="text-lg font-medium">{getFullName(contact)}</h4>
-                  <p className="text-gray-600">{contact.function || 'Geen functie'}</p>
-                  <p className="text-gray-600">{contact.email}</p>
-                  <p className="text-gray-600">{contact.phoneNumber || 'Geen telefoonnummer'}</p>
+                  <h4 className="text-lg font-medium">{getFullName(user)}</h4>
+                  <p className="text-gray-600">{user.function || 'Geen functie'}</p>
+                  <p className="text-gray-600">{user.email}</p>
+                  <p className="text-gray-600">{user.phoneNumber || 'Geen telefoonnummer'}</p>
                 </div>
               </div>
             ))}

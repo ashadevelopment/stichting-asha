@@ -1,9 +1,8 @@
-// app/beheer/gebruikers/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import ProfilePictureManager from '../../../components/ProfilePictureManager';
 
 interface User {
   _id: string;
@@ -80,13 +79,6 @@ export default function GebruikersPage() {
     setShowEditModal(true);
   }
 
-  function getProfileImage(user: User) {
-    if (user.profilePicture?.data) {
-      return `data:${user.profilePicture.contentType};base64,${user.profilePicture.data}`;
-    }
-    return '/images/default-profile.png'; // Default image path
-  }
-
   const roleColors: Record<string, string> = {
     beheerder: 'bg-red-100 text-red-800',
     developer: 'bg-blue-100 text-blue-800',
@@ -145,17 +137,14 @@ export default function GebruikersPage() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 relative">
-                      {user.profilePicture?.data ? (
-                        <img
-                          className="h-10 w-10 rounded-full object-cover"
-                          src={getProfileImage(user)}
-                          alt={user.fullName}
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                          {user.initial}
-                        </div>
-                      )}
+                      <ProfilePictureManager 
+                        userId={user._id}
+                        name={user.fullName}
+                        initial={user.initial}
+                        size={40}
+                        editable={false}
+                        showButtons={false}
+                      />
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
@@ -244,37 +233,17 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
     function: user?.function || '',
     phoneNumber: user?.phoneNumber || '',
   });
-  const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    user?.profilePicture?.data 
-      ? `data:${user.profilePicture.contentType};base64,${user.profilePicture.data}`
-      : null
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [profileUpdated, setProfileUpdated] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setProfilePicture(file);
-      
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setProfilePicture(null);
-    setPreviewUrl(null);
+  const handleProfilePictureSuccess = () => {
+    setProfileUpdated(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -293,14 +262,6 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
       // Append user ID if editing
       if (isEdit && user?._id) {
         formDataObj.append('userId', user._id);
-      }
-      
-      // Append profile picture if selected
-      if (profilePicture) {
-        formDataObj.append('profilePicture', profilePicture);
-      } else if (previewUrl === null && isEdit) {
-        // If editing and image was removed, indicate to remove on server
-        formDataObj.append('removeProfilePicture', 'true');
       }
       
       const endpoint = isEdit ? '/api/users/update' : '/api/users/create';
@@ -350,50 +311,27 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
-              {/* Profile Picture */}
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Profielfoto</label>
-                <div className="flex items-center space-x-4">
-                  <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                    {previewUrl ? (
-                      <img
-                        src={previewUrl}
-                        alt="Profile preview"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-gray-500 text-2xl">
-                        {user?.initial || '?'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <label className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                      />
-                      Upload foto
-                    </label>
-                    {(previewUrl || (user?.profilePicture?.data)) && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                      >
-                        Verwijderen
-                      </button>
-                    )}
-                  </div>
+              {/* Profile Picture Manager - only show in edit mode when we have a user ID */}
+              {isEdit && user?._id && (
+                <div className="flex justify-center mb-6">
+                  <ProfilePictureManager
+                    userId={user._id}
+                    name={formData.firstName || formData.name}
+                    email={formData.email}
+                    size={100}
+                    editable={true}
+                    onSuccess={handleProfilePictureSuccess}
+                    showButtons={true}
+                  />
                 </div>
-              </div>
+              )}
 
               {/* Name Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-700 mb-1">Voornaam</label>
+                  <label className="block text-gray-700 mb-1">
+                    Voornaam {!isEdit && <span className="text-red-500">*</span>}
+                    </label>
                   <input
                     type="text"
                     name="firstName"
@@ -403,7 +341,9 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-1">Achternaam</label>
+                  <label className="block text-gray-700 mb-1">
+                    Achternaam {!isEdit && <span className="text-red-500">*</span>}
+                    </label>
                   <input
                     type="text"
                     name="lastName"
@@ -414,22 +354,11 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
                 </div>
               </div>
 
-              {/* Username (Name) */}
-              <div>
-                <label className="block text-gray-700 mb-1">Gebruikersnaam</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border rounded-md"
-                  required
-                />
-              </div>
-
               {/* Email */}
               <div>
-                <label className="block text-gray-700 mb-1">Email</label>
+                <label className="block text-gray-700 mb-1">
+                  Email {!isEdit && <span className="text-red-500">*</span>}
+                  </label>
                 <input
                   type="email"
                   name="email"
@@ -497,6 +426,12 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
                   className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
+
+              {profileUpdated && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                  Profielfoto bijgewerkt! Sla de gebruiker op om alle wijzigingen te bevestigen.
+                </div>
+              )}
 
               {/* Submit Button */}
               <div className="mt-6">

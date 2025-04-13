@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     await dbConnect();
     
     // Get minimal user data for selection lists
-    const users = await User.find({}, '_id firstName lastName name email role');
+    const users = await User.find({}, '_id firstName lastName email role');
     
     // Transform the users data to include virtual fields but minimize payload
     const usersList = users.map(user => {

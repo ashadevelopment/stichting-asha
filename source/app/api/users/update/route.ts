@@ -27,7 +27,6 @@ export async function PUT(req: NextRequest) {
     }
     
     // Update basic fields
-    user.name = formData.get('name') as string || user.name;
     user.firstName = formData.get('firstName') as string || user.firstName;
     user.lastName = formData.get('lastName') as string || user.lastName;
     user.email = formData.get('email') as string || user.email;

@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     
     // Extract user data
-    const name = formData.get('name') as string;
     const firstName = formData.get('firstName') as string;
     const lastName = formData.get('lastName') as string;
     const email = formData.get('email') as string;
@@ -25,9 +24,30 @@ export async function POST(req: NextRequest) {
     const role = formData.get('role') as string;
     const functionTitle = formData.get('function') as string;
     const phoneNumber = formData.get('phoneNumber') as string;
+
+    if (!firstName) {
+      return NextResponse.json(
+        { message: 'First name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!lastName) {
+      return NextResponse.json(
+        { message: 'Last name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { message: 'Password must be at least 6 characters long' },
+        { status: 400 }
+      );
+    }
     
     // Validate required fields
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return NextResponse.json(
         { message: 'Name, email, and password are required' },
         { status: 400 }
@@ -70,7 +90,6 @@ export async function POST(req: NextRequest) {
     
     // Create user
     const newUser = await User.create({
-      name,
       firstName,
       lastName,
       email,
