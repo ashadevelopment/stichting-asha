@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Avatar from '../../components/Avatar';
+import ProfilePictureManager from '../../components/ProfilePictureManager';
 import { Send, Upload, FileText } from 'lucide-react';
 
 interface ContactPerson {
@@ -157,12 +157,13 @@ export default function Contact() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {contacts.map((contact) => (
               <div key={contact._id} className="bg-gray-50 p-4 rounded-lg flex items-center">
-                <Avatar 
+                <ProfilePictureManager
                   userId={contact._id}
                   name={getFullName(contact)}
                   initial={contact.initial}
-                  size={90}
-                  refreshTrigger={refreshTrigger}
+                  size={64}
+                  editable={false}
+                  showButtons={false}
                 />
                 <div className="ml-4">
                   <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>

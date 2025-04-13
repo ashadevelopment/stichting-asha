@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Mail, User, UserCheck, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
-import Avatar from '../../../components/Avatar'
+import ProfilePictureManager from '../../../components/ProfilePictureManager';
 
 interface UserProfile {
   _id: string;
@@ -182,12 +182,13 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {currentContacts.map(contact => (
               <div key={contact._id} className="border border-gray-200 rounded-lg p-4 flex items-center">
-                <Avatar
+                <ProfilePictureManager
                   userId={contact._id}
                   name={getFullName(contact)}
                   initial={contact.initial}
                   size={64}
-                  refreshTrigger={refreshTrigger}
+                  editable={false}
+                  showButtons={false}
                 />
                 <div className="ml-4">
                   <h4 className="text-lg font-medium">{getFullName(contact)}</h4>
@@ -228,12 +229,13 @@ export default function ContactPage() {
                   onClick={() => toggleUserSelection(user._id)}
                 >
                   <div className="relative">
-                    <Avatar
+                    <ProfilePictureManager
                       userId={user._id}
                       name={getFullName(user)}
                       initial={user.initial}
                       size={64}
-                      refreshTrigger={refreshTrigger}
+                      editable={false}
+                      showButtons={false}
                     />
                     {selectedUsers.includes(user._id) && (
                       <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center">

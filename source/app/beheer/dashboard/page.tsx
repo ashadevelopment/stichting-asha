@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
-import Avatar from '../../../components/Avatar'
+import ProfilePictureManager from '../../../components/ProfilePictureManager'
 
 export default function DashboardPage() {
   const { data: session } = useSession()
@@ -13,14 +13,16 @@ export default function DashboardPage() {
       {/* Header met profielfoto en naam */}
       <div className="flex items-center gap-4 mb-4">
         {session?.user?.id ? (
-          <Avatar 
-            userId={session.user.id}
-            name={session.user.name || undefined}
-            size={64}
-            refreshTrigger={refreshTrigger}
+          <ProfilePictureManager 
+          userId={session.user.id}
+          name={session.user.name || undefined}
+          size={84}
+          editable={false}
           />
-        ) : (
-          <Avatar size={64} />
+        ): (
+          <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold uppercase">
+            {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U'}
+          </div>
         )}
 
         <div>

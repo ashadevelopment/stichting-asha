@@ -3,7 +3,6 @@ import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../api/auth/[...nextauth]/route';
-import Avatar from '../../../../components/Avatar';
 
 export async function GET(request: NextRequest) {
   try {

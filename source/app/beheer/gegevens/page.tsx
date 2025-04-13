@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { Lock, RefreshCw, User2, Phone, Mail, MapPin, BadgeInfo } from 'lucide-react'
-import ProfilePictureUpload from '../../../components/ProfilePictureUpload'
+import ProfilePictureManager from '../../../components/ProfilePictureManager'
 
 export default function PersoonlijkeGegevensPage() {
   const { data: session, update } = useSession()
@@ -14,12 +14,10 @@ export default function PersoonlijkeGegevensPage() {
   const user = session?.user
 
   const handleProfileUpdate = async () => {
-    // Refresh session data after profile update
     await update()
     setRefreshTrigger(Date.now())
     setMessage({ type: 'success', text: 'Profile picture updated successfully' })
     
-    // Clear message after 3 seconds
     setTimeout(() => {
       setMessage(null)
     }, 3000)
@@ -36,11 +34,11 @@ export default function PersoonlijkeGegevensPage() {
       {/* Profile picture section */}
       <div className="flex justify-center mb-8">
         {user?.id && (
-          <ProfilePictureUpload 
-            userId={user.id} 
-            name={user.name || undefined}
-            onSuccess={handleProfileUpdate}
-            size={120}
+          <ProfilePictureManager 
+          userId={user.id} 
+          name={user.name || undefined}
+          size={120}
+          onSuccess={handleProfileUpdate}
           />
         )}
       </div>
