@@ -155,7 +155,7 @@ export default function GebruikersPage() {
                   <div className="text-sm text-gray-900">{user.email}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${roleColors[user.role] || 'bg-gray-100 text-gray-800'}`}>
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${roleColors[user.role] || 'bg-gray-100 text-gray-800'}`}>
                     {user.role}
                   </span>
                 </td>
