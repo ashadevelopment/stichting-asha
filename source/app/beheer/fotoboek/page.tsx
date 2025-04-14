@@ -25,6 +25,7 @@ export default function FotoboekPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [showForm, setShowForm] = useState(true)
   
   // Bevestigingsdialoog state
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -36,12 +37,15 @@ export default function FotoboekPage() {
 
   const fetchPhotos = async () => {
     try {
+      setLoading(true)
       const res = await fetch('/api/photos')
       const data = await res.json()
       setPhotos(data)
     } catch (error) {
       console.error('Error fetching photos:', error)
       setError('Fout bij het ophalen van foto\'s')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -114,6 +118,11 @@ export default function FotoboekPage() {
         setTimeout(() => setSuccessMessage(''), 3000)
         
         fetchPhotos()
+        
+        // Op mobiel, sluit het formulier na toevoegen
+        if (window.innerWidth < 768) {
+          setShowForm(false)
+        }
       } else {
         const error = await response.json()
         setError(`Fout: ${error.error}`)
@@ -169,9 +178,9 @@ export default function FotoboekPage() {
   }
 
   return (
-    <div className="text-gray-800 px-6 py-4">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <ImagePlus size={24} /> Fotoboek beheer
+    <div className="text-gray-800 p-4">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+        <ImagePlus size={20} className="sm:w-[24px] sm:h-[24px]" /> Fotoboek beheer
       </h2>
 
       {error && (
@@ -186,81 +195,117 @@ export default function FotoboekPage() {
         </div>
       )}
 
-      <div className="bg-white p-6 border border-gray-200 rounded-xl shadow-sm max-w-xl mb-8">
-        <h3 className="text-xl font-semibold mb-4">Nieuwe foto toevoegen</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Titel</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Beschrijving (optioneel)</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded h-24 resize-none"
-            />
-          </div>
+      {/* Toggle Form Button */}
+      <button
+        onClick={() => setShowForm(!showForm)}
+        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 mb-4"
+      >
+        <ImagePlus size={18} />
+        {showForm ? 'Verberg formulier' : 'Nieuwe foto toevoegen'}
+      </button>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Afbeelding</label>
-            <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
-                <ImagePlus size={18} />
-                <span>Kies een afbeelding</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleImageChange} 
-                  className="hidden" 
-                />
-              </label>
-              
-              {preview ? (
-                <div className="border border-gray-200 p-2 rounded">
-                  <p className="text-xs text-gray-500 mb-2">Voorbeeld:</p>
-                  <img src={preview} alt="Preview" className="max-h-64 object-contain rounded" />
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Nog geen afbeelding geselecteerd</p>
-              )}
+      {/* Photo Upload Form */}
+      {showForm && (
+        <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm max-w-xl mb-6 sm:mb-8">
+          <h3 className="text-lg sm:text-xl font-semibold mb-4">Nieuwe foto toevoegen</h3>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Titel</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              />
             </div>
-          </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Beschrijving (optioneel)</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded h-24 resize-none"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading || !imageData}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 flex items-center gap-2"
-          >
-            <Save size={18} />
-            {loading ? 'Bezig met uploaden...' : 'Foto opslaan'}
-          </button>
-        </form>
-      </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Afbeelding</label>
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                  <ImagePlus size={18} />
+                  <span>Kies een afbeelding</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleImageChange} 
+                    className="hidden" 
+                  />
+                </label>
+                
+                {preview ? (
+                  <div className="border border-gray-200 p-2 rounded">
+                    <p className="text-xs text-gray-500 mb-2">Voorbeeld:</p>
+                    <img src={preview} alt="Preview" className="max-h-64 object-contain rounded" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">Nog geen afbeelding geselecteerd</p>
+                )}
+              </div>
+            </div>
 
-      <div className="bg-white p-6 border border-gray-200 rounded-xl shadow-sm">
-        <h3 className="text-xl font-semibold mb-4">Bestaande foto's</h3>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="submit"
+                disabled={loading || !imageData}
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center gap-2 order-2 sm:order-1"
+              >
+                <Save size={18} />
+                {loading ? 'Bezig met uploaden...' : 'Foto opslaan'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setTitle('');
+                  setDescription('');
+                  setPreview(null);
+                  setImageData(null);
+                }}
+                className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 flex items-center justify-center gap-2 order-1 sm:order-2"
+              >
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Photos Gallery */}
+      <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm">
+        <h3 className="text-lg sm:text-xl font-semibold mb-4">Bestaande foto's</h3>
         
-        {photos.length === 0 ? (
-          <p className="text-gray-500">Nog geen foto's toegevoegd.</p>
+        {loading && photos.length === 0 ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : photos.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Nog geen foto's toegevoegd.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {photos.map((photo) => (
-              <div key={photo._id} className="border border-gray-200 rounded p-3">
-                <img
-                  src={`data:${photo.image.contentType};base64,${photo.image.data}`}
-                  alt={photo.title}
-                  className="w-full h-48 object-cover rounded mb-2"
-                />
-                <h4 className="font-medium">{photo.title}</h4>
-                {photo.description && <p className="text-sm text-gray-600">{photo.description}</p>}
+              <div key={photo._id} className="border border-gray-200 rounded-lg p-3 transition hover:shadow-md">
+                <div className="relative pb-[75%] w-full mb-2 overflow-hidden rounded">
+                  <img
+                    src={`data:${photo.image.contentType};base64,${photo.image.data}`}
+                    alt={photo.title}
+                    className="absolute top-0 left-0 w-full h-full object-cover"
+                  />
+                </div>
+                <h4 className="font-medium text-gray-800 line-clamp-1">{photo.title}</h4>
+                {photo.description && (
+                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{photo.description}</p>
+                )}
                 
                 <button
                   onClick={() => initiateDeletePhoto(photo._id)}

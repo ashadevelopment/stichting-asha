@@ -96,100 +96,158 @@ export default function GebruikersPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="px-4 py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">Gebruikers Beheer</h1>
         <button
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
           onClick={() => setShowAddModal(true)}
         >
           Nieuwe gebruiker
         </button>
       </div>
 
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Gebruiker
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rol
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Functie
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Telefoonnummer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acties
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 relative">
-                      <ProfilePictureManager 
-                        userId={user._id}
-                        name={user.fullName}
-                        initial={user.initial}
-                        size={40}
-                        editable={false}
-                        showButtons={false}
-                      />
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{user.email}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${roleColors[user.role] || 'bg-gray-100 text-gray-800'}`}>
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.function}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.phoneNumber}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(user)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                  >
-                    Bewerken
-                  </button>
-                  <button
-                    onClick={() => deleteUser(user._id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Verwijderen
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {users.length === 0 && (
+      {/* Mobile User Cards - Shown on small screens */}
+      <div className="sm:hidden space-y-4">
+        {users.length === 0 ? (
+          <p className="text-center text-gray-500 py-4">Geen gebruikers gevonden</p>
+        ) : (
+          users.map((user) => (
+            <div key={user._id} className="bg-white shadow-md rounded-lg p-4">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 h-12 w-12 relative">
+                  <ProfilePictureManager 
+                    userId={user._id}
+                    name={user.fullName}
+                    initial={user.initial}
+                    size={48}
+                    editable={false}
+                    showButtons={false}
+                  />
+                </div>
+                <div className="ml-4">
+                  <div className="text-lg font-medium text-gray-900">{user.fullName}</div>
+                  <div className="text-sm text-gray-500">{user.email}</div>
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${roleColors[user.role] || 'bg-gray-100 text-gray-800'}`}>
+                  {user.role}
+                </span>
+              </div>
+              
+              <div className="text-sm text-gray-500 mb-4">
+                <div>Functie: {user.function || 'N/A'}</div>
+                <div>Telefoonnummer: {user.phoneNumber || 'N/A'}</div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => handleEdit(user)}
+                  className="text-indigo-600 hover:text-indigo-900 px-3 py-1 border border-indigo-300 rounded-md text-sm"
+                >
+                  Bewerken
+                </button>
+                <button
+                  onClick={() => deleteUser(user._id)}
+                  className="text-red-600 hover:text-red-900 px-3 py-1 border border-red-300 rounded-md text-sm"
+                >
+                  Verwijderen
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table - Hidden on small screens */}
+      <div className="hidden sm:block bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                  Geen gebruikers gevonden
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Gebruiker
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rol
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Functie
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Telefoonnummer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acties
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    Geen gebruikers gevonden
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 relative">
+                          <ProfilePictureManager 
+                            userId={user._id}
+                            name={user.fullName}
+                            initial={user.initial}
+                            size={40}
+                            editable={false}
+                            showButtons={false}
+                          />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${roleColors[user.role] || 'bg-gray-100 text-gray-800'}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.function || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.phoneNumber || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleEdit(user)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                      >
+                        Bewerken
+                      </button>
+                      <button
+                        onClick={() => deleteUser(user._id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Verwijderen
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* User Form Modal (Add/Edit) */}
@@ -288,8 +346,8 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">
@@ -327,7 +385,7 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
               )}
 
               {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-gray-700 mb-1">
                     Voornaam {!isEdit && <span className="text-red-500">*</span>}

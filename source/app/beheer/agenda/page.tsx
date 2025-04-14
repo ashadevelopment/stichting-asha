@@ -109,12 +109,18 @@ export default function AgendaPage() {
     })
     setFormMode('edit')
     setShowForm(true)
+    
+    // Scroll naar boven voor mobiele gebruikers
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleAddNewClick = () => {
     resetForm()
     setFormMode('create')
     setShowForm(true)
+    
+    // Scroll naar boven voor mobiele gebruikers
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   // Initieer verwijderen - open de bevestigingsdialoog
@@ -225,8 +231,8 @@ export default function AgendaPage() {
   // Render check voor beheerders
   if (session?.user?.role !== 'beheerder') {
     return (
-      <div className="text-gray-800 px-6 py-4">
-        <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
+      <div className="text-gray-800 p-4">
+        <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
           <CalendarPlus size={24} /> Agenda Beheer
         </h2>
         <p className="text-red-500">Je hebt geen toegang tot deze pagina. Alleen beheerders kunnen evenementen beheren.</p>
@@ -235,9 +241,9 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="text-gray-800 px-6 py-4">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <CalendarPlus size={24} /> Agenda Beheer
+    <div className="text-gray-800 p-4">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+        <CalendarPlus size={20} className="sm:w-[24px] sm:h-[24px]" /> Agenda Beheer
       </h2>
       
       {error && (
@@ -252,18 +258,19 @@ export default function AgendaPage() {
         </div>
       )}
       
-      {/* Knop voor toevoegen */}
+      {/* Knop voor toevoegen of verbergen/tonen formulier */}
       <button
-        onClick={handleAddNewClick}
-        className="mb-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+        onClick={() => showForm ? setShowForm(false) : handleAddNewClick()}
+        className="mb-6 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start"
       >
-        <CalendarPlus size={18} /> Nieuw evenement toevoegen
+        <CalendarPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
+        {showForm ? 'Verberg formulier' : 'Nieuw evenement toevoegen'}
       </button>
       
       {/* Formulier */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
-          <h3 className="text-xl font-bold mb-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-6 shadow-sm">
+          <h3 className="text-lg sm:text-xl font-bold mb-4">
             {formMode === 'create' ? 'Nieuw evenement toevoegen' : 'Evenement bewerken'}
           </h3>
           
@@ -292,7 +299,7 @@ export default function AgendaPage() {
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Datum</label>
                 <input
@@ -323,7 +330,7 @@ export default function AgendaPage() {
                 </select>
               </div>
               
-              <div>
+              <div className="sm:col-span-2 lg:col-span-1">
                 <label className="block text-sm font-medium mb-1">Locatie</label>
                 <input
                   type="text"
@@ -336,7 +343,7 @@ export default function AgendaPage() {
               </div>
             </div>
             
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
               <button
                 type="submit"
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
@@ -358,23 +365,25 @@ export default function AgendaPage() {
       
       {/* Lijst van evenementen */}
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold mb-2">Evenementen</h3>
+        <h3 className="text-lg sm:text-xl font-semibold mb-2">Evenementen</h3>
         
         {isLoading ? (
-          <p className="text-gray-500">Evenementen laden...</p>
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
         ) : events.length === 0 ? (
-          <p className="text-gray-500">Geen evenementen gevonden.</p>
+          <p className="text-gray-500 text-center py-4">Geen evenementen gevonden.</p>
         ) : (
           <div className="space-y-4">
             {events.map((event) => (
-              <div key={event._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                <div className="flex justify-between items-start">
+              <div key={event._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                   <h4 className="text-lg font-semibold">{event.title}</h4>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-1 sm:mt-0">
                     <button
                       onClick={() => handleEditClick(event)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 p-1"
                       title="Bewerk evenement"
                     >
                       <Edit size={18} />
@@ -382,7 +391,7 @@ export default function AgendaPage() {
                     
                     <button
                       onClick={() => handleDeleteClick(event._id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 p-1"
                       title="Verwijder evenement"
                     >
                       <Trash2 size={18} />
@@ -392,21 +401,21 @@ export default function AgendaPage() {
                 
                 <p className="text-gray-700 mt-2">{event.description}</p>
                 
-                <div className="mt-3 text-sm text-gray-600 space-y-1">
+                <div className="mt-3 text-sm text-gray-600 grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="flex items-center gap-2">
-                    <Calendar size={16} />
+                    <Calendar size={16} className="text-gray-400" />
                     <span>
                       {format(parseISO(event.date), 'd MMMM yyyy', { locale: nl })}
                     </span>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <Clock size={16} />
+                    <Clock size={16} className="text-gray-400" />
                     <span>{event.time} uur</span>
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <MapPin size={16} />
+                    <MapPin size={16} className="text-gray-400" />
                     <span>{event.location}</span>
                   </div>
                 </div>
