@@ -1,13 +1,88 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ProfilePictureManager from '../../../components/ProfilePictureManager'
 import { User, Home, BarChart2 } from 'lucide-react'
+import { IActivity } from '../../lib/models/Activity'
+import { format } from 'date-fns';
+import { nl } from 'date-fns/locale';
+
+interface Activity {
+  _id: string;
+  type: 'create' | 'update' | 'delete';
+  entityType: string;
+  entityId: string;
+  entityName: string;
+  performedBy: string;
+  performedByName: string;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
   const { data: session } = useSession()
   const [refreshTrigger] = useState(Date.now())
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchRecentActivities() {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/activities?limit=5');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch activities');
+        }
+        
+        const data = await response.json();
+        
+        // Transform data to avoid ObjectId issues
+        const formattedActivities = data.map((activity: any) => ({
+          ...activity,
+          _id: activity._id.toString()
+        }));
+        
+        setActivities(formattedActivities);
+      } catch (error) {
+        console.error('Error fetching activities:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchRecentActivities();
+    
+    // Set up a polling mechanism to refresh activities every minute
+    const intervalId = setInterval(fetchRecentActivities, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, [refreshTrigger]);
+
+  function formatActivityMessage(activity: Activity) {
+    const { type, entityType, entityName, performedByName } = activity;
+    let message = '';
+    let colorClass = '';
+
+    switch (type) {
+      case 'create':
+        message = `${performedByName} heeft een nieuwe ${entityType} aangemaakt: ${entityName}`;
+        colorClass = 'border-green-500';
+        break;
+      case 'update':
+        message = `${performedByName} heeft ${entityType} bijgewerkt: ${entityName}`;
+        colorClass = 'border-blue-500';
+        break;
+      case 'delete':
+        message = `${performedByName} heeft ${entityType} verwijderd: ${entityName}`;
+        colorClass = 'border-red-500';
+        break;
+    }
+
+    const timestamp = format(new Date(activity.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl });
+
+    return { message, timestamp, colorClass };
+  }
 
   return (
     <div className="p-4 sm:p-6">
@@ -111,26 +186,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recente activiteiten - eenvoudige demo */}
+      {/* Recente activiteiten - uit database */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mt-6">
         <h2 className="text-xl font-semibold mb-4">Recente activiteiten</h2>
         
-        <div className="space-y-4">
-          <div className="border-l-4 border-blue-500 pl-3 py-1">
-            <p className="text-gray-800">Nieuwe gebruiker geregistreerd</p>
-            <p className="text-sm text-gray-500">Vandaag, 10:42</p>
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
           </div>
-          
-          <div className="border-l-4 border-green-500 pl-3 py-1">
-            <p className="text-gray-800">Project toegevoegd: "Zomerfestival 2025"</p>
-            <p className="text-sm text-gray-500">Gisteren, 15:20</p>
+        ) : activities.length > 0 ? (
+          <div className="space-y-4">
+            {activities.map((activity, index) => {
+              const { message, timestamp, colorClass } = formatActivityMessage(activity);
+              return (
+                <div key={`activity-${index}`} className={`border-l-4 ${colorClass} pl-3 py-1`}>
+                  <p className="text-gray-800">{message}</p>
+                  <p className="text-sm text-gray-500">{timestamp}</p>
+                </div>
+              );
+            })}
           </div>
-          
-          <div className="border-l-4 border-yellow-500 pl-3 py-1">
-            <p className="text-gray-800">Systeemupdate uitgevoerd</p>
-            <p className="text-sm text-gray-500">12 april, 23:15</p>
-          </div>
-        </div>
+        ) : (
+          <p className="text-gray-500 italic">Geen recente activiteiten gevonden.</p>
+        )}
       </div>
     </div>
   )
