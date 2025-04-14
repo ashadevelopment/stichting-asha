@@ -25,6 +25,7 @@ export default function NotitiesPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
+  const [showForm, setShowForm] = useState(true)
 
   useEffect(() => {
     fetchNotices()
@@ -165,9 +166,9 @@ export default function NotitiesPage() {
   }
 
   return (
-    <div className="text-gray-800 px-6 py-4">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <StickyNote size={24} /> Notities
+    <div className="text-gray-800 p-4">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+        <StickyNote size={20} className="sm:w-[24px] sm:h-[24px]" /> Notities
       </h2>
 
       {error && (
@@ -182,100 +183,107 @@ export default function NotitiesPage() {
         </div>
       )}
 
-      {activeNotice && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md mb-4 flex items-center gap-2">
-          <AlertCircle size={18} />
-          <span>Er is momenteel een actieve notitie: <strong>{activeNotice.title}</strong></span>
+      {/* Toggle Form Button */}
+      <button
+        onClick={() => setShowForm(!showForm)}
+        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 mb-4"
+      >
+        <StickyNote size={18} />
+        {showForm ? 'Verberg formulier' : 'Nieuwe notitie toevoegen'}
+      </button>
+
+      {/* Notice Form */}
+      {showForm && (
+        <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm mb-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Titel</label>
+              <input
+                type="text"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded text-sm"
+                placeholder="Bijv: Herinnering bijeenkomst"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Bericht</label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded text-sm h-32 resize-none"
+                placeholder="Typ hier je notitie..."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                <Calendar size={16} /> Verloopdatum
+              </label>
+              <select 
+                value={expirationDays}
+                onChange={e => setExpirationDays(parseInt(e.target.value))}
+                className="w-full border border-gray-300 px-3 py-2 rounded text-sm"
+              >
+                <option value="1">1 dag</option>
+                <option value="3">3 dagen</option>
+                <option value="7">1 week</option>
+                <option value="14">2 weken</option>
+                <option value="30">1 maand</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Notitie verloopt op: {format(addDays(new Date(), expirationDays), 'dd/MM/yyyy')}
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Send size={16} /> {isLoading ? 'Versturen...' : 'Verstuur notitie'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6 max-w-3xl mb-8">
-        <div>
-          <label className="block text-sm font-medium mb-1">Titel</label>
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="w-full border border-gray-200 px-3 py-2 rounded text-sm"
-            placeholder="Bijv: Herinnering bijeenkomst"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Bericht</label>
-          <textarea
-            value={message}
-            onChange={e => setMessage(e.target.value)}
-            className="w-full border border-gray-200 px-3 py-2 rounded text-sm h-32 resize-none"
-            placeholder="Typ hier je notitie..."
-            required
-          />
-        </div>
-
-        <div>
-          <label className="flex text-sm font-medium mb-2 items-center gap-1">
-            <Calendar size={16} /> Verloopdatum
-          </label>
-          <select 
-            value={expirationDays}
-            onChange={e => setExpirationDays(parseInt(e.target.value))}
-            className="w-full border border-gray-200 px-3 py-2 rounded text-sm"
-          >
-            <option value="1">1 dag</option>
-            <option value="3">3 dagen</option>
-            <option value="7">1 week</option>
-            <option value="14">2 weken</option>
-            <option value="30">1 maand</option>
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            Notitie verloopt op: {format(addDays(new Date(), expirationDays), 'dd/MM/yyyy')}
-          </p>
-        </div>
-
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm ${
-              isLoading ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
-          >
-            <Send size={16} /> {isLoading ? 'Versturen...' : 'Verstuur notitie'}
-          </button>
-        </div>
-      </form>
-
-      {/* List of notices */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-4xl">
-        <h3 className="text-xl font-semibold mb-4">Notities overzicht</h3>
+      {/* Notices Overview */}
+      <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm">
+        <h3 className="text-lg sm:text-xl font-semibold mb-4">Notities overzicht</h3>
         
         {notices.length === 0 ? (
-          <p className="text-gray-500 text-sm">Geen notities gevonden.</p>
+          <p className="text-gray-500 text-center py-4">Geen notities gevonden.</p>
         ) : (
           <div className="space-y-4">
             {notices.map((notice) => (
               <div 
                 key={notice._id} 
-                className={`p-4 rounded-md border ${
+                className={`p-4 rounded-lg border ${
                   notice.isActive 
                     ? 'bg-yellow-50 border-yellow-300' 
                     : 'bg-gray-50 border-gray-200'
                 }`}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium">{notice.title}</h4>
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                  <div className="flex-grow">
+                    <h4 className="font-semibold text-gray-800">{notice.title}</h4>
                     <p className="text-sm text-gray-600 mt-1">{notice.message}</p>
-                    <div className="text-xs text-gray-500 mt-2 space-x-4">
+                    <div className="text-xs text-gray-500 mt-2 space-y-1 sm:space-y-0 sm:space-x-2">
                       <span>Door: {notice.author}</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>Aangemaakt: {format(parseISO(notice.createdAt), 'dd/MM/yyyy')}</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>Verloopt: {format(parseISO(notice.expirationDate), 'dd/MM/yyyy')}</span>
-                      {notice.isActive && <span className="text-green-600 font-medium">Actief</span>}
+                      {notice.isActive && <span className="text-green-600 font-medium block sm:inline">Actief</span>}
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 self-start">
                     {!notice.isActive && (
                       <button
                         onClick={() => handleActivateNotice(notice._id)}

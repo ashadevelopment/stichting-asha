@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { UserCheck, FileText, Check, X, User, Upload } from 'lucide-react'
+import { UserCheck, FileText, Check, X, User, Upload, Trash2 } from 'lucide-react'
+import ConfirmationDialog from '../../../components/ConfirmationDialog'
 
 interface Volunteer {
   _id: string
@@ -30,6 +31,10 @@ export default function VrijwilligersPage() {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState('')
   const [needsRefresh, setNeedsRefresh] = useState(false)
+  
+  // Bevestigingsdialoog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [volunteerToDelete, setVolunteerToDelete] = useState<string | null>(null)
 
   // Fetch volunteers when component mounts
   useEffect(() => {
@@ -111,29 +116,45 @@ export default function VrijwilligersPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Weet je zeker dat je deze vrijwilliger wilt verwijderen?')) {
-      return
-    }
+  const handleDeleteClick = (id: string) => {
+    setVolunteerToDelete(id)
+    setIsDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!volunteerToDelete) return
     
     try {
-      const response = await fetch(`/api/volunteers/${id}`, {
+      const response = await fetch(`/api/volunteers/${volunteerToDelete}`, {
         method: 'DELETE',
       })
       
       if (!response.ok) throw new Error('Fout bij verwijderen vrijwilliger')
       
       // Remove from local state
-      setVolunteers(prev => prev.filter(vol => vol._id !== id))
+      setVolunteers(prev => prev.filter(vol => vol._id !== volunteerToDelete))
       
       // Show success message
       setSuccessMessage('Vrijwilliger succesvol verwijderd')
       // Clear the success message after 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000)
+      
+      // Reset dialog state
+      setIsDialogOpen(false)
+      setVolunteerToDelete(null)
     } catch (err) {
       setError('Er is een fout opgetreden bij het verwijderen')
       console.error(err)
+      
+      // Reset dialog state
+      setIsDialogOpen(false)
+      setVolunteerToDelete(null)
     }
+  }
+
+  const cancelDelete = () => {
+    setIsDialogOpen(false)
+    setVolunteerToDelete(null)
   }
 
   const openFile = async (volunteerId: string, fileType: 'cv' | 'motivationLetter') => {
@@ -267,7 +288,7 @@ export default function VrijwilligersPage() {
                   Bekijk Motivatie
                 </button>
                 <button 
-                  onClick={() => handleDelete(volunteer._id)}
+                  onClick={() => handleDeleteClick(volunteer._id)}
                   className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                 >
                   Verwijderen
@@ -292,7 +313,7 @@ export default function VrijwilligersPage() {
               <p className="text-sm text-gray-500">Email: {volunteer.email}</p>
               <div className="mt-2 space-x-3">
                 <button 
-                  onClick={() => handleDelete(volunteer._id)}
+                  onClick={() => handleDeleteClick(volunteer._id)}
                   className="text-sm bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
                 >
                   Verwijderen
@@ -302,6 +323,15 @@ export default function VrijwilligersPage() {
           ))}
         </div>
       )}
+
+      {/* Bevestigingsdialoog voor verwijderen */}
+      <ConfirmationDialog 
+        isOpen={isDialogOpen}
+        title="Vrijwilliger verwijderen"
+        message="Weet u zeker dat u deze vrijwilliger wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   )
 }
