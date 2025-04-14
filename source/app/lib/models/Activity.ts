@@ -1,3 +1,4 @@
+// source/app/lib/models/Activity.ts
 import mongoose, { Schema, Document } from "mongoose";
 
 // Define the Activity document interface
@@ -8,7 +9,6 @@ export interface IActivity extends Document {
   entityName: string;
   performedBy: mongoose.Types.ObjectId;
   performedByName: string;
-  expiresAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,18 +44,12 @@ const ActivityModel = mongoose.models.Activity || mongoose.model<IActivity>(
       performedByName: {
         type: String,
         required: true
-      },
-      expiresAt: {
-        type: Date,
-        default: () => {
-          const date = new Date();
-          date.setDate(date.getDate() + 30);
-          return date;
-        },
-        required: true
       }
     },
-    { timestamps: true }
+    { 
+      timestamps: true, // This adds createdAt and updatedAt fields
+      expires: '30d' // Optional: automatically delete activities after 30 days
+    }
   )
 );
 

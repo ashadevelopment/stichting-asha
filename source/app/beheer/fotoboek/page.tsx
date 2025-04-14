@@ -20,8 +20,8 @@ export default function FotoboekPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
-  const [imageData, setImageData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -39,11 +39,23 @@ export default function FotoboekPage() {
     try {
       setLoading(true)
       const res = await fetch('/api/photos')
+      
+      // Check if the response is ok
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Fout bij het ophalen van foto\'s');
+      }
+      
+      // Try to parse JSON
       const data = await res.json()
-      setPhotos(data)
+      
+      // Ensure data is an array
+      const photosArray = Array.isArray(data) ? data : [];
+      
+      setPhotos(photosArray)
     } catch (error) {
       console.error('Error fetching photos:', error)
-      setError('Fout bij het ophalen van foto\'s')
+      setError(error instanceof Error ? error.message : 'Fout bij het ophalen van foto\'s')
     } finally {
       setLoading(false)
     }
@@ -55,39 +67,15 @@ export default function FotoboekPage() {
       const reader = new FileReader()
       reader.onloadend = () => {
         setPreview(reader.result as string)
-        // Upload the file
-        handleUpload(file)
+        setImageFile(file)
       }
       reader.readAsDataURL(file)
     }
   }
 
-  const handleUpload = async (file: File) => {
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      const uploadData = await uploadRes.json()
-      if (uploadData.error) {
-        setError(`Upload fout: ${uploadData.error}`)
-        return
-      }
-
-      setImageData(uploadData)
-    } catch (error) {
-      console.error('Upload error:', error)
-      setError('Fout bij uploaden')
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title || !imageData) {
+    if (!title || !imageFile) {
       setError('Titel en afbeelding zijn verplicht')
       return
     }
@@ -96,23 +84,24 @@ export default function FotoboekPage() {
     setError('') // Reset error
     
     try {
+      const formData = new FormData()
+      formData.append('title', title)
+      if (description) {
+        formData.append('description', description)
+      }
+      formData.append('file', imageFile)
+
       const response = await fetch('/api/photos', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          image: imageData
-        })
+        body: formData
       })
 
       if (response.ok) {
+        const data = await response.json()
         setTitle('')
         setDescription('')
         setPreview(null)
-        setImageData(null)
+        setImageFile(null)
         setSuccessMessage('Foto succesvol toegevoegd')
         // Toon het succeesbericht voor 3 seconden
         setTimeout(() => setSuccessMessage(''), 3000)
@@ -257,7 +246,7 @@ export default function FotoboekPage() {
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 type="submit"
-                disabled={loading || !imageData}
+                disabled={loading || !imageFile}
                 className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 flex items-center justify-center gap-2 order-2 sm:order-1"
               >
                 <Save size={18} />
@@ -270,7 +259,7 @@ export default function FotoboekPage() {
                   setTitle('');
                   setDescription('');
                   setPreview(null);
-                  setImageData(null);
+                  setImageFile(null);
                 }}
                 className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 flex items-center justify-center gap-2 order-1 sm:order-2"
               >
@@ -281,7 +270,7 @@ export default function FotoboekPage() {
         </div>
       )}
 
-      {/* Photos Gallery */}
+      {/* Remainder of the existing code stays the same */}
       <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm">
         <h3 className="text-lg sm:text-xl font-semibold mb-4">Bestaande foto's</h3>
         

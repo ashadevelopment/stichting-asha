@@ -38,13 +38,12 @@ export default function ProfilePictureManager({
   useEffect(() => {
     const checkUserImage = async () => {
       try {
-        // Try to fetch the profile picture with a timestamp to avoid cache
-        const apiUrl = `/api/users/profile-picture?userId=${userId}&t=${refreshTrigger}`;
-        const response = await fetch(apiUrl, { method: 'HEAD' });
+        const response = await fetch(`/api/users/profile-picture?userId=${userId}&t=${refreshTrigger}`);
         
         if (response.ok) {
+          const imageData = await response.json();
           setHasImage(true);
-          setPreviewUrl(apiUrl);
+          setPreviewUrl(`data:${imageData.contentType};base64,${imageData.data}`);
         } else {
           setHasImage(false);
           setPreviewUrl(null);
@@ -127,7 +126,7 @@ export default function ProfilePictureManager({
   };
   
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this profile picture?')) {
+    if (!confirm('Weet je zeker dat je deze profielfoto wilt verwijderen?')) {
       return;
     }
     
@@ -169,7 +168,7 @@ export default function ProfilePictureManager({
         {(previewUrl && hasImage) ? (
           <img 
             src={previewUrl}
-            alt={name || "Profile"} 
+            alt={name || "Profiel"} 
             className="w-full h-full object-cover"
             onError={() => setHasImage(false)}
           />
@@ -210,7 +209,7 @@ export default function ProfilePictureManager({
               type="button"
             >
               <Upload size={16} />
-              {hasImage ? 'Change' : 'Upload'}
+              {hasImage ? 'Wijzigen' : 'Uploaden'}
             </button>
             
             {hasImage && (
@@ -221,7 +220,7 @@ export default function ProfilePictureManager({
                 type="button"
               >
                 <Trash size={16} />
-                Delete
+                Verwijderen
               </button>
             )}
           </div>
@@ -233,7 +232,7 @@ export default function ProfilePictureManager({
           {loading && (
             <div className="flex items-center mt-2">
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500 mr-2"></div>
-              <p className="text-blue-600 text-sm">Processing...</p>
+              <p className="text-blue-600 text-sm">Verwerken...</p>
             </div>
           )}
         </>

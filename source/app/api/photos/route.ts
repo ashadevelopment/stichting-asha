@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
-import dbConnect from "../../lib/mongodb"
-import Photo from "../../lib/models/Photo"
+// source/app/api/photos/route.ts
+import { NextRequest, NextResponse } from "next/server"
+import dbConnect from '../../lib/mongodb'
+import Photo from '../../lib/models/Photo'
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
 
@@ -8,16 +9,38 @@ import { authOptions } from "../auth/[...nextauth]/route"
 export async function GET() {
   try {
     await dbConnect()
-    const photos = await Photo.find().sort({ displayOrder: 1, createdAt: -1 })
-    return NextResponse.json(photos)
+    
+    // Find all photos, sorted by creation date
+    const photos = await Photo.find().sort({ createdAt: -1 })
+    
+    // Convert to plain objects and ensure base64 data
+    const plainPhotos = photos.map(photo => {
+      const plainObj = photo.toObject();
+      
+      // Ensure image data is present
+      if (!plainObj.image || !plainObj.image.data) {
+        plainObj.image = {
+          data: '',
+          contentType: 'image/png' // Default fallback
+        }
+      }
+      
+      return plainObj;
+    });
+    
+    // Return photos or an empty array
+    return NextResponse.json(plainPhotos || []);
   } catch (err) {
     console.error("Error fetching photos:", err)
-    return NextResponse.json({ error: "Fout bij ophalen van foto's" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Fout bij ophalen van foto's", details: err instanceof Error ? err.message : 'Unknown error' }, 
+      { status: 500 }
+    )
   }
 }
 
 // POST new photo (admin only)
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -30,28 +53,69 @@ export async function POST(req: Request) {
       )
     }
     
-    await dbConnect()
-    const body = await req.json()
+    // Parse the request body
+    const formData = await req.formData()
     
+    // Extract photo details
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string | null
+    const file = formData.get('file') as File
+
     // Validation
-    if (!body.title || !body.image) {
+    if (!title) {
       return NextResponse.json(
-        { error: "Titel en afbeelding zijn verplicht" }, 
+        { error: "Titel is verplicht" }, 
         { status: 400 }
       )
     }
-    
-    // Add author to the photo
-    const photoData = {
-      ...body,
-      author: session.user.name || "Anoniem"
+
+    if (!file) {
+      return NextResponse.json(
+        { error: "Afbeelding is verplicht" }, 
+        { status: 400 }
+      )
     }
+
+    // Connect to database
+    await dbConnect()
     
-    const photo = await Photo.create(photoData)
+    // Read file data
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
     
-    return NextResponse.json(photo, { status: 201 })
+    // Create photo document
+    const photo = await Photo.create({
+      title,
+      description: description || '',
+      image: {
+        filename: file.name,
+        contentType: file.type,
+        data: buffer.toString('base64')
+      },
+      author: session.user.name || 'Anoniem'
+    })
+    
+    // Convert to plain object and return
+    const plainPhoto = photo.toObject();
+    return NextResponse.json(plainPhoto, { status: 201 })
   } catch (err) {
     console.error("Error creating photo:", err)
-    return NextResponse.json({ error: "Fout bij toevoegen van foto" }, { status: 500 })
+    
+    // Handle specific error types
+    if (err instanceof Error) {
+      return NextResponse.json(
+        { 
+          error: "Fout bij toevoegen van foto", 
+          details: err.message 
+        }, 
+        { status: 500 }
+      )
+    }
+    
+    // Fallback error
+    return NextResponse.json(
+      { error: "Onverwachte fout bij toevoegen van foto" }, 
+      { status: 500 }
+    )
   }
 }

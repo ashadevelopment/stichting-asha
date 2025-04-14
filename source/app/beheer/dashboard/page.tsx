@@ -3,8 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import ProfilePictureManager from '../../../components/ProfilePictureManager'
-import { User, Home, BarChart2 } from 'lucide-react'
-import { IActivity } from '../../lib/models/Activity'
+import { User, Home, BarChart2, Activity } from 'lucide-react'
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -62,26 +61,31 @@ export default function DashboardPage() {
   function formatActivityMessage(activity: Activity) {
     const { type, entityType, entityName, performedByName } = activity;
     let message = '';
-    let colorClass = '';
+    let iconColor = '';
 
     switch (type) {
       case 'create':
         message = `${performedByName} heeft een nieuwe ${entityType} aangemaakt: ${entityName}`;
-        colorClass = 'border-green-500';
+        iconColor = 'text-green-500';
         break;
       case 'update':
         message = `${performedByName} heeft ${entityType} bijgewerkt: ${entityName}`;
-        colorClass = 'border-blue-500';
+        iconColor = 'text-blue-500';
         break;
       case 'delete':
         message = `${performedByName} heeft ${entityType} verwijderd: ${entityName}`;
-        colorClass = 'border-red-500';
+        iconColor = 'text-red-500';
         break;
+      default:
+        message = `${performedByName} heeft een actie uitgevoerd op ${entityType}: ${entityName}`;
+        iconColor = 'text-gray-500';
     }
 
-    const timestamp = format(new Date(activity.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl });
-
-    return { message, timestamp, colorClass };
+    return { 
+      message, 
+      timestamp: format(new Date(activity.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl }),
+      iconColor 
+    };
   }
 
   return (
@@ -186,9 +190,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recente activiteiten - uit database */}
+      {/* Recente activiteiten */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mt-6">
-        <h2 className="text-xl font-semibold mb-4">Recente activiteiten</h2>
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Activity size={20} /> Recente activiteiten
+        </h2>
         
         {isLoading ? (
           <div className="flex justify-center py-4">
@@ -197,17 +203,25 @@ export default function DashboardPage() {
         ) : activities.length > 0 ? (
           <div className="space-y-4">
             {activities.map((activity, index) => {
-              const { message, timestamp, colorClass } = formatActivityMessage(activity);
+              const { message, timestamp, iconColor } = formatActivityMessage(activity);
               return (
-                <div key={`activity-${index}`} className={`border-l-4 ${colorClass} pl-3 py-1`}>
-                  <p className="text-gray-800">{message}</p>
-                  <p className="text-sm text-gray-500">{timestamp}</p>
+                <div 
+                  key={`activity-${index}`} 
+                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className={`mt-1 ${iconColor}`}>
+                    <Activity size={18} />
+                  </div>
+                  <div>
+                    <p className="text-gray-800 text-sm">{message}</p>
+                    <p className="text-xs text-gray-500">{timestamp}</p>
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <p className="text-gray-500 italic">Geen recente activiteiten gevonden.</p>
+          <p className="text-gray-500 italic text-center py-4">Geen recente activiteiten gevonden.</p>
         )}
       </div>
     </div>
