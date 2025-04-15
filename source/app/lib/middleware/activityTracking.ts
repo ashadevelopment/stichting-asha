@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { recordActivity, ActionType, EntityType } from '../utils/activityUtils';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../../api/auth/[...nextauth]/route';
+import { getServerSession } from 'next-auth/next';
+import dbConnect from '../mongodb';
+import Activity from '../models/Activity';
+
+// Define action types
+export type ActionType = 'create' | 'update' | 'delete';
+
+// Define entity types
+export type EntityType = 'user' | 'volunteer' | 'project' | 'photo' | 'event' | 'notice' | 'contactSettings';
 
 // Define the handler function type
 type ApiHandler = (req: NextRequest) => Promise<NextResponse>;
@@ -13,12 +19,46 @@ type GetEntityInfoFn = (req: NextRequest, response: NextResponse) => Promise<{
   entityName: string;
 }>;
 
+// Function to record activities
+export async function recordActivity({
+  type,
+  entityType,
+  entityId,
+  entityName,
+  performedBy,
+  performedByName,
+}: {
+  type: ActionType;
+  entityType: EntityType;
+  entityId: string;
+  entityName: string;
+  performedBy: string;
+  performedByName: string;
+}) {
+  try {
+    await dbConnect();
+    
+    await Activity.create({
+      type,
+      entityType,
+      entityId,
+      entityName,
+      performedBy,
+      performedByName
+    });
+    
+  } catch (error) {
+    console.error('Error recording activity:', error);
+  }
+}
+
 // Reusable middleware for tracking activities in API routes
 export async function withActivityTracking(
   handler: ApiHandler,
   req: NextRequest,
   entityType: EntityType,
-  getEntityInfo: GetEntityInfoFn
+  getEntityInfo: GetEntityInfoFn,
+  authOptions: any // Pass authOptions directly
 ): Promise<NextResponse> {
   try {
     // Call the original handler
@@ -26,8 +66,11 @@ export async function withActivityTracking(
     
     // Only track successful operations
     if (response.status >= 200 && response.status < 300) {
+      // Clone the response to read its body
+      const clonedResponse = response.clone();
+      
       // Get entity information
-      const { type, entityId, entityName } = await getEntityInfo(req, response);
+      const { type, entityId, entityName } = await getEntityInfo(req, clonedResponse);
       
       // Get user information from the session
       const session = await getServerSession(authOptions);

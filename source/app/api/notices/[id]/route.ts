@@ -1,8 +1,10 @@
+// app/api/notices/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Notice from "../../../lib/models/Notice"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
+import { recordActivity } from "../../../lib/middleware/activityTracking"
 
 // DELETE a specific notice
 export async function DELETE(
@@ -24,7 +26,8 @@ export async function DELETE(
     
     const { id } = params
     
-    const notice = await Notice.findByIdAndDelete(id)
+    // Get notice before deletion to use name in activity log
+    const notice = await Notice.findById(id)
     
     if (!notice) {
       return NextResponse.json(
@@ -32,6 +35,22 @@ export async function DELETE(
         { status: 404 }
       )
     }
+    
+    // Store notice details before deletion
+    const noticeTitle = notice.title
+    
+    // Delete the notice
+    await Notice.findByIdAndDelete(id)
+    
+    // Record activity
+    await recordActivity({
+      type: 'delete',
+      entityType: 'notice',
+      entityId: id,
+      entityName: noticeTitle,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
     
     return NextResponse.json({ message: "Notitie succesvol verwijderd" })
   } catch (error) {
@@ -76,6 +95,16 @@ export async function PUT(
         { status: 404 }
       )
     }
+    
+    // Record activity
+    await recordActivity({
+      type: 'update',
+      entityType: 'notice',
+      entityId: id,
+      entityName: notice.title,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
     
     return NextResponse.json(notice)
   } catch (error) {

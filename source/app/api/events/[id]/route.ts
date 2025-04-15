@@ -4,6 +4,7 @@ import dbConnect from "../../../lib/mongodb"
 import Event from "../../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
+import { recordActivity } from "../../../lib/middleware/activityTracking"
 
 // GET een specifiek evenement op ID
 export async function GET(
@@ -62,6 +63,16 @@ export async function PUT(
       return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
     }
     
+    // Record activity
+    await recordActivity({
+      type: 'update',
+      entityType: 'event',
+      entityId: params.id,
+      entityName: updatedEvent.title,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
+    
     return NextResponse.json(updatedEvent)
   } catch (err) {
     console.error("Error updating event:", err)
@@ -86,11 +97,29 @@ export async function DELETE(
     }
     
     await dbConnect()
-    const deletedEvent = await Event.findByIdAndDelete(params.id)
     
-    if (!deletedEvent) {
+    // Get event before deletion to use name in activity log
+    const event = await Event.findById(params.id)
+    
+    if (!event) {
       return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
     }
+    
+    // Store event details before deletion
+    const eventTitle = event.title
+    
+    // Delete the event
+    await Event.findByIdAndDelete(params.id)
+    
+    // Record activity
+    await recordActivity({
+      type: 'delete',
+      entityType: 'event',
+      entityId: params.id,
+      entityName: eventTitle,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
     
     return NextResponse.json({ success: true, message: "Evenement verwijderd" })
   } catch (err) {

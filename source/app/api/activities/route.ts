@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     // Connect to database
     await dbConnect();
+    console.log("Database connected in activities API route");
     
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
     
     // Validate user session (optional, but recommended for admin pages)
     const session = await getServerSession(authOptions);
+    console.log("Session in activities API route:", session?.user?.email || "No session");
     
     // If no session, return unauthorized
     if (!session) {
@@ -23,9 +25,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get activities with expanded details
+    console.log(`Fetching up to ${limit} activities...`);
     const activities = await Activity.find()
       .sort({ createdAt: -1 })
       .limit(limit);
+    
+    console.log(`Found ${activities.length} activities`);
     
     // Convert MongoDB documents to plain objects and stringify ObjectIds
     const plainActivities = activities.map(activity => {
@@ -39,12 +44,13 @@ export async function GET(request: NextRequest) {
       return plainObj;
     });
     
-    // Log for debugging
-    console.log('Fetched Activities:', plainActivities);
-    
+    // Return as JSON
     return NextResponse.json(plainActivities);
   } catch (error) {
     console.error('Error fetching activities:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
   }
 }

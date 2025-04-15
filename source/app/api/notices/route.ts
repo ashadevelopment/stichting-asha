@@ -1,8 +1,10 @@
+// app/api/notices/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "../../lib/mongodb"
 import Notice from "../../lib/models/Notice"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
+import { recordActivity } from "../../lib/middleware/activityTracking"
 
 // GET all notices
 export async function GET(req: NextRequest) {
@@ -59,7 +61,18 @@ export async function POST(req: NextRequest) {
       message: data.message,
       roles: data.roles || ['gebruiker'],
       expirationDate: new Date(data.expirationDate),
-      author: data.author || session.user.name
+      author: data.author || session.user.name,
+      isActive: true
+    })
+    
+    // Record activity
+    await recordActivity({
+      type: 'create',
+      entityType: 'notice',
+      entityId: notice._id.toString(),
+      entityName: notice.title,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
     })
     
     return NextResponse.json(notice, { status: 201 })
@@ -85,6 +98,19 @@ export async function DELETE() {
       { expirationDate: { $lt: now }, isActive: true },
       { isActive: false }
     )
+    
+    // Only record activity if notices were actually updated
+    if (result.modifiedCount > 0) {
+      // Record activity with system user since this might be automated
+      await recordActivity({
+        type: 'update',
+        entityType: 'notice',
+        entityId: 'system-cleanup',
+        entityName: 'Verlopen notities',
+        performedBy: 'system',
+        performedByName: 'Systeem'
+      })
+    }
     
     return NextResponse.json({ 
       message: `Marked ${result.modifiedCount} expired notices as inactive`, 

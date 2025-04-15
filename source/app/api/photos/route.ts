@@ -4,6 +4,7 @@ import dbConnect from '../../lib/mongodb'
 import Photo from '../../lib/models/Photo'
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
+import { recordActivity } from "../../lib/middleware/activityTracking"
 
 // GET all photos
 export async function GET() {
@@ -93,6 +94,16 @@ export async function POST(req: NextRequest) {
         data: buffer.toString('base64')
       },
       author: session.user.name || 'Anoniem'
+    })
+    
+    // Record activity
+    await recordActivity({
+      type: 'create',
+      entityType: 'photo',
+      entityId: photo._id.toString(),
+      entityName: photo.title,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
     })
     
     // Convert to plain object and return

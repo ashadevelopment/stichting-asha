@@ -7,7 +7,7 @@ import { User, Home, BarChart2, Activity } from 'lucide-react'
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
-interface Activity {
+interface ActivityItem {
   _id: string;
   type: 'create' | 'update' | 'delete';
   entityType: string;
@@ -20,31 +20,36 @@ interface Activity {
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const [refreshTrigger] = useState(Date.now())
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchRecentActivities() {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/activities?limit=5');
+        setError(null);
+        
+        const response = await fetch('/api/activities?limit=5', {
+          credentials: 'include'
+        });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch activities');
+          throw new Error(`Failed to fetch activities: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
         
-        // Transform data to avoid ObjectId issues
-        const formattedActivities = data.map((activity: any) => ({
-          ...activity,
-          _id: activity._id.toString()
-        }));
-        
-        setActivities(formattedActivities);
+        // Check if data is an array
+        if (!Array.isArray(data)) {
+          console.error('Unexpected response format, expected an array:', data);
+          setActivities([]);
+        } else {
+          setActivities(data);
+        }
       } catch (error) {
         console.error('Error fetching activities:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load activities');
       } finally {
         setIsLoading(false);
       }
@@ -56,36 +61,54 @@ export default function DashboardPage() {
     const intervalId = setInterval(fetchRecentActivities, 60000);
     
     return () => clearInterval(intervalId);
-  }, [refreshTrigger]);
+  }, []);
 
-  function formatActivityMessage(activity: Activity) {
-    const { type, entityType, entityName, performedByName } = activity;
-    let message = '';
-    let iconColor = '';
+  function formatActivityMessage(activity: ActivityItem) {
+    try {
+      const { type, entityType, entityName, performedByName } = activity;
+      let message = '';
+      let iconColor = '';
 
-    switch (type) {
-      case 'create':
-        message = `${performedByName} heeft een nieuwe ${entityType} aangemaakt: ${entityName}`;
-        iconColor = 'text-green-500';
-        break;
-      case 'update':
-        message = `${performedByName} heeft ${entityType} bijgewerkt: ${entityName}`;
-        iconColor = 'text-blue-500';
-        break;
-      case 'delete':
-        message = `${performedByName} heeft ${entityType} verwijderd: ${entityName}`;
-        iconColor = 'text-red-500';
-        break;
-      default:
-        message = `${performedByName} heeft een actie uitgevoerd op ${entityType}: ${entityName}`;
-        iconColor = 'text-gray-500';
+      // Check for undefined values - set fallbacks
+      const displayEntityType = entityType || 'item';
+      const displayEntityName = entityName || 'Onbekend';
+      const displayPerformer = performedByName || 'Iemand';
+
+      switch (type) {
+        case 'create':
+          message = `${displayPerformer} heeft een nieuwe ${displayEntityType} aangemaakt: ${displayEntityName}`;
+          iconColor = 'text-green-500';
+          break;
+        case 'update':
+          message = `${displayPerformer} heeft ${displayEntityType} bijgewerkt: ${displayEntityName}`;
+          iconColor = 'text-blue-500';
+          break;
+        case 'delete':
+          message = `${displayPerformer} heeft ${displayEntityType} verwijderd: ${displayEntityName}`;
+          iconColor = 'text-red-500';
+          break;
+        default:
+          message = `${displayPerformer} heeft een actie uitgevoerd op ${displayEntityType}: ${displayEntityName}`;
+          iconColor = 'text-gray-500';
+      }
+
+      // Check if createdAt is valid before formatting
+      let timestamp;
+      try {
+        timestamp = format(new Date(activity.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl });
+      } catch (dateError) {
+        timestamp = 'Onbekende datum';
+      }
+
+      return { message, timestamp, iconColor };
+    } catch (err) {
+      console.error('Error formatting activity message:', err, activity);
+      return {
+        message: 'Onbekende activiteit',
+        timestamp: 'Onbekende datum',
+        iconColor: 'text-gray-500'
+      };
     }
-
-    return { 
-      message, 
-      timestamp: format(new Date(activity.createdAt), 'dd MMMM yyyy HH:mm', { locale: nl }),
-      iconColor 
-    };
   }
 
   return (
@@ -200,13 +223,17 @@ export default function DashboardPage() {
           <div className="flex justify-center py-4">
             <div className="w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
           </div>
+        ) : error ? (
+          <div className="p-4 bg-red-50 text-red-600 rounded-md">
+            <p>Fout bij laden van activiteiten: {error}</p>
+          </div>
         ) : activities.length > 0 ? (
           <div className="space-y-4">
             {activities.map((activity, index) => {
               const { message, timestamp, iconColor } = formatActivityMessage(activity);
               return (
                 <div 
-                  key={`activity-${index}`} 
+                  key={`activity-${activity._id || index}`} 
                   className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className={`mt-1 ${iconColor}`}>

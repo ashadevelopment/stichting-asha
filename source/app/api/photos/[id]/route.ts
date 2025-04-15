@@ -1,8 +1,10 @@
+// app/api/photos/[id]/route.ts
 import { NextResponse } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Photo from "../../../lib/models/Photo"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
+import { recordActivity } from "../../../lib/middleware/activityTracking"
 
 // DELETE a photo
 export async function DELETE(
@@ -22,11 +24,29 @@ export async function DELETE(
     }
     
     await dbConnect()
-    const deletedPhoto = await Photo.findByIdAndDelete(params.id)
     
-    if (!deletedPhoto) {
+    // Get photo before deletion to use title in activity
+    const photo = await Photo.findById(params.id)
+    
+    if (!photo) {
       return NextResponse.json({ error: "Foto niet gevonden" }, { status: 404 })
     }
+    
+    // Store photo title before deletion
+    const photoTitle = photo.title
+    
+    // Delete the photo
+    await Photo.findByIdAndDelete(params.id)
+    
+    // Record activity
+    await recordActivity({
+      type: 'delete',
+      entityType: 'photo',
+      entityId: params.id,
+      entityName: photoTitle,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
     
     return NextResponse.json({ message: "Foto succesvol verwijderd" })
   } catch (err) {
@@ -64,6 +84,16 @@ export async function PUT(
     if (!updatedPhoto) {
       return NextResponse.json({ error: "Foto niet gevonden" }, { status: 404 })
     }
+    
+    // Record activity
+    await recordActivity({
+      type: 'update',
+      entityType: 'photo',
+      entityId: params.id,
+      entityName: updatedPhoto.title,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
     
     return NextResponse.json(updatedPhoto)
   } catch (err) {

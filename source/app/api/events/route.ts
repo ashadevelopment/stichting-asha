@@ -4,6 +4,7 @@ import dbConnect from "../../lib/mongodb"
 import Event from "../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
+import { recordActivity } from "../../lib/middleware/activityTracking"
 
 // GET alle evenementen
 export async function GET() {
@@ -48,6 +49,17 @@ export async function POST(req: Request) {
     }
     
     const event = await Event.create(eventData)
+    
+    // Record activity
+    await recordActivity({
+      type: 'create',
+      entityType: 'event',
+      entityId: event._id.toString(),
+      entityName: event.title,
+      performedBy: session.user.id,
+      performedByName: session.user.name || 'Onbekend'
+    })
+    
     return NextResponse.json(event, { status: 201 })
   } catch (err) {
     console.error("Error creating event:", err)
