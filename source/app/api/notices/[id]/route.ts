@@ -48,7 +48,7 @@ export async function DELETE(
       entityType: 'notice',
       entityId: id,
       entityName: noticeTitle,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     
@@ -102,7 +102,7 @@ export async function PUT(
       entityType: 'notice',
       entityId: id,
       entityName: notice.title,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     

@@ -69,7 +69,7 @@ export async function PUT(
       entityType: 'event',
       entityId: params.id,
       entityName: updatedEvent.title,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     
@@ -117,7 +117,7 @@ export async function DELETE(
       entityType: 'event',
       entityId: params.id,
       entityName: eventTitle,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     

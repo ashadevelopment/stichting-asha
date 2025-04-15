@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       entityType: 'event',
       entityId: event._id.toString(),
       entityName: event.title,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     

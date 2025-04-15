@@ -44,7 +44,7 @@ export async function DELETE(
       entityType: 'photo',
       entityId: params.id,
       entityName: photoTitle,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     
@@ -91,7 +91,7 @@ export async function PUT(
       entityType: 'photo',
       entityId: params.id,
       entityName: updatedPhoto.title,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     

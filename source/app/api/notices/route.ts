@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       entityType: 'notice',
       entityId: notice._id.toString(),
       entityName: notice.title,
-      performedBy: session.user.id,
+      performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
     
