@@ -15,11 +15,11 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          // Maak verbinding met de database
+          // Connect to the database
           await dbConnect()
           
-          // Zoek gebruiker (let op: MongoDB is case-sensitive voor email)
-          // Converteer email naar lowercase voor consistentie
+          // Find user (note: MongoDB is case-sensitive for email)
+          // Convert email to lowercase for consistency
           const email = credentials?.email.toLowerCase()
           console.log(`Trying to find user with email: ${email}`)
           
@@ -27,20 +27,20 @@ export const authOptions: NextAuthOptions = {
           console.log(`User found: ${user ? 'Yes' : 'No'}`)
           
           if (!user) {
-            console.log("Gebruiker niet gevonden")
-            throw new Error("Ongeldige gegevens of gebruiker bestaat niet")
+            console.log("User not found")
+            throw new Error("Invalid credentials or user does not exist")
           }
 
-          // Verificatie van wachtwoord
+          // Verify password
           const isValid = await compare(credentials!.password, user.password)
           console.log(`Password valid: ${isValid ? 'Yes' : 'No'}`)
           
           if (!isValid) {
-            console.log("Ongeldig wachtwoord")
-            throw new Error("Ongeldige gegevens of gebruiker bestaat niet")
+            console.log("Invalid password")
+            throw new Error("Invalid credentials or user does not exist")
           }
 
-          // Return gebruikersdata voor sessie
+          // Return user data for session
           return {
             id: user._id.toString(),
             name: user.name,
@@ -71,7 +71,12 @@ export const authOptions: NextAuthOptions = {
     }
   },
   pages: {
-    signIn: "/login"
+    signIn: "/login",
+    error: "/login",
+    // Add these lines to specify custom pages
+    newUser: "/register",
+    // Add error path
+    signOut: "/",
   },
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET
