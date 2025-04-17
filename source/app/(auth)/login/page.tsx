@@ -93,13 +93,6 @@ export default function LoginPage() {
             </div>
           )}
         </form>
-
-        <p className="text-center text-lg text-gray-600 mt-30">
-          Nog geen account?{" "}
-          <a href="/register" className="text-[#1E2A78] font-semibold hover:underline">
-            Maak hier een account aan
-          </a>
-        </p>
       </div>
     </div>
   );
