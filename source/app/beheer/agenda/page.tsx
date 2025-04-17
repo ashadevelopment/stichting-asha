@@ -282,7 +282,7 @@ export default function AgendaPage() {
                 name="title"
                 value={form.title}
                 onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2 text-black"
+                className="w-full border border-gray-300 rounded-md p-2 text-black capitalize"
                 required
               />
             </div>
@@ -294,7 +294,7 @@ export default function AgendaPage() {
                 value={form.description}
                 onChange={handleInputChange}
                 rows={4}
-                className="w-full border border-gray-300 rounded-md p-2 text-black"
+                className="w-full border border-gray-300 rounded-md p-2 text-black capitalize"
                 required
               />
             </div>
@@ -337,7 +337,7 @@ export default function AgendaPage() {
                   name="location"
                   value={form.location}
                   onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-black"
+                  className="w-full border border-gray-300 rounded-md p-2 text-black capitalize"
                   required
                 />
               </div>
@@ -378,7 +378,7 @@ export default function AgendaPage() {
             {events.map((event) => (
               <div key={event._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                  <h4 className="text-lg font-semibold">{event.title}</h4>
+                  <h4 className="text-lg font-semibold capitalize">{event.title}</h4>
                   
                   <div className="flex gap-2 mt-1 sm:mt-0">
                     <button
@@ -399,7 +399,7 @@ export default function AgendaPage() {
                   </div>
                 </div>
                 
-                <p className="text-gray-700 mt-2">{event.description}</p>
+                <p className="text-gray-700 mt-2 capitalize">{event.description}</p>
                 
                 <div className="mt-3 text-sm text-gray-600 grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function AgendaPage() {
                   
                   <div className="flex items-center gap-2">
                     <MapPin size={16} className="text-gray-400" />
-                    <span>{event.location}</span>
+                    <span className="capitalize">{event.location}</span>
                   </div>
                 </div>
                 
