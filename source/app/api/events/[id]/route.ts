@@ -1,129 +1,90 @@
-// app/api/events/[id]/route.ts
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Event from "../../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../../lib/authOptions"
 import { recordActivity } from "../../../lib/middleware/activityTracking"
 
-// GET een specifiek evenement op ID
-export async function GET(
-  req: Request,
-  context: { params: { id: string } }
-) {
-  try {
-    await dbConnect();
-    const event = await Event.findById(context.params.id);
-
-    if (!event) {
-      return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 });
-    }
-
-    return NextResponse.json(event);
-  } catch (err) {
-    console.error("Error fetching event:", err);
-    return NextResponse.json({ error: "Fout bij ophalen van evenement" }, { status: 500 });
-  }
+function getIdFromUrl(request: NextRequest) {
+  const url = new URL(request.url)
+  const segments = url.pathname.split("/")
+  return segments[segments.length - 1]
 }
 
-// PUT (update) een evenement
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    // Controleer of de gebruiker is ingelogd en beheerder is
-    if (!session || !session.user || session.user.role !== 'beheerder') {
-      return NextResponse.json(
-        { error: "Geen toegang. Alleen beheerders kunnen evenementen bijwerken." }, 
-        { status: 403 }
-      )
-    }
-    
-    await dbConnect()
-    const body = await req.json()
-    
-    // Validatie
-    if (!body.title || !body.description || !body.date || !body.time || !body.location) {
-      return NextResponse.json(
-        { error: "Alle velden zijn verplicht" }, 
-        { status: 400 }
-      )
-    }
-    
-    const updatedEvent = await Event.findByIdAndUpdate(
-      params.id,
-      { $set: body },
-      { new: true, runValidators: true }
+export async function GET(request: NextRequest) {
+  const id = getIdFromUrl(request)
+  await dbConnect()
+  const event = await Event.findById(id)
+  if (!event) {
+    return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
+  }
+  return NextResponse.json(event)
+}
+
+export async function PUT(request: NextRequest) {
+  // 1) Get the session
+  const session = await getServerSession(authOptions)
+
+  // 2) Guard: if no session or not an admin, bail out
+  if (!session || session.user.role !== "beheerder") {
+    return NextResponse.json(
+      { error: "Geen toegang. Alleen beheerders kunnen evenementen bijwerken." },
+      { status: 403 }
     )
-    
-    if (!updatedEvent) {
-      return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
-    }
-    
-    // Record activity
-    await recordActivity({
-      type: 'update',
-      entityType: 'event',
-      entityId: params.id,
-      entityName: updatedEvent.title,
-      performedBy: session?.user?.id || 'unknown',
-      performedByName: session.user.name || 'Onbekend'
-    })
-    
-    return NextResponse.json(updatedEvent)
-  } catch (err) {
-    console.error("Error updating event:", err)
-    return NextResponse.json({ error: "Fout bij bijwerken van evenement" }, { status: 500 })
   }
+
+  // At this point TypeScript knows session is non‑null
+  const id = getIdFromUrl(request)  // your helper to pull the [id] from the URL
+  await dbConnect()
+
+  const body = await request.json()
+  // … validate body …
+
+  const updatedEvent = await Event.findByIdAndUpdate(id, { $set: body }, { new: true })
+  if (!updatedEvent) {
+    return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
+  }
+
+  // 3) Record activity — session is guaranteed non‑null here
+  await recordActivity({
+    type: "update",
+    entityType: "event",
+    entityId: id,
+    entityName: updatedEvent.title,
+    performedBy: session.user.id || "unknown",       
+    performedByName: session.user.name || "Onbekend",
+  })
+
+  return NextResponse.json(updatedEvent)
 }
 
-// DELETE een evenement
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    // Controleer of de gebruiker is ingelogd en beheerder is
-    if (!session || !session.user || session.user.role !== 'beheerder') {
-      return NextResponse.json(
-        { error: "Geen toegang. Alleen beheerders kunnen evenementen verwijderen." }, 
-        { status: 403 }
-      )
-    }
-    
-    await dbConnect()
-    
-    // Get event before deletion to use name in activity log
-    const event = await Event.findById(params.id)
-    
-    if (!event) {
-      return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
-    }
-    
-    // Store event details before deletion
-    const eventTitle = event.title
-    
-    // Delete the event
-    await Event.findByIdAndDelete(params.id)
-    
-    // Record activity
-    await recordActivity({
-      type: 'delete',
-      entityType: 'event',
-      entityId: params.id,
-      entityName: eventTitle,
-      performedBy: session?.user?.id || 'unknown',
-      performedByName: session.user.name || 'Onbekend'
-    })
-    
-    return NextResponse.json({ success: true, message: "Evenement verwijderd" })
-  } catch (err) {
-    console.error("Error deleting event:", err)
-    return NextResponse.json({ error: "Fout bij verwijderen van evenement" }, { status: 500 })
+export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "beheerder") {
+    return NextResponse.json(
+      { error: "Geen toegang. Alleen beheerders kunnen evenementen verwijderen." },
+      { status: 403 }
+    )
   }
+
+  const id = getIdFromUrl(request)
+  await dbConnect()
+
+  const toDelete = await Event.findById(id)
+  if (!toDelete) {
+    return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
+  }
+
+  await Event.findByIdAndDelete(id)
+
+  await recordActivity({
+    type: "delete",
+    entityType: "event",
+    entityId: id,
+    entityName: toDelete.title,
+    performedBy: session.user.id || "unknown",
+    performedByName: session.user.name || "Onbekend",
+  })
+
+  return NextResponse.json({ success: true })
 }
