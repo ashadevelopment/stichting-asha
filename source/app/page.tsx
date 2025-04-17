@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FolderKanban, Calendar, ChevronLeft, ChevronRight, CircleAlert} from "lucide-react";
+import { FolderKanban, Calendar, ChevronLeft, ChevronRight, CircleAlert, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -305,32 +305,83 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Information location */}
+        <div className="mb-10 md:mb-16 text-right mr-7 md:mr-16 -mt-10 md:-mt-16">
+          <div className="flex justify-end items-center mb-2">
+            <p className="text-xl md:text-2xl font-semibold text-[#1E2A78] mr-2">Locatie</p>
+            <MapPin className="w-7 h-7 text-[#1E2A78]" />
+          </div>
+          <div className="mr-1 mt-2">
+            <p className="text-lg md:text-xl text-gray-700">Cartesiusweg 11</p>
+            <p className="text-lg md:text-xl text-gray-700">3534 BA, Utrecht</p>
+          </div>
+        </div>
+
         {/* Information Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-6 lg:px-10 mt-16 md:mt-24 lg:mt-32 mb-10">
-          {/* Visie */}
-          <div className="bg-white shadow-lg rounded-lg p-4 md:p-6">
-            <h2 className="text-xl md:text-2xl font-semibold text-[#1E2A78] mb-2 md:mb-4">Visie</h2>
-            <p className="text-sm md:text-base text-gray-700">
-              Stichting Asha vindt het belangrijk dat de Hindostaanse gemeenschap in Utrecht de eigen cultuur en identiteit beleeft. Zo kunnen de leden van de gemeenschap de kracht opdoen om zich verder te ontwikkelen. Bovendien bevordert cultuur- en identiteitsbeleving een vlotte inburgering in de Nederlandse samenleving.
-            </p>
+        <h3 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8">
+          Visie, Missie en Media
+        </h3>
+        <div className="container mx-auto px-4 py-12">
+        {/* Visie Section */}
+        <div className="flex flex-col md:flex-row mb-12">
+          <div className="md:w-1/2">
+            <div className="bg-white rounded-lg shadow-lg p-8 h-full">
+              <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Visie</h2>
+              <p className="text-gray-700">
+                Stichting Asha vindt het belangrijk dat de Hindostaanse gemeenschap in Utrecht de eigen
+                cultuur en identiteit beleeft. Zo kunnen de leden van de gemeenschap de kracht opdoen om
+                zich verder te ontwikkelen. Bovendien bevordert cultuur- en identiteitsbeleving een vlotte
+                inburgering in de Nederlandse samenleving.
+              </p>
+            </div>
+          </div>
+          <div className="md:w-1/2 md:pl-32">
+            <Image
+              src="/meeting.png" 
+              alt="Hindostaanse gemeenschap evenement"
+              width={800}
+              height={800}
+              className="w-[80%] h-[100%] object-cover rounded-lg shadow-lg"
+            />
+          </div>
+        </div>
+
+        {/* Missie Section */}
+        <div className="flex flex-col md:flex-row-reverse mb-12">
+          <div className="md:w-1/2">
+            <div className="bg-white rounded-lg shadow-lg p-8 h-full">
+              <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Missie</h2>
+              <p className="text-gray-700">
+                Door het organiseren van projecten en activiteiten voor de Hindostaanse gemeenschap en
+                andere groepen in de Utrechtse samenleving, wil Stichting Asha een bijdrage leveren aan de
+                multiculturele samenleving. Samenwerkingen met de gemeente, onderwijsinstellingen, het
+                bedrijfsleven en welzijnsorganisaties is daardoor essentieel.
+              </p>
+            </div>
+          </div>
+          <div className="md:w-1/2 md:pr-6">
+            <Image
+              src="/meeting.png"
+              alt="Multiculturele samenleving"
+              width={800}
+              height={800}
+              className="w-full h-full object-cover rounded-lg shadow-lg"
+            />
           </div>
 
-          {/* Missie */}
-          <div className="bg-white shadow-lg rounded-lg p-4 md:p-6">
-            <h2 className="text-xl md:text-2xl font-semibold text-[#1E2A78] mb-2 md:mb-4">Missie</h2>
-            <p className="text-sm md:text-base text-gray-700">
-              Door het organiseren van projecten en activiteiten voor de Hindostaanse gemeenschap en andere groepen in de Utrechtse samenleving, wil Stichting Asha een bijdrage leveren aan de multiculturele samenleving. Samenwerkingen met de gemeente, onderwijsinstellingen, het bedrijfsleven en welzijnsorganisaties is daardoor essentieel.
-            </p>
-          </div>
-
-          {/* Media */}
-          <div className="bg-white shadow-lg rounded-lg p-4 md:p-6 md:col-span-2 lg:col-span-1">
-            <h2 className="text-xl md:text-2xl font-semibold text-[#1E2A78] mb-2 md:mb-4">Media</h2>
-            <p className="text-sm md:text-base text-gray-700">
-              Stichting Asha wordt voortdurend door de Media benaderd. Met name de projecten sollicitatie Helpdesk, ouderen en huiswerkbegeleiding haalt veelvuldig de media. Verder zijn de praktijkvoorbeelden interessant, een verzameling daarvan ziet u bij onze projecten.
+        {/* Media Section */}
+        <div className="mb-12">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Media</h2>
+            <p className="text-gray-700">
+              Stichting Asha wordt voortdurend door de Media benaderd. Met name de projecten sollicitatie
+              Helpdesk, ouderen en huiswerkbegeleiding haalt veelvuldig de media. Verder zijn de
+              praktijkvoorbeelden interessant, een verzameling daarvan ziet u bij onze projecten.
             </p>
           </div>
         </div>
+      </div>
+    </div>
 
         {/* Projects and Photos Carousel Banner */}
         <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-62 mb-16">
