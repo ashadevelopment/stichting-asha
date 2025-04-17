@@ -147,42 +147,48 @@ export default function DashboardPage() {
       {/* Dashboardtegels */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Snelkoppeling: Gebruikers */}
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] cursor-pointer" 
-             onClick={() => window.location.href = '/beheer/gebruikers'}>
+        <div 
+          className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group" 
+          onClick={() => window.location.href = '/beheer/gebruikers'}
+        >
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-blue-100 p-2 rounded-full">
-              <User size={24} className="text-blue-600" />
+              <User size={24} className="text-blue-600 group-hover:text-white" />
             </div>
-            <h2 className="text-lg font-semibold">Gebruikers</h2>
+            <h2 className="text-lg font-semibold group-hover:text-white">Gebruikers</h2>
           </div>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm group-hover:text-white">
             Beheer gebruikers, wijzig rollen, en bekijk gebruikersgegevens.
           </p>
         </div>
 
         {/* Snelkoppeling: Website */}
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] cursor-pointer"
-             onClick={() => window.location.href = '/'}>
+        <div 
+          className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group"
+          onClick={() => window.location.href = '/'}
+        >
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-green-100 p-2 rounded-full">
-              <Home size={24} className="text-green-600" />
+              <Home size={24} className="text-green-600 group-hover:text-white" />
             </div>
-            <h2 className="text-lg font-semibold">Website</h2>
+            <h2 className="text-lg font-semibold group-hover:text-white">Website</h2>
           </div>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm group-hover:text-white">
             Ga naar de voorpagina van je website om te zien hoe het eruitziet voor bezoekers.
           </p>
         </div>
 
         {/* Snelkoppeling: Statistieken */}
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] cursor-pointer">
+        <div 
+          className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group"
+        >
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-purple-100 p-2 rounded-full">
-              <BarChart2 size={24} className="text-purple-600" />
+              <BarChart2 size={24} className="text-purple-600 group-hover:text-white" />
             </div>
-            <h2 className="text-lg font-semibold">Statistieken</h2>
+            <h2 className="text-lg font-semibold group-hover:text-white">Statistieken</h2>
           </div>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm group-hover:text-white">
             Bekijk site-activiteit en bezoekersstatistieken (binnenkort beschikbaar).
           </p>
         </div>
@@ -212,6 +218,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
 
       {/* Recente activiteiten */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mt-6">
