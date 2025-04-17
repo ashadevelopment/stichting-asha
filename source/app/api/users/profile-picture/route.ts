@@ -1,10 +1,11 @@
-// source/app/api/users/profile-picture/route.ts
+// app/api/users/profile-picture/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '../../../lib/authOptions';
 
+// GET profile picture for a user
 export async function GET(req: NextRequest) {
   try {
     // Connect to database
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Add POST method for uploading profile picture
+// POST method for uploading profile picture
 export async function POST(req: NextRequest) {
   try {
     // Verify user is authenticated
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Add DELETE method for removing profile picture
+// DELETE method for removing profile picture
 export async function DELETE(req: NextRequest) {
   try {
     // Verify user is authenticated

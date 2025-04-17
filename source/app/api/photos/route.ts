@@ -1,9 +1,8 @@
-// source/app/api/photos/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import dbConnect from '../../lib/mongodb'
-import Photo from '../../lib/models/Photo'
+import dbConnect from "../../lib/mongodb"
+import Photo from "../../lib/models/Photo"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../auth/[...nextauth]/route"
+import { authOptions } from "../../lib/authOptions"
 import { recordActivity } from "../../lib/middleware/activityTracking"
 
 // GET all photos
@@ -16,7 +15,7 @@ export async function GET() {
     
     // Convert to plain objects and ensure base64 data
     const plainPhotos = photos.map(photo => {
-      const plainObj = photo.toObject();
+      const plainObj = photo.toObject()
       
       // Ensure image data is present
       if (!plainObj.image || !plainObj.image.data) {
@@ -26,15 +25,18 @@ export async function GET() {
         }
       }
       
-      return plainObj;
-    });
+      return plainObj
+    })
     
     // Return photos or an empty array
-    return NextResponse.json(plainPhotos || []);
+    return NextResponse.json(plainPhotos)
   } catch (err) {
     console.error("Error fetching photos:", err)
     return NextResponse.json(
-      { error: "Fout bij ophalen van foto's", details: err instanceof Error ? err.message : 'Unknown error' }, 
+      { 
+        error: "Fout bij ophalen van foto's", 
+        details: err instanceof Error ? err.message : 'Unknown error' 
+      }, 
       { status: 500 }
     )
   }
@@ -102,17 +104,15 @@ export async function POST(req: NextRequest) {
       entityType: 'photo',
       entityId: photo._id.toString(),
       entityName: photo.title,
-      performedBy: session?.user?.id || 'unknown',
+      performedBy: session.user.id || 'Onbekend',
       performedByName: session.user.name || 'Onbekend'
     })
     
     // Convert to plain object and return
-    const plainPhoto = photo.toObject();
-    return NextResponse.json(plainPhoto, { status: 201 })
+    return NextResponse.json(photo.toObject(), { status: 201 })
   } catch (err) {
     console.error("Error creating photo:", err)
     
-    // Handle specific error types
     if (err instanceof Error) {
       return NextResponse.json(
         { 
@@ -123,7 +123,6 @@ export async function POST(req: NextRequest) {
       )
     }
     
-    // Fallback error
     return NextResponse.json(
       { error: "Onverwachte fout bij toevoegen van foto" }, 
       { status: 500 }

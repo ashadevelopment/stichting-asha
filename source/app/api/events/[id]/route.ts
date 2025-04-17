@@ -3,26 +3,26 @@ import { NextResponse } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Event from "../../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "../../../lib/authOptions"
 import { recordActivity } from "../../../lib/middleware/activityTracking"
 
 // GET een specifiek evenement op ID
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    await dbConnect()
-    const event = await Event.findById(params.id)
-    
+    await dbConnect();
+    const event = await Event.findById(context.params.id);
+
     if (!event) {
-      return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 })
+      return NextResponse.json({ error: "Evenement niet gevonden" }, { status: 404 });
     }
-    
-    return NextResponse.json(event)
+
+    return NextResponse.json(event);
   } catch (err) {
-    console.error("Error fetching event:", err)
-    return NextResponse.json({ error: "Fout bij ophalen van evenement" }, { status: 500 })
+    console.error("Error fetching event:", err);
+    return NextResponse.json({ error: "Fout bij ophalen van evenement" }, { status: 500 });
   }
 }
 

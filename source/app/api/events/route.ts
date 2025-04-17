@@ -1,12 +1,11 @@
-// app/api/events/route.ts
 import { NextResponse } from "next/server"
 import dbConnect from "../../lib/mongodb"
 import Event from "../../lib/models/Event"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../auth/[...nextauth]/route"
+import { authOptions } from "../../lib/authOptions" 
 import { recordActivity } from "../../lib/middleware/activityTracking"
 
-// GET alle evenementen
+// GET all events
 export async function GET() {
   try {
     await dbConnect()
@@ -18,12 +17,12 @@ export async function GET() {
   }
 }
 
-// POST nieuw evenement (alleen voor beheerders)
+// POST new event (only for admins)
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
     
-    // Controleer of de gebruiker is ingelogd en beheerder is
+    // Check if the user is authenticated and is an admin
     if (!session || !session.user || session.user.role !== 'beheerder') {
       return NextResponse.json(
         { error: "Geen toegang. Alleen beheerders kunnen evenementen toevoegen." }, 
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
     await dbConnect()
     const body = await req.json()
     
-    // Validatie
+    // Validation
     if (!body.title || !body.description || !body.date || !body.time || !body.location) {
       return NextResponse.json(
         { error: "Alle velden zijn verplicht" }, 
@@ -42,7 +41,7 @@ export async function POST(req: Request) {
       )
     }
     
-    // Voeg auteur toe aan het evenement
+    // Add author to the event
     const eventData = {
       ...body,
       author: session.user.name || "Anoniem"

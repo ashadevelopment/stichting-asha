@@ -4,37 +4,29 @@ import dbConnect from '../../lib/mongodb';
 import ContactSettings from '../../lib/models/ContactSettings';
 import User from '../../lib/models/User';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../api/auth/[...nextauth]/route';
+import { authOptions } from '../../lib/authOptions';
 
 // GET endpoint to retrieve current contact persons
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await dbConnect();
     console.log("Database verbonden in GET contacts route");
     
-    // Find the contact settings document (should be only one)
-    let settings = await ContactSettings.findOne().populate('contactPersons');
-    console.log("Contact settings gevonden:", settings ? 'Ja' : 'Nee');
-    
-    // If no settings exist yet, return empty array
-    if (!settings) {
-      console.log("Geen contactinstellingen gevonden, lege array retourneren");
+    const settings = await ContactSettings.findOne().populate("contactPersons");
+    console.log("Contact settings gevonden:", settings ? "Ja" : "Nee");
+
+    if (!settings || !Array.isArray(settings.contactPersons)) {
+      console.log("Geen contactpersonen gevonden of populate werkte niet goed");
       return NextResponse.json({ contactPersons: [] });
     }
-    
-    console.log("Aantal contactpersonen gevonden:", settings.contactPersons ? settings.contactPersons.length : 0);
-    
-    // Als populate niet goed heeft gewerkt, probeer handmatig de gebruikers op te halen
-    if (!Array.isArray(settings.contactPersons) || settings.contactPersons.length === 0) {
-      console.log("Geen contactpersonen gevonden in de instellingen of populate werkte niet goed");
-      return NextResponse.json({ contactPersons: [] });
-    }
-    
+
+    console.log("Aantal contactpersonen gevonden:", settings.contactPersons.length);
     return NextResponse.json({ contactPersons: settings.contactPersons });
+
   } catch (error) {
-    console.error('Error fetching contact persons:', error);
+    console.error("Error fetching contact persons:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch contact persons' },
+      { error: "Failed to fetch contact persons" },
       { status: 500 }
     );
   }

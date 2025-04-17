@@ -1,9 +1,8 @@
-// app/api/notices/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Notice from "../../../lib/models/Notice"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "../../../lib/authOptions" 
 import { recordActivity } from "../../../lib/middleware/activityTracking"
 
 // DELETE a specific notice

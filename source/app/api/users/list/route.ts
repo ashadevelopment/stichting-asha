@@ -1,43 +1,47 @@
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '../../../lib/mongodb';
-import User from '../../../lib/models/User';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../api/auth/[...nextauth]/route';
+import { NextRequest, NextResponse } from 'next/server'
+import dbConnect from '../../../lib/mongodb'
+import User from '../../../lib/models/User'
+import { getServerSession } from 'next-auth/next'
+import { authOptions }   from '../../../lib/authOptions'
 
 export async function GET(request: NextRequest) {
+  // 1. Grab the session
+  const session = await getServerSession(authOptions)
+  const userRole = session?.user?.role
+
+  // 2. Reject if no session, no user, or no role
+  if (!session || !session.user || !userRole) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // 3. Only allow beheerder & developer
+  if (!['beheerder', 'developer'].includes(userRole)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    
-    // Check if user is authenticated
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    await dbConnect();
-    
-    // Get minimal user data for selection lists
-    const users = await User.find({}, '_id firstName lastName email role');
-    
-    // Transform the users data to include virtual fields but minimize payload
-    const usersList = users.map(user => {
-      const userData = user.toJSON();
+    await dbConnect()
+
+    // 4. Fetch minimal user data
+    const users = await User.find({}, 'firstName lastName email role')
+
+    // 5. Map to a lean payload, including the `fullName` virtual
+    const usersList = users.map((user) => {
+      const u = user.toJSON()
       return {
-        _id: userData._id,
-        fullName: userData.fullName,
-        email: userData.email,
-        role: userData.role
-      };
-    });
-    
-    return NextResponse.json({ users: usersList });
-  } catch (error) {
-    console.error('Error fetching users list:', error);
+        _id: u._id,
+        fullName: u.fullName,
+        email: u.email,
+        role: u.role,
+      }
+    })
+
+    return NextResponse.json({ users: usersList })
+  } catch (err: any) {
+    console.error('Error fetching users list:', err)
     return NextResponse.json(
-      { error: 'Failed to fetch users list' },
+      { error: 'Failed to fetch users list', details: err.message },
       { status: 500 }
-    );
+    )
   }
 }
