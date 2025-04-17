@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
@@ -13,6 +13,12 @@ type HeaderProps = {
 export function Header({ className = "" }: HeaderProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+
+  // Function to handle sign-out
+  const handleSignOut = (e: React.MouseEvent) => {
+    e.preventDefault();
+    signOut({ redirect: true, callbackUrl: '/' }); // Redirect to home page after sign-out
+  };
 
   // Controleren of een link actief is
   const isActive = (path: string) => {
@@ -85,12 +91,12 @@ export function Header({ className = "" }: HeaderProps) {
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  href="/api/auth/signout" 
+                <button 
+                  onClick={handleSignOut}
                   className="ml-4 text-[#2E376F]"
                 >
-                 Uitloggen <LogOut className="w-5 h-5 inline-block m-2" />
-                </Link>
+                  Uitloggen <LogOut className="w-5 h-5 inline-block m-2" />
+                </button>
               </>
             ) : (
               <Link 
