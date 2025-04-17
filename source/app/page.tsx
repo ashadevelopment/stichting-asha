@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FolderKanban, Calendar, ChevronLeft, ChevronRight, CircleAlert, MapPin } from "lucide-react";
+import { FolderKanban, Calendar, ChevronLeft, ChevronRight, CircleAlert, MapPin, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
@@ -343,7 +343,7 @@ export default function Home() {
         </div>
 
         {/* Information location */}
-        <div className="mb-10 md:mb-16 text-right mr-7 md:mr-16 -mt-10 md:-mt-16">
+        <div className="mb-10 md:mb-25 text-right mr-4 md:mr-16 mt-4 md:-mt-16">
           <div className="flex justify-end items-center mb-2">
             <p className="text-xl md:text-2xl font-semibold text-[#1E2A78] mr-2">Locatie</p>
             <MapPin className="w-7 h-7 text-[#1E2A78]" />
@@ -378,7 +378,7 @@ export default function Home() {
                 alt="Hindostaanse gemeenschap evenement"
                 width={600}
                 height={400}
-                className="rounded-lg shadow-lg object-cover w-[70%] h-auto"
+                className="rounded-lg shadow-lg object-cover w-full md:w-[65%] h-auto"
               />
             </div>
           </div>
@@ -402,7 +402,7 @@ export default function Home() {
                 alt="Multiculturele samenleving"
                 width={700}
                 height={400}
-                className="rounded-lg shadow-lg object-cover w-[70%] h-auto"
+                className="rounded-lg shadow-lg object-cover w-full md:w-[70%] h-auto"
               />
             </div>
           </div>
@@ -418,11 +418,37 @@ export default function Home() {
               </p>
             </div>
           </div>
-
+        </div>
+        {/* Maak kennis met Asha Section */}
+        <div className="w-full px-4 md:px-0 mt-20 mb-10 md:mb-40">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] mb-6">
+              Maak kennis met Asha
+            </h2>
+            <div className="relative w-full pb-[56.25%] h-0 rounded-lg shadow-lg overflow-hidden">
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src="https://www.youtube.com/embed/yloGClcO8hY"
+                title="Maak kennis met Asha"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+            <br />
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => router.push("/nieuwsbrief")}
+                className="flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all shadow-lg"
+              >
+                <Mail className="w-4 h-4 md:w-[18px] md:h-[18px]" />
+                Nieuwsbrief
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Projects and Photos Carousel Banner */}
-        <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-12 mb-16">
+        <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-22 mb-16">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Projecten & Foto's</h2>
             
