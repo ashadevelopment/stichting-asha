@@ -1,20 +1,20 @@
 // app/api/photos/[id]/route.ts
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Photo from "../../../lib/models/Photo"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "../../../lib/authOptions"
 import { recordActivity } from "../../../lib/middleware/activityTracking"
 
+// Utility to extract ID from URL
+const extractIdFromRequest = (req: NextRequest | Request): string =>
+  new URL(req.url).pathname.split('/')[4]
+
 // DELETE a photo
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
-    // Check if user is authenticated and has appropriate role
+
     if (!session || !session.user || 
         (session.user.role !== 'beheerder' && session.user.role !== 'developer')) {
       return NextResponse.json(
@@ -22,32 +22,28 @@ export async function DELETE(
         { status: 403 }
       )
     }
-    
+
     await dbConnect()
-    
-    // Get photo before deletion to use title in activity
-    const photo = await Photo.findById(params.id)
-    
+    const id = extractIdFromRequest(req)
+
+    const photo = await Photo.findById(id)
+
     if (!photo) {
       return NextResponse.json({ error: "Foto niet gevonden" }, { status: 404 })
     }
-    
-    // Store photo title before deletion
+
     const photoTitle = photo.title
-    
-    // Delete the photo
-    await Photo.findByIdAndDelete(params.id)
-    
-    // Record activity
+    await Photo.findByIdAndDelete(id)
+
     await recordActivity({
       type: 'delete',
       entityType: 'photo',
-      entityId: params.id,
+      entityId: id,
       entityName: photoTitle,
       performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
-    
+
     return NextResponse.json({ message: "Foto succesvol verwijderd" })
   } catch (err) {
     console.error("Error deleting photo:", err)
@@ -56,14 +52,10 @@ export async function DELETE(
 }
 
 // Update photo details
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-    
-    // Check if user is authenticated and has appropriate role
+
     if (!session || !session.user || 
         (session.user.role !== 'beheerder' && session.user.role !== 'developer')) {
       return NextResponse.json(
@@ -71,30 +63,26 @@ export async function PUT(
         { status: 403 }
       )
     }
-    
+
     await dbConnect()
+    const id = extractIdFromRequest(req)
     const body = await req.json()
-    
-    const updatedPhoto = await Photo.findByIdAndUpdate(
-      params.id,
-      body,
-      { new: true }
-    )
-    
+
+    const updatedPhoto = await Photo.findByIdAndUpdate(id, body, { new: true })
+
     if (!updatedPhoto) {
       return NextResponse.json({ error: "Foto niet gevonden" }, { status: 404 })
     }
-    
-    // Record activity
+
     await recordActivity({
       type: 'update',
       entityType: 'photo',
-      entityId: params.id,
+      entityId: id,
       entityName: updatedPhoto.title,
       performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
     })
-    
+
     return NextResponse.json(updatedPhoto)
   } catch (err) {
     console.error("Error updating photo:", err)
@@ -103,18 +91,17 @@ export async function PUT(
 }
 
 // GET a specific photo
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: Request) {
   try {
     await dbConnect()
-    const photo = await Photo.findById(params.id)
-    
+    const id = extractIdFromRequest(req)
+
+    const photo = await Photo.findById(id)
+
     if (!photo) {
       return NextResponse.json({ error: "Foto niet gevonden" }, { status: 404 })
     }
-    
+
     return NextResponse.json(photo)
   } catch (err) {
     console.error("Error fetching photo:", err)

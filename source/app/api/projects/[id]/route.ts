@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "../../../lib/mongodb"
 import Project from "../../../lib/models/Project"
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "../../../lib/authOptions"
 
 // DELETE project (alleen voor beheerders)
-export async function DELETE(req: Request, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -21,7 +21,8 @@ export async function DELETE(req: Request, context: { params: { id: string } }) 
     await dbConnect()
     
     // Wacht tot de parameters zijn opgehaald voordat je ze gebruikt
-    const { id } = await context.params
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
     
     const deletedProject = await Project.findByIdAndDelete(id)
     
@@ -37,7 +38,7 @@ export async function DELETE(req: Request, context: { params: { id: string } }) 
 }
 
 // PUT project bijwerken (alleen voor beheerders)
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -53,7 +54,8 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
     await dbConnect()
     
     // Wacht tot de parameters zijn opgehaald voordat je ze gebruikt
-    const { id } = await context.params
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
     const body = await req.json()
     
     // Validatie

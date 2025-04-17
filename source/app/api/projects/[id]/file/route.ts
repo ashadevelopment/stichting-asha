@@ -1,25 +1,24 @@
 // app/api/projects/[id]/file/route.ts
-import { NextResponse } from "next/server"
+import { NextResponse, NextRequest } from "next/server"
 import dbConnect from "../../../../lib/mongodb"
 import Project from "../../../../lib/models/Project"
 
 // GET bestandsinhoud voor een specifiek project
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
     await dbConnect()
+
+    const url = req.nextUrl
+    const id = url.pathname.split("/")[4]
     
-    // Bepaal of het om een afbeelding of document gaat
-    const url = new URL(req.url)
+
     const fileType = url.searchParams.get('type')
     
     if (!['image', 'document'].includes(fileType || '')) {
       return NextResponse.json({ error: "Ongeldig bestandstype" }, { status: 400 })
     }
     
-    const project = await Project.findById(params.id)
+    const project = await Project.findById(id)
     
     if (!project) {
       return NextResponse.json({ error: "Project niet gevonden" }, { status: 404 })

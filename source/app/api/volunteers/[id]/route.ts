@@ -2,23 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../lib/mongodb';
 import Volunteer from '../../../lib/models/Volunteer';
 
-// Get a specific volunteer
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Utility to extract [id] from URL
+function extractIdFromRequest(req: NextRequest): string {
+  return req.nextUrl.pathname.split('/')[4]; // /api/volunteers/[id] → index 4 = [id]
+}
+
+// GET a specific volunteer
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
-    const volunteer = await Volunteer.findById(params.id)
-      .select('-cv.data -motivationLetter.data'); // Exclude file data
-    
+    const id = extractIdFromRequest(request);
+
+    const volunteer = await Volunteer.findById(id).select('-cv.data -motivationLetter.data');
     if (!volunteer) {
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json(volunteer);
   } catch (error) {
     console.error('Error fetching volunteer:', error);
@@ -29,41 +31,35 @@ export async function GET(
   }
 }
 
-// Update volunteer status (approve or reject)
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// PUT - Update volunteer status (approve or reject)
+export async function PUT(request: NextRequest) {
   try {
     await dbConnect();
-    
+    const id = extractIdFromRequest(request);
     const { action } = await request.json();
-    
-    // Validate action
+
     if (action !== 'approve' && action !== 'reject') {
       return NextResponse.json(
         { error: 'Ongeldige actie. Gebruik "approve" of "reject"' },
         { status: 400 }
       );
     }
-    
-    // Map action to status
+
     const status = action === 'approve' ? 'approved' : 'rejected';
-    
-    // Find and update volunteer
+
     const volunteer = await Volunteer.findByIdAndUpdate(
-      params.id,
+      id,
       { status },
-      { new: true } // Return updated document
+      { new: true }
     ).select('-cv.data -motivationLetter.data');
-    
+
     if (!volunteer) {
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({
       message: `Vrijwilliger succesvol ${status === 'approved' ? 'goedgekeurd' : 'afgewezen'}`,
       volunteer
@@ -77,23 +73,21 @@ export async function PUT(
   }
 }
 
-// Delete a volunteer
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// DELETE a volunteer
+export async function DELETE(request: NextRequest) {
   try {
     await dbConnect();
-    
-    const volunteer = await Volunteer.findByIdAndDelete(params.id);
-    
+    const id = extractIdFromRequest(request);
+
+    const volunteer = await Volunteer.findByIdAndDelete(id);
+
     if (!volunteer) {
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({
       message: 'Vrijwilliger succesvol verwijderd'
     });

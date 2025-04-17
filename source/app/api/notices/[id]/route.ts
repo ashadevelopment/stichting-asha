@@ -6,10 +6,7 @@ import { authOptions } from "../../../lib/authOptions"
 import { recordActivity } from "../../../lib/middleware/activityTracking"
 
 // DELETE a specific notice
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions)
   
   // Check if user is authenticated and has appropriate role
@@ -23,7 +20,8 @@ export async function DELETE(
   try {
     await dbConnect()
     
-    const { id } = params
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
     
     // Get notice before deletion to use name in activity log
     const notice = await Notice.findById(id)
@@ -45,7 +43,7 @@ export async function DELETE(
     await recordActivity({
       type: 'delete',
       entityType: 'notice',
-      entityId: id,
+      entityId: id || notice._id.toString(),
       entityName: noticeTitle,
       performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
@@ -62,10 +60,7 @@ export async function DELETE(
 }
 
 // Update a specific notice
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(req: Request) {
   const session = await getServerSession(authOptions)
   
   // Check if user is authenticated and has appropriate role
@@ -79,7 +74,8 @@ export async function PUT(
   try {
     await dbConnect()
     
-    const { id } = params
+    const url = new URL(req.url);
+    const id = url.pathname.split("/").pop();
     const data = await req.json()
     
     const notice = await Notice.findByIdAndUpdate(
@@ -99,7 +95,7 @@ export async function PUT(
     await recordActivity({
       type: 'update',
       entityType: 'notice',
-      entityId: id,
+      entityId: id || notice._id.toString(),
       entityName: notice.title,
       performedBy: session?.user?.id || 'unknown',
       performedByName: session.user.name || 'Onbekend'
