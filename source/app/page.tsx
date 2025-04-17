@@ -4,7 +4,7 @@ import Image from "next/image";
 import { FolderKanban, Calendar, ChevronLeft, ChevronRight, CircleAlert, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Footer from "../components/Footer";
 
 // Define the NoticeType interface
@@ -59,6 +59,43 @@ interface PartnerLogo {
   src: string;
   alt: string;
 }
+
+const anime = require("animejs/lib/anime.es.js");
+
+export default function InfoSections() {
+  const visieRef = useRef(null);
+  const missieRef = useRef(null);
+  const mediaRef = useRef(null);
+
+useEffect(() => {
+    const animateOnScroll = (element: HTMLElement) => {
+        anime({
+          targets: element,
+          opacity: [0, 1],
+          translateY: [50, 0],
+          easing: "easeOutExpo",
+          duration: 1000,
+        });
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              animateOnScroll(entry.target as HTMLElement);
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.3 }
+      );
+
+    if (visieRef.current) observer.observe(visieRef.current);
+    if (missieRef.current) observer.observe(missieRef.current);
+    if (mediaRef.current) observer.observe(mediaRef.current);
+
+    return () => observer.disconnect();
+}, []);
 
 export default function Home() {
   const router = useRouter();
@@ -318,70 +355,71 @@ export default function Home() {
         </div>
 
         {/* Information Sections */}
-        <h3 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8">
+        <h3 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8 mt-50">
           Visie, Missie en Media
         </h3>
-        <div className="container mx-auto px-4 py-12">
-        {/* Visie Section */}
-        <div className="flex flex-col md:flex-row mb-12">
-          <div className="md:w-1/2">
-            <div className="bg-white rounded-lg shadow-lg p-8 h-full">
-              <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Visie</h2>
-              <p className="text-gray-700">
-                Stichting Asha vindt het belangrijk dat de Hindostaanse gemeenschap in Utrecht de eigen
-                cultuur en identiteit beleeft. Zo kunnen de leden van de gemeenschap de kracht opdoen om
-                zich verder te ontwikkelen. Bovendien bevordert cultuur- en identiteitsbeleving een vlotte
-                inburgering in de Nederlandse samenleving.
+        <div className="container mx-auto px-4 py-12 space-y-24">
+          {/* Visie Section */}
+          <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-12">
+            <div ref={visieRef} className="md:w-1/2 opacity-0">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Visie</h2>
+                <p className="text-gray-700">
+                  Stichting Asha vindt het belangrijk dat de Hindostaanse gemeenschap in Utrecht de eigen
+                  cultuur en identiteit beleeft. Zo kunnen de leden van de gemeenschap de kracht opdoen om
+                  zich verder te ontwikkelen. Bovendien bevordert cultuur- en identiteitsbeleving een vlotte
+                  inburgering in de Nederlandse samenleving.
+                </p>
+              </div>
+            </div>
+            <div className="md:w-1/2 flex justify-center mt-8 md:mt-0">
+              <Image
+                src="/meeting.png"
+                alt="Hindostaanse gemeenschap evenement"
+                width={600}
+                height={400}
+                className="rounded-lg shadow-lg object-cover w-[70%] h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Missie Section */}
+          <div className="flex flex-col md:flex-row-reverse items-center md:items-start md:space-x-reverse md:space-x-12">
+            <div ref={missieRef} className="md:w-1/2 opacity-0">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Missie</h2>
+                <p className="text-gray-700">
+                  Door het organiseren van projecten en activiteiten voor de Hindostaanse gemeenschap en
+                  andere groepen in de Utrechtse samenleving, wil Stichting Asha een bijdrage leveren aan de
+                  multiculturele samenleving. Samenwerkingen met de gemeente, onderwijsinstellingen, het
+                  bedrijfsleven en welzijnsorganisaties is daardoor essentieel.
+                </p>
+              </div>
+            </div>
+            <div className="md:w-1/2 flex justify-center mt-8 md:mt-0">
+              <Image
+                src="/bestuur.png"
+                alt="Multiculturele samenleving"
+                width={700}
+                height={400}
+                className="rounded-lg shadow-lg object-cover w-[70%] h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Media Section */}
+          <div className="flex justify-center">
+            <div ref={mediaRef} className="bg-white rounded-lg shadow-lg p-8 md:w-2/3 opacity-0">
+              <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Media</h2>
+              <p className="text-gray-700 p-3">
+                Stichting Asha wordt voortdurend door de Media benaderd. Met name de projecten sollicitatie
+                Helpdesk, ouderen en huiswerkbegeleiding haalt veelvuldig de media. Verder zijn de
+                praktijkvoorbeelden interessant, een verzameling daarvan ziet u bij onze projecten.
               </p>
             </div>
           </div>
-          <div className="md:w-1/2 md:pl-32">
-            <Image
-              src="/meeting.png" 
-              alt="Hindostaanse gemeenschap evenement"
-              width={800}
-              height={800}
-              className="w-[80%] h-[100%] object-cover rounded-lg shadow-lg"
-            />
-          </div>
-        </div>
 
-        {/* Missie Section */}
-        <div className="flex flex-col md:flex-row-reverse mb-12">
-          <div className="md:w-1/2">
-            <div className="bg-white rounded-lg shadow-lg p-8 h-full">
-              <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Missie</h2>
-              <p className="text-gray-700">
-                Door het organiseren van projecten en activiteiten voor de Hindostaanse gemeenschap en
-                andere groepen in de Utrechtse samenleving, wil Stichting Asha een bijdrage leveren aan de
-                multiculturele samenleving. Samenwerkingen met de gemeente, onderwijsinstellingen, het
-                bedrijfsleven en welzijnsorganisaties is daardoor essentieel.
-              </p>
-            </div>
-          </div>
-          <div className="md:w-1/2 md:pr-6">
-            <Image
-              src="/meeting.png"
-              alt="Multiculturele samenleving"
-              width={800}
-              height={800}
-              className="w-full h-full object-cover rounded-lg shadow-lg"
-            />
-          </div>
-
-        {/* Media Section */}
-        <div className="mb-12">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-xl font-bold text-[#1E2A78] mb-4">Media</h2>
-            <p className="text-gray-700">
-              Stichting Asha wordt voortdurend door de Media benaderd. Met name de projecten sollicitatie
-              Helpdesk, ouderen en huiswerkbegeleiding haalt veelvuldig de media. Verder zijn de
-              praktijkvoorbeelden interessant, een verzameling daarvan ziet u bij onze projecten.
-            </p>
-          </div>
         </div>
-      </div>
-    </div>
 
         {/* Projects and Photos Carousel Banner */}
         <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-62 mb-16">
@@ -553,4 +591,4 @@ export default function Home() {
       <Footer />
     </div>
   );
-}
+}}
