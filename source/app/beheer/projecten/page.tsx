@@ -8,6 +8,12 @@ import { nl } from 'date-fns/locale';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
 import { Project } from '../../lib/types';
 
+interface FileData {
+  filename: string;
+  contentType: string;
+  data: string;
+}
+
 export default function ProjectenPage() {
   const { data: session } = useSession();
   const [title, setTitle] = useState('');
@@ -94,46 +100,41 @@ export default function ProjectenPage() {
     setError('');
     setSuccessMessage('');
     
-    let imageData = null;
-    let documentData = null;
+    let imageData: FileData | undefined
+    let documentData: FileData | undefined
 
-    // Handle image upload
     if (imageFile) {
-      const imageBytes = await imageFile.arrayBuffer();
-      const imageBuffer = Buffer.from(imageBytes);
-      
+      const bytes = await imageFile.arrayBuffer()
       imageData = {
         filename: imageFile.name,
         contentType: imageFile.type,
-        data: imageBuffer.toString('base64')
-      };
+        data: Buffer.from(bytes).toString('base64'),
+      }
     }
 
-    // Handle document upload
     if (documentFile) {
-      const documentBytes = await documentFile.arrayBuffer();
-      const documentBuffer = Buffer.from(documentBytes);
-      
+      const bytes = await documentFile.arrayBuffer()
       documentData = {
         filename: documentFile.name,
         contentType: documentFile.type,
-        data: documentBuffer.toString('base64')
-      };
+        data: Buffer.from(bytes).toString('base64'),
+      }
     }
 
-    // Prepare project data
+    // Build up your payload, only spreading in the optional fields if they exist
     const projectData: Project = {
       title,
       description,
       longDescription,
-      image: imageData,
-      document: documentData,
-      projectDate: projectDate 
-        ? new Date(projectDate).toISOString() 
+      projectDate: projectDate
+        ? new Date(projectDate).toISOString()
         : new Date().toISOString(),
       author: session?.user?.name || 'Onbekend',
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : []
-    };
+      tags: tags.split(',').map((t) => t.trim()),
+      // these two lines will only add the property if it's defined
+      ...(imageData && { image: imageData }),
+      ...(documentData && { document: documentData }),
+    }
 
     try {
       const url = isEditing && currentProject?._id 
@@ -233,6 +234,10 @@ export default function ProjectenPage() {
 
   // Functie voor verwijderen van een project
   const handleDeleteClick = (projectId: string) => {
+    if (!projectId) {
+      console.error('Invalid project ID');
+      return;
+    }
     setProjectToDelete(projectId);
     setIsDialogOpen(true);
   };
@@ -498,7 +503,7 @@ export default function ProjectenPage() {
                       <FileText size={18} />
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(project._id)}
+                      onClick={() => handleDeleteClick(project._id!)}
                       className="text-red-600 hover:text-red-800"
                       title="Verwijder project"
                     >
