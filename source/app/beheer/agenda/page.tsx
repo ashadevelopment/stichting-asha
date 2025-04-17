@@ -233,7 +233,7 @@ export default function AgendaPage() {
     return (
       <div className="text-gray-800 p-4">
         <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-          <CalendarPlus size={24} /> Agenda Beheer
+          <CalendarPlus size={24} /> Agenda
         </h2>
         <p className="text-red-500">Je hebt geen toegang tot deze pagina. Alleen beheerders kunnen evenementen beheren.</p>
       </div>

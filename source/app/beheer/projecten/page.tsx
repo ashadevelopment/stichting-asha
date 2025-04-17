@@ -294,7 +294,7 @@ export default function ProjectenPage() {
   return (
     <div className="text-gray-800 p-4">
       <h2 className="text-xl sm:text-3xl font-bold mb-4 flex items-center gap-2">
-        <FolderPlus size={24} /> Projecten Beheer
+        <FolderPlus size={24} /> Projecten
       </h2>
 
       {/* Error Message */}

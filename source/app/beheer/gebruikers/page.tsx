@@ -98,7 +98,7 @@ export default function GebruikersPage() {
   return (
     <div className="px-4 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Gebruikers Beheer</h1>
+        <h1 className="text-2xl font-bold">Gebruikers</h1>
         <button
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
           onClick={() => setShowAddModal(true)}
@@ -218,11 +218,11 @@ export default function GebruikersPage() {
                       <div className="text-sm text-gray-900">{user.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${roleColors[user.role] || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${roleColors[user.role] || 'bg-gray-100 text-gray-800'} capitalize`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                       {user.function || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -295,6 +295,16 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
   const [error, setError] = useState('');
   const [profileUpdated, setProfileUpdated] = useState(false);
 
+  // Determine if function field should be automatically set and disabled
+  const shouldDisableFunction = !isEdit && ['developer', 'vrijwilliger', 'stagiair'].includes(formData.role);
+
+  // Update function when role changes
+  useEffect(() => {
+    if (!isEdit && ['developer', 'vrijwilliger', 'stagiair'].includes(formData.role)) {
+      setFormData(prev => ({ ...prev, function: formData.role }));
+    }
+  }, [formData.role, isEdit]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -308,6 +318,20 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Password validation check
+    if (!isEdit && formData.password.length < 6) {
+      setError('Wachtwoord moet minstens 6 karakters lang zijn');
+      setLoading(false);
+      return;
+    }
+
+    // If we're editing and password is provided, check its length
+    if (isEdit && formData.password && formData.password.length < 6) {
+      setError('Wachtwoord moet minstens 6 karakters lang zijn');
+      setLoading(false);
+      return;
+    }
 
     try {
       const formDataObj = new FormData();
@@ -440,7 +464,11 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
                   className="w-full px-3 py-2 border rounded-md"
                   required={!isEdit}
                   placeholder={isEdit ? "Alleen invullen om te wijzigen" : ""}
+                  minLength={6}
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Wachtwoord moet minstens 6 karakters lang zijn
+                </p>
               </div>
 
               {/* Role */}
@@ -469,8 +497,15 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
                   name="function"
                   value={formData.function}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border rounded-md"
+                  className={`w-full px-3 py-2 border rounded-md ${shouldDisableFunction ? 'bg-gray-100' : ''} capitalize`}
+                  disabled={shouldDisableFunction}
+                  placeholder={shouldDisableFunction ? formData.role : ""}
                 />
+                {shouldDisableFunction && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Functie is automatisch ingevuld op basis van de geselecteerde rol.
+                  </p>
+                )}
               </div>
 
               {/* Phone Number */}

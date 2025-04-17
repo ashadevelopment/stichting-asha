@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const role = formData.get('role') as string;
-    const functionTitle = formData.get('function') as string;
+    let functionTitle = formData.get('function') as string;
     const phoneNumber = formData.get('phoneNumber') as string;
 
     if (!firstName) {
@@ -86,6 +86,11 @@ export async function POST(req: NextRequest) {
         contentType: profilePicture.type,
         data: Buffer.from(await profilePicture.arrayBuffer()).toString('base64')
       };
+    }
+    
+    // For specific roles, set function title to be the same as role
+    if (['developer', 'vrijwilliger', 'stagiair'].includes(role)) {
+      functionTitle = role;
     }
     
     // Create user

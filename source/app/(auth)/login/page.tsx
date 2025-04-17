@@ -23,9 +23,27 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Zorg voor consistentie door de e-mail naar kleine letters te converteren
+      // Normalize email to lowercase
       const normalizedEmail = form.email.toLowerCase();
       
+      // First check if email exists
+      const emailCheckResponse = await fetch("/api/auth/check-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+      
+      const emailCheckData = await emailCheckResponse.json();
+      
+      if (!emailCheckData.exists) {
+        setError("E-mailadres bestaat niet. Controleer uw e-mailadres.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // If email exists, attempt login
       const res = await signIn("credentials", {
         redirect: false,
         email: normalizedEmail,
@@ -33,7 +51,7 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Ongeldige gegevens of gebruiker bestaat niet.");
+        setError("Onjuist wachtwoord. Probeer het opnieuw.");
         console.error("Login fout:", res.error);
       } else {
         router.push("/beheer/dashboard");
