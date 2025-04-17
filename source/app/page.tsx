@@ -7,6 +7,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import Footer from "../components/Footer";
 
+import { animate } from 'animejs';
+
 // Define the NoticeType interface
 interface NoticeType {
   _id: string;
@@ -60,49 +62,17 @@ interface PartnerLogo {
   alt: string;
 }
 
-const anime = require("animejs/lib/anime.es.js");
-
-export default function InfoSections() {
-  const visieRef = useRef(null);
-  const missieRef = useRef(null);
-  const mediaRef = useRef(null);
-
-useEffect(() => {
-    const animateOnScroll = (element: HTMLElement) => {
-        anime({
-          targets: element,
-          opacity: [0, 1],
-          translateY: [50, 0],
-          easing: "easeOutExpo",
-          duration: 1000,
-        });
-      };
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              animateOnScroll(entry.target as HTMLElement);
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.3 }
-      );
-
-    if (visieRef.current) observer.observe(visieRef.current);
-    if (missieRef.current) observer.observe(missieRef.current);
-    if (mediaRef.current) observer.observe(mediaRef.current);
-
-    return () => observer.disconnect();
-}, []);
-
 export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
   const [notice, setNotice] = useState<NoticeType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Animation refs
+  const visieRef = useRef(null);
+  const missieRef = useRef(null);
+  const mediaRef = useRef(null);
   
   // Carousel states
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
@@ -113,6 +83,36 @@ export default function Home() {
   const [partnerLogos, setPartnerLogos] = useState<PartnerLogo[]>([]);
   const [partnerLogosLoading, setPartnerLogosLoading] = useState(true);
   const [partnerLogosError, setPartnerLogosError] = useState<string | null>(null);
+
+  // Animation useEffect
+  useEffect(() => {
+    const animateOnScroll = (element: HTMLElement) => {
+      animate(element, {
+        opacity: [0, 1],
+        translateY: [50, 0],
+        easing: "easeOutExpo",
+        duration: 1000,
+      });
+    };
+  
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            animateOnScroll(entry.target as HTMLElement);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+  
+    if (visieRef.current) observer.observe(visieRef.current);
+    if (missieRef.current) observer.observe(missieRef.current);
+    if (mediaRef.current) observer.observe(mediaRef.current);
+  
+    return () => observer.disconnect();
+  }, []);
 
   // Fetch notice on component mount
   useEffect(() => {
@@ -327,14 +327,14 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <button
               onClick={() => router.push("/projecten")}
-              className="flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all"
+              className="flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all shadow-lg"
             >
               <FolderKanban className="w-4 h-4 md:w-[18px] md:h-[18px]" />
               Projecten
             </button>
             <button
               onClick={() => router.push("/agenda")}
-              className="flex items-center justify-center gap-2 border border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all"
+              className="flex items-center justify-center gap-2 border border-blue-900 text-blue-900 hover:bg-blue-900 hover:text-white font-semibold py-2 md:py-3 px-4 md:px-5 rounded-md text-sm md:text-base transition-all shadow-lg"
             >
               <Calendar className="w-4 h-4 md:w-[18px] md:h-[18px]" />
               Agenda
@@ -355,7 +355,7 @@ export default function Home() {
         </div>
 
         {/* Information Sections */}
-        <h3 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8 mt-50">
+        <h3 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8 mt-12">
           Visie, Missie en Media
         </h3>
         <div className="container mx-auto px-4 py-12 space-y-24">
@@ -422,7 +422,7 @@ export default function Home() {
         </div>
 
         {/* Projects and Photos Carousel Banner */}
-        <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-62 mb-16">
+        <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-12 mb-16">
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Projecten & Foto's</h2>
             
@@ -439,7 +439,7 @@ export default function Home() {
                 {/* Carousel Navigation */}
                 <button 
                   onClick={goToPrev}
-                  className="absolute top-1/2 left-[-6rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-2 rounded-full text-white"
+                  className="absolute top-1/2 left-2 md:left-[-12rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-4 rounded-full text-white"
                   aria-label="Previous slide"
                 >
                   <ChevronLeft size={24} />
@@ -447,7 +447,7 @@ export default function Home() {
                 
                 <button 
                   onClick={goToNext}
-                  className="absolute top-1/2 right-[-6rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-2 rounded-full text-white"
+                  className="absolute top-1/2 right-2 md:right-[-12rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-4 rounded-full text-white"
                   aria-label="Next slide"
                 >
                   <ChevronRight size={24} />
@@ -551,13 +551,13 @@ export default function Home() {
           </div>
         </div>
         {/* Partner Logos Carousel */}
-        <div className="flex items-center justify-center mt-50 mb-10 md:mb-20">
+        <div className="flex items-center justify-center mt-12 mb-10 md:mb-20">
           <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] mb-2">Onze Partners</h2>
         </div>
 
-        <div className="w-full flex justify-center mb-50">
+        <div className="w-full flex justify-center mb-12">
           <div className="partner-logos-container relative w-[80%] overflow-hidden py-5">
-            <div className="partner-logos-track flex animate-scroll-x gap-10">
+            <div className="partner-logos-track flex gap-10 animate-scroll">
               {partnerLogos.map((logo) => (
                 <div
                   key={`logo-${logo.id}`}
@@ -591,4 +591,4 @@ export default function Home() {
       <Footer />
     </div>
   );
-}}
+}
