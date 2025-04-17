@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Session } from 'next-auth';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '../mongodb';
 import Activity from '../models/Activity';
@@ -70,10 +71,10 @@ export async function withActivityTracking(
       const clonedResponse = response.clone();
       
       // Get entity information
-      const { type, entityId, entityName } = await getEntityInfo(req, clonedResponse);
+      const { type, entityId, entityName } = await getEntityInfo(req, response);
       
       // Get user information from the session
-      const session = await getServerSession(authOptions);
+      const session = await getServerSession(authOptions) as Session | null;
       const userId = session?.user?.id || 'system';
       const userName = session?.user?.name || 'System';
       
