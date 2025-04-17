@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FolderKanban, Calendar, AlertTriangle, ChevronLeft, ChevronRight, CircleAlert} from "lucide-react";
+import { FolderKanban, Calendar, ChevronLeft, ChevronRight, CircleAlert} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
