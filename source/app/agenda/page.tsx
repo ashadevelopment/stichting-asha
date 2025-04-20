@@ -32,8 +32,7 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Beschikbare tijdsopties op 15-minuten intervallen
+
   const timeOptions = generateTimeOptions();
   
   function generateTimeOptions() {
@@ -52,12 +51,10 @@ export default function Agenda() {
   const end = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start, end });
 
-  // Get current week dates
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Start week on Monday
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
-  // Evenementen ophalen van de API
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -99,120 +96,176 @@ export default function Agenda() {
 
   const goToCurrentDate = () => {
     setCurrentDate(new Date());
+    setSelectedDate(new Date());
   };
 
   const getEventsForDate = (date: Date) => {
     return events.filter((event) => event.date === format(date, "yyyy-MM-dd"));
   };
 
-  // Helper function to sort events by time
   const sortEventsByTime = (events: Event[]) => {
     return [...events].sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Get days with events for the current week
-  const getDaysWithEvents = () => {
-    return weekDays.filter(day => getEventsForDate(day).length > 0);
-  };
-
-  // Check if there are any events this week
-  const hasEventsThisWeek = getDaysWithEvents().length > 0;
-
   return (
-    <div className="flex flex-col md:flex-row gap-6 min-h-[70vh]">
-  {/* Calendar */}
-  <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col justify-between">
-    {/* Navigation + Header */}
-    <div className="flex justify-between items-center text-yellow-500 text-sm font-semibold mb-4">
-      <button onClick={previousMonth}>← Vorige maand</button>
-      <div className="text-center">
-        <h2 className="text-xl font-bold text-[#1E2A78] mb-1">Agenda</h2>
-        <div className="text-[#1E2A78] font-semibold text-md mb-2">
-          {format(currentDate, "LLLL yyyy", { locale: nl })}
-        </div>
-        <button
-          onClick={goToCurrentDate}
-          className="px-4 py-1 border border-yellow-400 text-yellow-500 text-sm font-semibold rounded-md hover:bg-yellow-100"
-        >
-          Naar Heden
-        </button>
-      </div>
-      <button onClick={nextMonth}>Volgende maand →</button>
-    </div>
-
-    {/* Weekday Labels */}
-    <div className="hidden sm:grid grid-cols-7 text-center text-xs font-semibold text-[#1E2A78] mb-2 px-2">
-      {["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"].map((day) => (
-        <div key={day} className="uppercase">{day}</div>
-      ))}
-    </div>
-
-    {/* Calendar Days - Responsive, with compact spacing and consistent height */}
-    <div className="grid grid-cols-4 sm:grid-cols-7 gap-y-1 sm:gap-y-2 text-sm px-2 sm:px-0">
-      {days.map((day) => {
-        const hasEvent = getEventsForDate(day).length > 0;
-        const isCurrent = isToday(day);
-        const isSelected = selectedDate && isSameDay(day, selectedDate);
-        const isOutside = !isSameMonth(day, currentDate);
-
-        return (
-          <div
-            key={day.toString()}
-            onClick={() => setSelectedDate(day)}
-            className={`text-center py-2 sm:py-3 rounded-lg cursor-pointer transition text-sm sm:text-base h-[48px] sm:h-[56px] flex flex-col items-center justify-center
-              ${isSelected
-                ? "border-2 border-yellow-400 text-yellow-600 font-bold"
-                : isCurrent
-                ? "border border-yellow-400 text-yellow-500 font-bold"
-                : isOutside
-                ? "text-gray-300"
-                : "text-[#1E2A78]"
-              }
-              hover:bg-yellow-100`}
-          >
-            <span>{format(day, "d")}</span>
-            {hasEvent && (
-              <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full mt-1"></span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  </div>
-
-  {/* Week Agenda Sidebar */}
-  <div className="w-full md:w-80 bg-white rounded-xl shadow p-6 flex flex-col">
-    <h3 className="text-xl font-bold text-[#1E2A78] mb-4">Week Agenda</h3>
-
-    {eachDayOfInterval({
-      start: startOfWeek(currentDate, { locale: nl }),
-      end: endOfWeek(currentDate, { locale: nl }),
-    }).map((day) => {
-      const eventsForDay = getEventsForDate(day);
-      const isEmpty = eventsForDay.length === 0;
-
-      return (
-        <div key={day.toString()} className="mb-3">
-          <div className={`font-semibold ${isEmpty ? "text-gray-400" : "text-yellow-500"}`}>
-            {format(day, "eeee", { locale: nl })} – {format(day, "d MMMM yyyy", { locale: nl })}
+    <div className="w-full min-h-screen bg-[#F2F2F2] py-10 px-4 flex justify-center">
+      <div className="flex flex-col md:flex-row md:items-start gap-4 max-w-7xl w-full">
+        {/* Weekly Agenda */}
+        <div className="w-full md:w-[320px] bg-white rounded-lg shadow-lg p-4 md:sticky md:top-6 self-start mt-1">
+          <div className="mb-3">
+            <h3 className="text-lg font-bold text-[#1E2A78]">Week Agenda</h3>
           </div>
 
-          {eventsForDay.map((event) => (
-            <div
-              key={event._id}
-              className="bg-white shadow-md rounded-md px-4 py-2 mt-2 flex justify-between items-start"
-            >
-              <div>
-                <div className="text-sm font-semibold text-[#1E2A78]">{event.title}</div>
-                <div className="text-xs text-gray-500">{event.description}</div>
-              </div>
-              <div className="text-yellow-500 text-sm font-bold whitespace-nowrap">{event.time}</div>
+          {isLoading ? (
+            <div className="text-center py-2 text-gray-500 text-sm">Laden...</div>
+          ) : (
+            <div className="space-y-4 capitalize">
+              {weekDays.map((day) => {
+                const dayEvents = getEventsForDate(day);
+                const sortedEvents = sortEventsByTime(dayEvents);
+                const isTodayDate = isToday(day);
+                const hasEvents = dayEvents.length > 0;
+
+                return (
+                  <div key={day.toString()} className="text-sm mt-8">
+                    <div
+                      className={`font-medium mb-1 cursor-pointer transition-colors ${
+                        hasEvents ? "text-yellow-600" : "text-gray-400"
+                      } ${isTodayDate ? "text-yellow-500" : ""}`}
+                      onClick={() => setSelectedDate(day)}
+                    >
+                      {format(day, "EEEE – d MMMM", { locale: nl })}
+                    </div>
+
+                    {hasEvents && (
+                      <div className="space-y-1.5 mt-7">
+                        {sortedEvents.map((event) => (
+                          <div
+                            key={event._id}
+                            className="bg-white rounded-md p-2 shadow-md hover:bg-yellow-50 cursor-pointer capitalize"
+                            onClick={() => setSelectedDate(day)}
+                          >
+                            <div className="font-bold text-[#1E2A78] text-sm capitalize">{event.title}</div>
+                            <div className="text-xs text-gray-500 capitalize">{event.description}</div>
+                            <div className="text-yellow-500 font-semibold text-sm mt-1 capitalize">{event.time}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
-      );
-    })}
-  </div>
-</div>
+
+        {/* Calendar */}
+        <div className="flex-1 md:w-[240px] bg-white rounded-lg shadow-lg p-6 flex flex-col h-auto">
+          <h2 className="text-2xl font-bold text-[#1E2A78] mb-4 text-center">Agenda</h2>
+
+          {/* Foutmelding weergeven indien nodig */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md mb-3 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Buttons voor navigatie */}
+          <div className="flex justify-between items-center mb-2">
+            <button
+              onClick={previousMonth}
+              className="text-yellow-500 hover:text-yellow-600 font-medium text-sm"
+            >
+              ← Vorige
+            </button>
+            <div className="text-lg font-medium text-[#1E2A78]">
+              {format(currentDate, "MMMM yyyy", { locale: nl })}
+            </div>
+            <button
+              onClick={nextMonth}
+              className="text-yellow-500 hover:text-yellow-600 font-medium text-sm"
+            >
+              Volgende →
+            </button>
+          </div>
+          
+          {/* "Naar Heden" button centered below the month/year */}
+          <div className="flex justify-center mb-4">
+            <button 
+              onClick={goToCurrentDate}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded-md px-3 py-1"
+            >
+              Naar Heden
+            </button>
+          </div>
+
+          {/* Laad indicator */}
+          {isLoading ? (
+            <div className="text-center py-4 text-gray-500 text-sm">
+              Evenementen laden...
+            </div>
+          ) : (
+            <>
+              <div className="overflow-y-auto">
+                {/* Kalender Grid - Compact version */}
+                <div className="grid grid-cols-7 gap-2 mb-5 p-1">
+                  {["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"].map((day) => (
+                    <div key={day} className="font-medium text-center text-[#1E2A78] text-xs py-1">
+                      {day}
+                    </div>
+                  ))}
+                  {days.map((day) => {
+                    const hasEvent = getEventsForDate(day).length > 0;
+
+                    return (
+                      <div
+                        key={day.toString()}
+                        className={`p-2 text-center cursor-pointer rounded-md hover:bg-yellow-100 transition-colors
+                          ${!isSameMonth(day, currentDate) ? "text-gray-400" : "text-[#1E2A78]"} 
+                          ${isToday(day) ? "bg-yellow-400 text-white" : ""} 
+                          ${selectedDate && isSameDay(day, selectedDate) ? "ring-2 ring-yellow-300" : ""}`}
+                        onClick={() => setSelectedDate(day)}
+                      >
+                        <span className="text-sm">{format(day, "d")}</span>
+                        {hasEvent && (
+                          <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mx-auto mt-1"></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Event List for the Selected Date */}
+                {selectedDate && (
+                  <div className="mt-2 border-t pt-2">
+                    <h3 className="text-md font-semibold mb-3 text-[#1E2A78]">
+                      Activiteiten op {format(selectedDate, "d MMMM yyyy", { locale: nl })}
+                    </h3>
+
+                    {getEventsForDate(selectedDate).length > 0 ? (
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {sortEventsByTime(getEventsForDate(selectedDate)).map((event) => (
+                          <div key={event._id} className="bg-gray-50 rounded-md p-3 shadow-sm">
+                            <div className="flex justify-between items-start">
+                              <h4 className="font-medium text-[#1E2A78] capitalize">{event.title}</h4>
+                              <span className="text-yellow-600 font-medium whitespace-nowrap ml-2 capitalize">{event.time}</span>
+                            </div>
+                            <p className="text-gray-700 text-sm mt-1 capitalize">{event.description}</p>
+                            <p className="text-gray-500 text-xs mt-1 capitalize">
+                              Locatie: {event.location}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Geen activiteiten gepland voor deze dag.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
