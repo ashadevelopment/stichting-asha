@@ -72,6 +72,12 @@ export function Header({ className = "" }: HeaderProps) {
               Contact
             </Link>
             <Link 
+              href="/nieuwsbrief" 
+              className={`transition-colors duration-300 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Nieuwsbrief
+            </Link>
+            <Link 
               href="/fotoboek" 
               className={`transition-colors duration-300 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
               >
