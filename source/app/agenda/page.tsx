@@ -109,7 +109,7 @@ export default function Agenda() {
 
   return (
     <div className="w-full min-h-screen bg-[#F2F2F2] py-10 px-4 flex justify-center">
-      <div className="flex flex-col md:flex-row md:items-start gap-4 max-w-7xl w-full">
+      <div className="flex flex-col md:flex-row md:items-start gap-4 max-w-7xl w-full mt-50">
         {/* Weekly Agenda */}
         <div className="w-full md:w-[320px] bg-white rounded-lg shadow-lg p-4 md:sticky md:top-6 self-start mt-1">
           <div className="mb-3">
