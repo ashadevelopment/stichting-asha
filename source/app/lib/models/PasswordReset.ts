@@ -1,9 +1,18 @@
-import mongoose, { Schema, models, model } from 'mongoose';
+import mongoose, { Schema, Document, models } from 'mongoose';
 
-const PasswordResetSchema = new Schema({
+export interface IPasswordReset extends Document {
+  email: string;
+  token: string;
+  expires: Date;
+  used: boolean;
+}
+
+const PasswordResetSchema = new Schema<IPasswordReset>({
   email: {
     type: String,
     required: true,
+    lowercase: true,
+    trim: true,
   },
   token: {
     type: String,
@@ -18,7 +27,8 @@ const PasswordResetSchema = new Schema({
     type: Boolean,
     default: false,
   },
-}, { timestamps: true });
+}, {
+  timestamps: true,
+});
 
-const PasswordReset = models.PasswordReset || model('PasswordReset', PasswordResetSchema);
-export default PasswordReset;
+export default models.PasswordReset || mongoose.model<IPasswordReset>('PasswordReset', PasswordResetSchema);
