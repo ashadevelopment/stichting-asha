@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
+import UserVerification from '../../../lib/models/UserVerification';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendVerificationEmail } from '../../../lib/utils/verification-email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +28,7 @@ export async function POST(req: NextRequest) {
     let functionTitle = formData.get('function') as string;
     const phoneNumber = formData.get('phoneNumber') as string;
 
+    // Validate required fields
     if (!firstName) {
       return NextResponse.json(
         { message: 'First name is required' },
@@ -46,7 +50,6 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Validate required fields
     if (!firstName || !lastName || !email || !password) {
       return NextResponse.json(
         { message: 'Name, email, and password are required' },
@@ -61,6 +64,15 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { message: 'Email already in use' },
+        { status: 400 }
+      );
+    }
+
+    // Check if there's a pending verification for this email
+    const existingVerification = await UserVerification.findOne({ email });
+    if (existingVerification) {
+      return NextResponse.json(
+        { message: 'Verification email already sent. Please check your inbox.' },
         { status: 400 }
       );
     }
@@ -93,8 +105,15 @@ export async function POST(req: NextRequest) {
       functionTitle = role;
     }
     
-    // Create user
-    const newUser = await User.create({
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    
+    // Set expiry to 24 hours from now
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 24);
+    
+    // Create user verification entry
+    await UserVerification.create({
       firstName,
       lastName,
       email,
@@ -103,11 +122,20 @@ export async function POST(req: NextRequest) {
       function: functionTitle,
       phoneNumber,
       profilePicture: profilePictureData,
+      verificationToken,
+      expires,
+      verified: false
     });
     
+    // Send verification email
+    await sendVerificationEmail(email, firstName, verificationToken);
+    
     return NextResponse.json(
-      { message: 'User created successfully', user: newUser },
-      { status: 201 }
+      { 
+        message: 'Verification email sent. The user needs to verify their email before the account is created.',
+        status: 'pending_verification'
+      },
+      { status: 200 }
     );
   } catch (error) {
     console.error('Error creating user:', error);
