@@ -293,6 +293,7 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [profileUpdated, setProfileUpdated] = useState(false);
 
   // Determine if function field should be automatically set and disabled
@@ -318,6 +319,7 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     // Password validation check
     if (!isEdit && formData.password.length < 6) {
@@ -354,12 +356,36 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
         body: formDataObj,
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Er is een fout opgetreden');
+        throw new Error(data.message || 'Er is een fout opgetreden');
       }
 
-      onSuccess();
+      // Display success message for new user
+      if (!isEdit) {
+        setSuccess(data.message || `Verificatie e-mail verzonden naar ${formData.email}. De gebruiker wordt toegevoegd zodra de e-mail is geverifieerd.`);
+        
+        // Clear form but don't close modal yet
+        setFormData({
+          name: '',
+          firstName: '',
+          lastName: '',
+          email: '',
+          password: '',
+          role: 'user',
+          function: '',
+          phoneNumber: '',
+        });
+        
+        // Wait 3 seconds and then close modal and refresh data
+        setTimeout(() => {
+          onSuccess();
+        }, 5000);
+      } else {
+        // For edit, close modal immediately
+        onSuccess();
+      }
     } catch (error: any) {
       setError(error.message || 'Er is een fout opgetreden');
     } finally {
@@ -388,6 +414,12 @@ function UserFormModal({ isOpen, onClose, user, onSuccess, isEdit }: {
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              {success}
             </div>
           )}
 

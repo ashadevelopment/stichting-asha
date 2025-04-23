@@ -3,8 +3,7 @@ import dbConnect from '../../../lib/mongodb';
 import User from '../../../lib/models/User';
 import UserVerification from '../../../lib/models/UserVerification';
 import { createTransporter } from '../../../lib/utils/email';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import RecentActivity from '../../../lib/models/Activity';
 
 // Helper to send password via email
 async function sendPasswordEmail(email: string, plainPassword: string) {
@@ -32,6 +31,19 @@ async function sendPasswordEmail(email: string, plainPassword: string) {
   };
 
   await transporter.sendMail(mailOptions);
+}
+
+// Helper to log activities
+async function logActivity(action: string, details: any) {
+  try {
+    await RecentActivity.create({
+      action,
+      details,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('Error logging activity:', error);
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -69,34 +81,48 @@ export async function GET(req: NextRequest) {
     }
 
     if (action === 'verify') {
-      const plainPassword = crypto.randomBytes(6).toString('base64'); // e.g., 8-char password
-      const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
+      // We will use the password that was set during user creation
+      // instead of generating a new one
       const userData = {
-        ...verification.toObject(),
-        password: hashedPassword,
+        firstName: verification.firstName,
+        lastName: verification.lastName,
+        email: verification.email,
+        password: verification.password,
+        role: verification.role,
+        function: verification.function,
+        phoneNumber: verification.phoneNumber,
+        profilePicture: {
+          filename: verification.profilePicture?.filename || null,
+          contentType: verification.profilePicture?.contentType || null,
+          data: verification.profilePicture?.data || null,
+        },
       };
-      delete userData._id;
-      delete userData.verificationToken;
-      delete userData.expires;
-      delete userData.verified;
-      delete userData.createdAt;
-      delete userData.updatedAt;
-      delete userData.__v;
-
+      
       await User.create(userData);
 
       verification.verified = true;
       await verification.save();
 
-      // Send password by email
+      // Extract plain password from verification data for email
+      // Note: This assumes password was stored in plain text in the verification object
+      // If it's hashed, you'll need to modify the user creation process
+      const plainPassword = verification.originalPassword || '(wachtwoord verborgen)';
+      
+      // Send email with their login details
       await sendPasswordEmail(userData.email, plainPassword);
+
+      // Log the activity
+      await logActivity('user_verified', {
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName
+      });
 
       return new Response(`
         <html><body style="text-align:center;font-family:Arial;">
           <div style="margin:50px auto;max-width:600px;padding:30px;border:1px solid #ccc;border-radius:8px;background:#f0fff0;">
             <h2 style="color:#4CAF50;">Account succesvol geverifieerd</h2>
-            <p>Uw account is succesvol aangemaakt. Uw wachtwoord is per e-mail verzonden.</p>
+            <p>Uw account is succesvol aangemaakt. Uw inloggegevens zijn per e-mail verzonden.</p>
             <a href="/login" style="display:inline-block;margin-top:20px;background:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">Inloggen</a>
           </div>
         </body></html>`, {
@@ -106,6 +132,13 @@ export async function GET(req: NextRequest) {
     }
 
     if (action === 'cancel') {
+      // Log the cancellation
+      await logActivity('verification_cancelled', {
+        email: verification.email,
+        firstName: verification.firstName,
+        lastName: verification.lastName
+      });
+      
       await verification.deleteOne();
 
       return new Response(`

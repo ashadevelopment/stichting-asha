@@ -113,11 +113,13 @@ export async function POST(req: NextRequest) {
     expires.setHours(expires.getHours() + 24);
     
     // Create user verification entry
+    // Store the plain password for use during verification
     await UserVerification.create({
       firstName,
       lastName,
       email,
       password: hashedPassword,
+      originalPassword: password, // Add the original password for email sending later
       role,
       function: functionTitle,
       phoneNumber,
@@ -132,7 +134,7 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json(
       { 
-        message: 'Verification email sent. The user needs to verify their email before the account is created.',
+        message: `Verificatie e-mail verzonden naar ${email}. De gebruiker wordt toegevoegd zodra de e-mail is geverifieerd.`,
         status: 'pending_verification'
       },
       { status: 200 }
