@@ -109,8 +109,17 @@ export default function PersoonlijkeGegevensPage() {
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
       
-      // Update the session to reflect changes
-      await update()
+      // Update the session with new data
+      const updatedSession = await update({
+        ...session,
+        user: {
+          ...session?.user,
+          firstName: firstName,
+          lastName: lastName,
+          name: `${firstName} ${lastName}`.trim(),
+          email: email,
+        }
+      })
       
       setMessage({ type: 'success', text: data.message || 'Gegevens succesvol bijgewerkt' })
       setTimeout(() => setMessage(null), 3000)

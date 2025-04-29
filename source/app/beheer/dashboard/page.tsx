@@ -34,6 +34,46 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Add state for storing the user's details
+  const [userDetails, setUserDetails] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: ''
+  });
+
+  // Fetch user details whenever session changes
+  useEffect(() => {
+    async function fetchUserData() {
+      if (session?.user?.id) {
+        try {
+          const response = await fetch(`/api/users/details?userId=${session.user.id}`);
+          if (response.ok) {
+            const userData = await response.json();
+            setUserDetails({
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              email: userData.email || '',
+              role: userData.role || session?.user?.role || ''
+            });
+          } else {
+            // Fallback to session data
+            const nameParts = session.user.name?.split(' ') || ['', ''];
+            setUserDetails({
+              firstName: session.user.firstName as string || nameParts[0] || '',
+              lastName: session.user.lastName as string || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
+              email: session.user.email || '',
+              role: session.user.role || ''
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+        }
+      }
+    }
+    
+    fetchUserData();
+  }, [session]);
 
   useEffect(() => {
     async function fetchRecentActivities() {
@@ -122,20 +162,23 @@ export default function DashboardPage() {
     }
   }
 
-  // Get the user's full name from the session
+  // Updated function to get the user's full name
   const getUserFullName = () => {
-    if (!session) return 'Beheerder';
-    
-    console.log("Session user:", JSON.stringify(session.user)); // Debug: log session object
-    
-    // Direct access attempt - this should be the most reliable
-    if (session.user?.firstName && session.user?.lastName) {
+    // First try from our fetched userDetails
+    if (userDetails.firstName && userDetails.lastName) {
+      return `${userDetails.firstName} ${userDetails.lastName}`;
+    } 
+    else if (userDetails.firstName) {
+      return userDetails.firstName;
+    }
+    // Then try from session
+    else if (session?.user?.firstName && session?.user?.lastName) {
       return `${session.user.firstName} ${session.user.lastName}`;
     } 
-    else if (session.user?.firstName) {
+    else if (session?.user?.firstName) {
       return session.user.firstName;
     }
-    else if (session.user?.name) {
+    else if (session?.user?.name) {
       return session.user.name;
     }
     else {
@@ -170,7 +213,7 @@ export default function DashboardPage() {
               Welkom, {getUserFullName()}
             </h1>
             <p className="text-sm text-gray-500 italic capitalize">
-              {session?.user?.role || 'Onbekend'}
+              {userDetails.role || session?.user?.role || 'Onbekend'}
             </p>
           </div>
         </div>
