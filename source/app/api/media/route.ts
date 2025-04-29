@@ -5,6 +5,45 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../lib/authOptions"
 import { recordActivity } from "../../lib/middleware/activityTracking"
 
+// File size limits in bytes
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+
+// Allowed file types
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
+
+// Validation function for uploads
+function validateMediaUpload(file: File, mediaType: string) {
+  // Check if file exists
+  if (!file) {
+    return { valid: false, error: "Geen bestand geüpload" };
+  }
+
+  // Check file size
+  const maxSize = mediaType === 'video' ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+  if (file.size > maxSize) {
+    const maxSizeMB = maxSize / (1024 * 1024);
+    return { 
+      valid: false, 
+      error: `Bestandsgrootte overschrijdt de limiet van ${maxSizeMB}MB` 
+    };
+  }
+
+  // Check file type
+  const allowedTypes = mediaType === 'video' ? ALLOWED_VIDEO_TYPES : ALLOWED_IMAGE_TYPES;
+  if (!allowedTypes.includes(file.type)) {
+    return { 
+      valid: false, 
+      error: `Bestandstype ${file.type} wordt niet ondersteund. Toegestane types: ${allowedTypes.join(', ')}` 
+    };
+  }
+
+  // Check dimensions for videos (would require additional processing)
+  // For now, we'll just return valid
+  return { valid: true };
+}
+
 // GET all media items
 export async function GET() {
   try {
@@ -66,7 +105,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File
     const mediaType = formData.get('mediaType') as 'image' | 'video'
 
-    // Validation
+    // Basic validation
     if (!title) {
       return NextResponse.json(
         { error: "Titel is verplicht" }, 
@@ -81,43 +120,88 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Extended validation for file type and size
+    const validation = validateMediaUpload(file, mediaType);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
     // Connect to database
     await dbConnect()
     
-    // Read file data
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    
-    // Create media document
-    const mediaItem = await Media.create({
-      title,
-      description: description || '',
-      media: {
-        filename: file.name,
-        contentType: file.type,
-        data: buffer.toString('base64'),
-        type: mediaType || (file.type.startsWith('video') ? 'video' : 'image')
-      },
-      author: session.user.name || 'Anoniem'
-    })
-    
-    // Record activity
-    await recordActivity({
-      type: 'create',
-      entityType: 'media',
-      entityId: mediaItem._id.toString(),
-      entityName: mediaItem.title,
-      performedBy: session.user.id || 'Onbekend',
-      performedByName: session.user.name || 'Onbekend',
-      details: `${mediaItem.media.type === 'video' ? 'Video' : 'Foto'} geplaatst door ${session.user.name || 'Onbekend'}`
-    })
-    
-    // Convert to plain object and return
-    return NextResponse.json(mediaItem.toObject(), { status: 201 })
+    try {
+      // Read file data
+      const bytes = await file.arrayBuffer()
+      
+      // Check if file data is valid
+      if (!bytes || bytes.byteLength === 0) {
+        return NextResponse.json(
+          { error: "Ongeldig bestand of leeg bestand" },
+          { status: 400 }
+        )
+      }
+      
+      const buffer = Buffer.from(bytes)
+      
+      // Check final buffer size for MongoDB limit (16MB)
+      const base64Size = Math.ceil(buffer.length * 4 / 3);
+      if (base64Size > 15 * 1024 * 1024) { // Leave some margin below 16MB
+        return NextResponse.json(
+          { error: "Bestand is te groot voor opslag na encoding (max 15MB na encoding)" },
+          { status: 400 }
+        )
+      }
+      
+      // Create media document
+      const mediaItem = await Media.create({
+        title,
+        description: description || '',
+        media: {
+          filename: file.name,
+          contentType: file.type,
+          data: buffer.toString('base64'),
+          type: mediaType || (file.type.startsWith('video') ? 'video' : 'image')
+        },
+        author: session.user.name || 'Anoniem'
+      })
+      
+      // Record activity
+      await recordActivity({
+        type: 'create',
+        entityType: 'media',
+        entityId: mediaItem._id.toString(),
+        entityName: mediaItem.title,
+        performedBy: session.user.id || 'Onbekend',
+        performedByName: session.user.name || 'Onbekend',
+        details: `${mediaItem.media.type === 'video' ? 'Video' : 'Foto'} geplaatst door ${session.user.name || 'Onbekend'}`
+      })
+      
+      // Convert to plain object and return
+      return NextResponse.json(mediaItem.toObject(), { status: 201 })
+    } catch (err) {
+      console.error("Error processing file:", err)
+      
+      // Check for specific MongoDB errors related to document size
+      if (err instanceof Error && err.message && 
+          (err.message.includes('document size') || err.message.includes('16777216'))) {
+        return NextResponse.json(
+          { error: "Bestand is te groot voor de database (maximum 16MB)" },
+          { status: 400 }
+        )
+      }
+      
+      throw err; // Re-throw for general error handling
+    }
   } catch (err) {
     console.error("Error creating media item:", err)
     
     if (err instanceof Error) {
+      // Detailed error logging
+      console.error(`Error stack: ${err.stack}`);
+      
       return NextResponse.json(
         { 
           error: "Fout bij toevoegen van media", 
