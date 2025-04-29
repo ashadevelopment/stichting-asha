@@ -94,13 +94,14 @@ export default function Contact() {
     e.preventDefault();
     setSubmitStatus("loading");
     setErrorMessage("");
-
+  
+    // Validate form fields
     if (!firstName || !lastName || !email || !phoneNumber || !message || !cvFile || !motivationFile) {
       setErrorMessage('Alle velden zijn verplicht');
       setSubmitStatus("error");
       return;
     }
-
+  
     try {
       const formData = new FormData();
       formData.append("firstName", firstName);
@@ -116,18 +117,23 @@ export default function Contact() {
       if (motivationFile) {
         formData.append("motivationLetter", motivationFile);
       }
+  
+      console.log("Submitting volunteer form data...");
       
       const response = await fetch("/api/volunteers", {
-        method: "POST",
+        method: "POST", 
         body: formData,
+        // Important: don't set Content-Type header here, it's automatically set with FormData
       });
       
+      console.log("Response status:", response.status);
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const responseData = await response.json();
         throw new Error(responseData.error || "Er is iets misgegaan bij het versturen");
       }
       
-      // Reset form
+      // Reset form on success
       setFirstName('');
       setLastName('');
       setEmail('');

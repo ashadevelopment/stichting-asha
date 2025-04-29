@@ -67,6 +67,8 @@ export default function VrijwilligersPage() {
 
   const handleApprove = async (id: string) => {
     try {
+      console.log(`Approving volunteer with ID: ${id}`);
+      
       const response = await fetch(`/api/volunteers/${id}`, {
         method: 'PUT',
         headers: {
@@ -75,24 +77,36 @@ export default function VrijwilligersPage() {
         body: JSON.stringify({ action: 'approve' })
       });
       
-      if (!response.ok) throw new Error('Fout bij goedkeuren vrijwilliger')
+      const data = await response.json();
+      console.log("Approval response:", data);
+      
+      if (!response.ok) {
+        throw new Error('Fout bij goedkeuren vrijwilliger: ' + (data.error || response.statusText));
+      }
+      
+      // Update the volunteer status locally without full refresh
+      setVolunteers(prev => 
+        prev.map(vol => 
+          vol._id === id ? { ...vol, status: 'approved' } : vol
+        )
+      );
       
       // Show success message
-      setSuccessMessage('Vrijwilliger succesvol goedgekeurd')
+      setSuccessMessage('Vrijwilliger succesvol goedgekeurd');
       // Clear the success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000)
-      
-      // Trigger a refresh after approval
-      setNeedsRefresh(true);
-    
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError('Er is een fout opgetreden bij het goedkeuren')
-      console.error(err)
+      console.error(err);
+      setError(`Er is een fout opgetreden bij het goedkeuren: ${err instanceof Error ? err.message : 'Onbekende fout'}`);
+      // Clear error message after 5 seconds
+      setTimeout(() => setError(null), 5000);
     }
-  }
+  };  
 
   const handleDeny = async (id: string) => {
     try {
+      console.log(`Denying volunteer with ID: ${id}`);
+      
       const response = await fetch(`/api/volunteers/${id}`, {
         method: 'PUT',
         headers: {
@@ -101,20 +115,31 @@ export default function VrijwilligersPage() {
         body: JSON.stringify({ action: 'reject' })
       });
       
-      if (!response.ok) throw new Error('Fout bij afkeuren vrijwilliger')
+      const data = await response.json();
+      console.log("Rejection response:", data);
+      
+      if (!response.ok) {
+        throw new Error('Fout bij afkeuren vrijwilliger: ' + (data.error || response.statusText));
+      }
+      
+      // Update the volunteer status locally without full refresh
+      setVolunteers(prev => 
+        prev.map(vol => 
+          vol._id === id ? { ...vol, status: 'rejected' } : vol
+        )
+      );
       
       // Show success message
-      setSuccessMessage('Vrijwilliger succesvol afgewezen')
+      setSuccessMessage('Vrijwilliger succesvol afgewezen');
       // Clear the success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000)
-      
-      // Trigger a refresh after denial
-      setNeedsRefresh(true);
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      setError('Er is een fout opgetreden bij het afkeuren')
-      console.error(err)
+      console.error(err);
+      setError(`Er is een fout opgetreden bij het afkeuren: ${err instanceof Error ? err.message : 'Onbekende fout'}`);
+      // Clear error message after 5 seconds
+      setTimeout(() => setError(null), 5000);
     }
-  }
+  };
 
   const handleDeleteClick = (id: string) => {
     setVolunteerToDelete(id)
@@ -122,35 +147,45 @@ export default function VrijwilligersPage() {
   }
 
   const confirmDelete = async () => {
-    if (!volunteerToDelete) return
+    if (!volunteerToDelete) return;
     
     try {
+      console.log(`Deleting volunteer with ID: ${volunteerToDelete}`);
+      
       const response = await fetch(`/api/volunteers/${volunteerToDelete}`, {
         method: 'DELETE',
-      })
+      });
       
-      if (!response.ok) throw new Error('Fout bij verwijderen vrijwilliger')
+      const data = await response.json();
+      console.log("Delete response:", data);
+      
+      if (!response.ok) {
+        throw new Error('Fout bij verwijderen vrijwilliger: ' + (data.error || response.statusText));
+      }
       
       // Remove from local state
-      setVolunteers(prev => prev.filter(vol => vol._id !== volunteerToDelete))
+      setVolunteers(prev => prev.filter(vol => vol._id !== volunteerToDelete));
       
       // Show success message
-      setSuccessMessage('Vrijwilliger succesvol verwijderd')
+      setSuccessMessage('Vrijwilliger succesvol verwijderd');
       // Clear the success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000)
+      setTimeout(() => setSuccessMessage(''), 3000);
       
       // Reset dialog state
-      setIsDialogOpen(false)
-      setVolunteerToDelete(null)
+      setIsDialogOpen(false);
+      setVolunteerToDelete(null);
     } catch (err) {
-      setError('Er is een fout opgetreden bij het verwijderen')
-      console.error(err)
+      console.error(err);
+      setError(`Er is een fout opgetreden bij het verwijderen: ${err instanceof Error ? err.message : 'Onbekende fout'}`);
       
       // Reset dialog state
-      setIsDialogOpen(false)
-      setVolunteerToDelete(null)
+      setIsDialogOpen(false);
+      setVolunteerToDelete(null);
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => setError(null), 5000);
     }
-  }
+  };
 
   const cancelDelete = () => {
     setIsDialogOpen(false)
@@ -159,10 +194,21 @@ export default function VrijwilligersPage() {
 
   const openFile = async (volunteerId: string, fileType: 'cv' | 'motivationLetter') => {
     try {
+      console.log(`Opening ${fileType} for volunteer ID: ${volunteerId}`);
+      
       const response = await fetch(`/api/volunteers/${volunteerId}/file?type=${fileType}`);
-      if (!response.ok) throw new Error('Could not fetch file');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Could not fetch file: ${errorData.error || response.statusText}`);
+      }
       
       const fileData = await response.json();
+      
+      if (!fileData || !fileData.data) {
+        throw new Error('Invalid file data received');
+      }
+      
       const linkSource = `data:${fileData.contentType};base64,${fileData.data}`;
       const downloadLink = document.createElement('a');
       
@@ -171,7 +217,8 @@ export default function VrijwilligersPage() {
       downloadLink.click();
     } catch (err) {
       console.error('Error opening file:', err);
-      setError('Fout bij het openen van het bestand. Probeer het opnieuw.');
+      setError(`Fout bij het openen van het bestand: ${err instanceof Error ? err.message : 'Onbekende fout'}`);
+      setTimeout(() => setError(null), 5000);
     }
   };
 

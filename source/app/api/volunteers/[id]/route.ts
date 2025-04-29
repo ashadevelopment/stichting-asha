@@ -37,7 +37,12 @@ export async function PUT(request: NextRequest) {
   try {
     await dbConnect();
     const id = extractIdFromRequest(request);
-    const { action } = await request.json();
+    console.log(`Updating volunteer status for ID: ${id}`);
+    
+    const body = await request.json();
+    const { action } = body;
+
+    console.log(`Action received: ${action}`);
 
     if (action !== 'approve' && action !== 'reject') {
       return NextResponse.json(
@@ -52,6 +57,7 @@ export async function PUT(request: NextRequest) {
     const volunteer = await Volunteer.findById(id);
     
     if (!volunteer) {
+      console.log(`Volunteer with ID ${id} not found`);
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
@@ -61,6 +67,7 @@ export async function PUT(request: NextRequest) {
     // Update status
     volunteer.status = status;
     await volunteer.save();
+    console.log(`Volunteer status updated to: ${status}`);
 
     // Get updated volunteer without file data
     const updatedVolunteer = await Volunteer.findById(id)
@@ -73,6 +80,7 @@ export async function PUT(request: NextRequest) {
         `${volunteer.firstName} ${volunteer.lastName}`,
         status === 'approved' ? 'approved' : 'rejected'
       );
+      console.log(`Status notification email sent to ${volunteer.email}`);
     } catch (emailError) {
       console.error('Failed to send status update email:', emailError);
       // Continue with the response, even if email sending fails
@@ -96,16 +104,19 @@ export async function DELETE(request: NextRequest) {
   try {
     await dbConnect();
     const id = extractIdFromRequest(request);
+    console.log(`Deleting volunteer with ID: ${id}`);
 
     const volunteer = await Volunteer.findByIdAndDelete(id);
 
     if (!volunteer) {
+      console.log(`Volunteer with ID ${id} not found for deletion`);
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
       );
     }
 
+    console.log(`Successfully deleted volunteer with ID: ${id}`);
     return NextResponse.json({
       message: 'Vrijwilliger succesvol verwijderd'
     });

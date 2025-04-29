@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     await dbConnect();
 
     const id = extractIdFromRequest(request);
+    console.log(`Fetching file for volunteer ID: ${id}`);
 
     // Get file type from query parameters
     const { searchParams } = new URL(request.url);
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
     const volunteer = await Volunteer.findById(id);
 
     if (!volunteer) {
+      console.log(`Volunteer with ID ${id} not found`);
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
@@ -36,16 +38,20 @@ export async function GET(request: NextRequest) {
     const file = volunteer[fileType];
 
     if (!file || !file.data) {
+      console.log(`File ${fileType} not found for volunteer ID ${id}`);
       return NextResponse.json(
         { error: 'Bestand niet gevonden' },
         { status: 404 }
       );
     }
 
+    console.log(`Successfully found ${fileType} for volunteer ID ${id}`);
+    
+    // Make sure we return all required data properly
     return NextResponse.json({
       filename: file.filename,
       contentType: file.contentType,
-      data: file.data
+      data: file.data // This is already stored as base64 string from POST
     });
   } catch (error) {
     console.error('Error fetching file:', error);
