@@ -5,7 +5,7 @@ import { sendVolunteerStatusEmail } from '../../../lib/utils/email';
 
 // Utility to extract [id] from URL
 function extractIdFromRequest(req: NextRequest): string {
-  return req.nextUrl.pathname.split('/')[4]; // /api/volunteers/[id] → index 4 = [id]
+  return req.nextUrl.pathname.split('/')[3]; // /api/volunteers/[id] → index 4 = [id]
 }
 
 // GET a specific volunteer
