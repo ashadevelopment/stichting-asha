@@ -60,12 +60,31 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
       return;
     }
 
-    // Here you would implement the actual email sending functionality
-    // For now we'll just simulate it with a timeout
+    // Use FormData to send the email with optional attachment
     setSending(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const formData = new FormData();
+      formData.append('fromName', fromName);
+      formData.append('fromEmail', fromEmail);
+      formData.append('toEmail', contactPerson?.email || '');
+      formData.append('subject', subject);
+      formData.append('message', message);
+      
+      // Add attachment if present
+      if (attachment) {
+        formData.append('attachment', attachment);
+      }
+      
+      // Send the email using the API route
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Er is een fout opgetreden');
+      }
       
       // Reset the form after successful submission
       setFromName('');
@@ -81,9 +100,10 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
         onClose();
       }, 3000);
       
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Email sending error:', error);
       setStatus('error');
-      setErrorMessage('Er is een fout opgetreden bij het versturen van je e-mail. Probeer het later opnieuw.');
+      setErrorMessage(error.message || 'Er is een fout opgetreden bij het versturen van je e-mail. Probeer het later opnieuw.');
     } finally {
       setSending(false);
     }
