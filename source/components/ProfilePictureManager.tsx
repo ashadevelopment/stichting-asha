@@ -42,7 +42,7 @@ export default function ProfilePictureManager({
         
         if (response.ok) {
           const imageData = await response.json();
-          setHasImage(true);
+          setHasImage(!!imageData.data); // Ensure data exists
           setPreviewUrl(`data:${imageData.contentType};base64,${imageData.data}`);
         } else {
           setHasImage(false);
@@ -134,8 +134,9 @@ export default function ProfilePictureManager({
     setError(null);
     
     try {
-      const response = await fetch('/api/users/profile-picture/delete', {
-        method: 'POST',
+      // Fixed: Use the correct DELETE method and endpoint
+      const response = await fetch('/api/users/profile-picture', {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -170,7 +171,10 @@ export default function ProfilePictureManager({
             src={previewUrl}
             alt={name || "Profiel"} 
             className="w-full h-full object-cover"
-            onError={() => setHasImage(false)}
+            onError={() => {
+              console.error("Image failed to load");
+              setHasImage(false);
+            }}
           />
         ) : (
           <div 
