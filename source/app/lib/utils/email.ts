@@ -193,7 +193,7 @@ export async function sendVolunteerApplicationEmails(
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Nieuwe Vrijwilliger Aanmelding</h2>
-        <p>Hallo,</p>
+        <p>Geachte heer/mevrouw,</p>
         <p>Er is een nieuwe aanmelding als vrijwilliger binnengekomen.</p>
         <p>
           <strong>Naam:</strong> ${volunteerName}<br />
