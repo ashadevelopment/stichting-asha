@@ -5,10 +5,10 @@ import dbConnect from '../mongodb';
 import Activity from '../models/Activity';
 
 // Define action types
-export type ActionType = 'create' | 'update' | 'delete';
+export type ActionType = 'create' | 'update' | 'delete' | 'details';
 
 // Define entity types
-export type EntityType = 'user' | 'volunteer' | 'project' | 'photo' | 'event' | 'notice' | 'contactSettings';
+export type EntityType = 'user' | 'volunteer' | 'project' | 'media' | 'event' | 'notice' | 'contactSettings' | 'details';
 
 // Define the handler function type
 type ApiHandler = (req: NextRequest) => Promise<NextResponse>;
@@ -28,6 +28,7 @@ export async function recordActivity({
   entityName,
   performedBy,
   performedByName,
+  details,
 }: {
   type: ActionType;
   entityType: EntityType;
@@ -35,6 +36,7 @@ export async function recordActivity({
   entityName: string;
   performedBy: string;
   performedByName: string;
+  details?: string;
 }) {
   try {
     await dbConnect();
@@ -45,7 +47,8 @@ export async function recordActivity({
       entityId,
       entityName,
       performedBy,
-      performedByName
+      performedByName,
+      details 
     });
     
   } catch (error) {

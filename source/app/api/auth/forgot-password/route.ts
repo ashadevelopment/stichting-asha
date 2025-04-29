@@ -24,40 +24,42 @@ export async function POST(req: Request) {
     // Find the user
     const user = await User.findOne({ email: normalizedEmail });
 
-    // For security reasons, don't reveal if a user exists or not
-    // We'll return a success message regardless
-
-    // If the user exists, create a password reset token
-    if (user) {
-      // Generate a secure random token
-      const resetToken = crypto.randomBytes(32).toString('hex');
-      
-      // Set expiry to 1 hour from now
-      const expires = new Date();
-      expires.setHours(expires.getHours() + 1);
-
-      // Delete any existing reset tokens for this user
-      await PasswordReset.deleteMany({ email: normalizedEmail });
-
-      // Create a new reset token
-      await PasswordReset.create({
-        email: normalizedEmail,
-        token: resetToken,
-        expires,
-        used: false,
-      });
-
-      // Get the base URL from environment or use a default
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
-
-      // Send the password reset email
-      await sendPasswordResetEmail(normalizedEmail, resetUrl);
+    // Check if user exists and provide appropriate message
+    if (!user) {
+      return NextResponse.json(
+        { error: "No account with that email address exists" },
+        { status: 404 }
+      );
     }
 
-    // Return success regardless of whether the email exists
+    // Generate a secure random token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    // Set expiry to 1 hour from now
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 1);
+
+    // Delete any existing reset tokens for this user
+    await PasswordReset.deleteMany({ email: normalizedEmail });
+
+    // Create a new reset token
+    await PasswordReset.create({
+      email: normalizedEmail,
+      token: resetToken,
+      expires,
+      used: false,
+    });
+
+    // Get the base URL from environment or use a default
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+
+    // Send the password reset email
+    await sendPasswordResetEmail(normalizedEmail, resetUrl);
+
+    // Return success
     return NextResponse.json({ 
-      message: "If an account with that email exists, a password reset link has been sent." 
+      message: "Password reset link has been sent to your email." 
     });
   } catch (error) {
     console.error("Forgot password error:", error);

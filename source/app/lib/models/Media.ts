@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose"
 
-const PhotoSchema = new Schema(
+const MediaSchema = new Schema(
   {
     title: { 
       type: String, 
@@ -9,10 +9,15 @@ const PhotoSchema = new Schema(
     description: { 
       type: String 
     },
-    image: {
+    media: {
       filename: String,
       contentType: String,
-      data: String  // Base64 encoded
+      data: String,  // Base64 encoded
+      type: {
+        type: String,
+        enum: ['image', 'video'],
+        required: true
+      }
     },
     author: { 
       type: String, 
@@ -26,4 +31,4 @@ const PhotoSchema = new Schema(
   { timestamps: true }
 )
 
-export default mongoose.models.Photo || mongoose.model("Photo", PhotoSchema)
+export default mongoose.models.Media || mongoose.model("Media", MediaSchema)

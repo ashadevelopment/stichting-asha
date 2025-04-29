@@ -1,40 +1,41 @@
 import { NextRequest, NextResponse } from "next/server"
 import dbConnect from "../../lib/mongodb"
-import Photo from "../../lib/models/Photo"
+import Media from "../../lib/models/Media" // Changed from Photo to Media
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../lib/authOptions"
 import { recordActivity } from "../../lib/middleware/activityTracking"
 
-// GET all photos
+// GET all media items
 export async function GET() {
   try {
     await dbConnect()
     
-    // Find all photos, sorted by creation date
-    const photos = await Photo.find().sort({ createdAt: -1 })
+    // Find all media items, sorted by creation date
+    const mediaItems = await Media.find().sort({ createdAt: -1 })
     
     // Convert to plain objects and ensure base64 data
-    const plainPhotos = photos.map(photo => {
-      const plainObj = photo.toObject()
+    const plainMediaItems = mediaItems.map(item => {
+      const plainObj = item.toObject()
       
-      // Ensure image data is present
-      if (!plainObj.image || !plainObj.image.data) {
-        plainObj.image = {
+      // Ensure media data is present
+      if (!plainObj.media || !plainObj.media.data) {
+        plainObj.media = {
           data: '',
-          contentType: 'image/png' // Default fallback
+          contentType: plainObj.media?.type === 'video' ? 'video/mp4' : 'image/png', // Default fallback
+          type: plainObj.media?.type || 'image'
         }
       }
       
       return plainObj
     })
     
-    // Return photos or an empty array
-    return NextResponse.json(plainPhotos)
+    // Return media items or an empty array
+    return NextResponse.json(plainMediaItems)
   } catch (err) {
-    console.error("Error fetching photos:", err)
+    console.error("Error fetching media items:", err)
     return NextResponse.json(
       { 
-        error: "Fout bij ophalen van foto's", 
+        error: "Fout bij ophalen van media", 
         details: err instanceof Error ? err.message : 'Unknown error' 
       }, 
       { status: 500 }
@@ -42,7 +43,7 @@ export async function GET() {
   }
 }
 
-// POST new photo (admin only)
+// POST new media item (admin only)
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     if (!session || !session.user || 
         (session.user.role !== 'beheerder' && session.user.role !== 'developer')) {
       return NextResponse.json(
-        { error: "Geen toegang. Alleen beheerders kunnen foto's toevoegen." }, 
+        { error: "Geen toegang. Alleen beheerders kunnen media toevoegen." }, 
         { status: 403 }
       )
     }
@@ -59,10 +60,11 @@ export async function POST(req: NextRequest) {
     // Parse the request body
     const formData = await req.formData()
     
-    // Extract photo details
+    // Extract media details
     const title = formData.get('title') as string
     const description = formData.get('description') as string | null
     const file = formData.get('file') as File
+    const mediaType = formData.get('mediaType') as 'image' | 'video'
 
     // Validation
     if (!title) {
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "Afbeelding is verplicht" }, 
+        { error: "Media bestand is verplicht" }, 
         { status: 400 }
       )
     }
@@ -86,14 +88,15 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     
-    // Create photo document
-    const photo = await Photo.create({
+    // Create media document
+    const mediaItem = await Media.create({
       title,
       description: description || '',
-      image: {
+      media: {
         filename: file.name,
         contentType: file.type,
-        data: buffer.toString('base64')
+        data: buffer.toString('base64'),
+        type: mediaType || (file.type.startsWith('video') ? 'video' : 'image')
       },
       author: session.user.name || 'Anoniem'
     })
@@ -101,22 +104,23 @@ export async function POST(req: NextRequest) {
     // Record activity
     await recordActivity({
       type: 'create',
-      entityType: 'photo',
-      entityId: photo._id.toString(),
-      entityName: photo.title,
+      entityType: 'media',
+      entityId: mediaItem._id.toString(),
+      entityName: mediaItem.title,
       performedBy: session.user.id || 'Onbekend',
-      performedByName: session.user.name || 'Onbekend'
+      performedByName: session.user.name || 'Onbekend',
+      details: `${mediaItem.media.type === 'video' ? 'Video' : 'Foto'} geplaatst door ${session.user.name || 'Onbekend'}`
     })
     
     // Convert to plain object and return
-    return NextResponse.json(photo.toObject(), { status: 201 })
+    return NextResponse.json(mediaItem.toObject(), { status: 201 })
   } catch (err) {
-    console.error("Error creating photo:", err)
+    console.error("Error creating media item:", err)
     
     if (err instanceof Error) {
       return NextResponse.json(
         { 
-          error: "Fout bij toevoegen van foto", 
+          error: "Fout bij toevoegen van media", 
           details: err.message 
         }, 
         { status: 500 }
@@ -124,7 +128,7 @@ export async function POST(req: NextRequest) {
     }
     
     return NextResponse.json(
-      { error: "Onverwachte fout bij toevoegen van foto" }, 
+      { error: "Onverwachte fout bij toevoegen van media" }, 
       { status: 500 }
     )
   }

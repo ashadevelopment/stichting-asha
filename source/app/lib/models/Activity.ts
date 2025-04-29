@@ -4,7 +4,7 @@ import mongoose, { Schema, Document } from "mongoose";
 // Define the Activity document interface
 export interface IActivity extends Document {
   type: 'create' | 'update' | 'delete';
-  entityType: 'user' | 'volunteer' | 'project' | 'photo' | 'event' | 'notice' | 'contactSettings';
+  entityType: 'user' | 'volunteer' | 'project' | 'media' | 'event' | 'notice' | 'contactSettings';
   entityId: mongoose.Types.ObjectId | string;
   entityName: string;
   performedBy: mongoose.Types.ObjectId | string;
@@ -42,6 +42,9 @@ const ActivitySchema = new Schema(
     performedByName: {
       type: String,
       required: true
+    },
+    details: { 
+      type: String 
     }
   },
   { 

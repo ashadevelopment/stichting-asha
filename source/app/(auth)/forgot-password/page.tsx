@@ -68,7 +68,7 @@ export default function ForgotPassword() {
                   <h3 className="text-sm font-medium text-green-800">Request sent</h3>
                   <div className="mt-2 text-sm text-green-700">
                     <p>
-                      If an account exists with that email, we've sent instructions to reset your password.
+                      Password reset instructions have been sent to your email.
                       Please check your inbox.
                     </p>
                   </div>
