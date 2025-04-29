@@ -268,12 +268,18 @@ export default function PersoonlijkeGegevensPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-gray-200 px-3 py-2 rounded bg-gray-50"
-                readOnly
+                className={`w-full border border-gray-200 px-3 py-2 rounded ${user?.role !== 'beheerder' ? 'bg-gray-50' : 'bg-white'}`}
+                readOnly={user?.role !== 'beheerder'}
               />
-              <p className="mt-1 text-xs text-gray-500">
-                E-mailadres kan niet worden gewijzigd. Neem contact op met de beheerder voor wijzigingen.
-              </p>
+              {user?.role !== 'beheerder' ? (
+                <p className="mt-1 text-xs text-gray-500">
+                  E-mailadres kan niet worden gewijzigd. Neem contact op met de beheerder voor wijzigingen.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-green-600">
+                  Als beheerder kunt u uw e-mailadres aanpassen.
+                </p>
+              )}
             </div>
 
             <div>
@@ -285,19 +291,6 @@ export default function PersoonlijkeGegevensPage() {
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Voer uw telefoonnummer in"
-                className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 text-sm font-medium flex items-center gap-1 text-gray-700">
-                <MapPin size={14} /> Adres
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Voer uw adres in"
                 className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
               />
             </div>
