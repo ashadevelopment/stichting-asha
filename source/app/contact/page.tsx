@@ -239,6 +239,18 @@ export default function Contact() {
             <h2 className="text-2xl font-semibold text-[#1E2A78] mb-4">
               Meld je aan als Vrijwilliger
             </h2>
+            
+            {/* Added volunteer information text */}
+            <div className="bg-blue-50 p-5 rounded-lg mb-6 border-l-4 border-blue-500">
+              <h3 className="text-xl font-bold text-blue-800 mb-2">TROTS OP HAAR VRIJWILLIGERS</h3>
+              <p className="text-gray-700">
+                Asha draait volledig op vrijwilligers. Hun inzet is onmisbaar voor alles wat we doen. 
+                Als vrijwilliger denk je mee, werk je mee en draag je bij aan de richting van de stichting. 
+                Je vergroot je netwerk, leert van anderen en haalt voldoening uit samenwerken. 
+                Met zo'n 25 vrijwilligers en jaarlijks 50–60 stagiaires zijn we trots op wat we samen bereiken. 
+                Sluit je aan bij een project of loop eens mee — we kunnen altijd extra hulp gebruiken!
+              </p>
+            </div>
 
             {submitStatus === "error" && (
               <div className="mb-6 bg-red-50 border border-red-200 text-red-600 p-4 rounded-md">
