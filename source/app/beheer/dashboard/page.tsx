@@ -124,20 +124,20 @@ export default function DashboardPage() {
 
   // Get the user's full name from the session
   const getUserFullName = () => {
-    if (!session || !session.user) return 'Beheerder';
+    if (!session) return 'Beheerder';
     
-    // Type assertion for session.user to use our interface
-    const user = session.user as SessionUser;
+    console.log("Session user:", JSON.stringify(session.user)); // Debug: log session object
     
-    // Try to use firstName and lastName if available
-    if (typeof user.firstName === 'string' && typeof user.lastName === 'string') {
-      return `${user.firstName} ${user.lastName}`;
+    // Direct access attempt - this should be the most reliable
+    if (session.user?.firstName && session.user?.lastName) {
+      return `${session.user.firstName} ${session.user.lastName}`;
     } 
-    // Fall back to name if available
-    else if (user.name) {
-      return user.name;
+    else if (session.user?.firstName) {
+      return session.user.firstName;
     }
-    // Last resort
+    else if (session.user?.name) {
+      return session.user.name;
+    }
     else {
       return 'Beheerder';
     }

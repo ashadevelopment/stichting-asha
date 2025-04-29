@@ -1,27 +1,124 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useState } from 'react'
-import { Lock, RefreshCw, User2, Phone, Mail, MapPin, BadgeInfo } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Lock, RefreshCw, User2, Phone, Mail, MapPin, BadgeInfo, Save, CheckCircle } from 'lucide-react'
 import ProfilePictureManager from '../../../components/ProfilePictureManager'
 
 export default function PersoonlijkeGegevensPage() {
   const { data: session, update } = useSession()
   const [isLoading, setIsLoading] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(Date.now())
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true)
 
+  // Password states
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  
+  // User information states
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [email, setEmail] = useState('')
+  const [address, setAddress] = useState('')
 
   const user = session?.user
+
+  // Fetch current user details when session is loaded
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (user?.id) {
+        setIsLoadingUserData(true)
+        try {
+          const response = await fetch(`/api/users/details?userId=${user.id}`)
+          if (response.ok) {
+            const userData = await response.json()
+            
+            // Set form fields with user data
+            setFirstName(userData.firstName || '')
+            setLastName(userData.lastName || '')
+            setEmail(userData.email || '')
+            setPhoneNumber(userData.phoneNumber || '')
+          } else {
+            // If API call fails, try to use session data as fallback
+            const nameParts = user.name?.split(' ') || ['', '']
+            if (nameParts.length > 1) {
+              setFirstName(nameParts[0])
+              setLastName(nameParts.slice(1).join(' '))
+            } else {
+              setFirstName(user.name || '')
+            }
+            setEmail(user.email || '')
+          }
+        } catch (error) {
+          console.error('Error fetching user details:', error)
+          // Fallback to session data
+          const nameParts = user.name?.split(' ') || ['', '']
+          if (nameParts.length > 1) {
+            setFirstName(nameParts[0])
+            setLastName(nameParts.slice(1).join(' '))
+          } else {
+            setFirstName(user.name || '')
+          }
+          setEmail(user.email || '')
+        } finally {
+          setIsLoadingUserData(false)
+        }
+      }
+    }
+    
+    fetchUserDetails()
+  }, [user])
 
   const handleProfileUpdate = async () => {
     await update()
     setRefreshTrigger(Date.now())
     setMessage({ type: 'success', text: 'Profielfoto is bijgewerkt' })
     setTimeout(() => setMessage(null), 3000)
+  }
+
+  const handleSaveUserInfo = async () => {
+    if (!user?.id) return
+    
+    try {
+      setSaveLoading(true)
+      const formData = new FormData()
+      
+      formData.append('userId', user.id)
+      formData.append('firstName', firstName)
+      formData.append('lastName', lastName)
+      formData.append('email', email)
+      formData.append('phoneNumber', phoneNumber)
+      
+      const response = await fetch('/api/users/profile', {
+        method: 'PUT',
+        body: formData
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Er is iets misgegaan bij het bijwerken van uw gegevens')
+      }
+      
+      // Show success animation
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 2000)
+      
+      // Update the session to reflect changes
+      await update()
+      
+      setMessage({ type: 'success', text: data.message || 'Gegevens succesvol bijgewerkt' })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message })
+    } finally {
+      setSaveLoading(false)
+    }
   }
 
   const handleForgotPassword = async () => {
@@ -90,16 +187,26 @@ export default function PersoonlijkeGegevensPage() {
             {user?.id && (
               <ProfilePictureManager 
                 userId={user.id} 
-                name={user.name || undefined}
+                name={`${firstName} ${lastName}`.trim() || user?.name || undefined}
                 size={120}
                 onSuccess={handleProfileUpdate}
               />
             )}
-            <h3 className="mt-4 text-lg font-semibold text-gray-800">{user?.name || 'Gebruiker'}</h3>
+            <h3 className="mt-4 text-lg font-semibold text-gray-800">
+              {firstName && lastName ? `${firstName} ${lastName}` : user?.name || 'Gebruiker'}
+            </h3>
             <p className="text-sm text-gray-500 flex items-center gap-1">
               <BadgeInfo size={12} />
               <span className="italic capitalize">{user?.role || 'Onbekend'}</span>
             </p>
+            {email && (
+              <p className="text-sm text-gray-500 mt-1">{email}</p>
+            )}
+          </div>
+          
+          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm">
+            <h4 className="font-medium mb-1">Persoonlijke gegevens beheren</h4>
+            <p>Op deze pagina kunt u uw persoonlijke gegevens bekijken en bijwerken. Wijzigingen worden automatisch opgeslagen wanneer u op de knop "Gegevens opslaan" klikt.</p>
           </div>
 
           {message && (
@@ -109,17 +216,39 @@ export default function PersoonlijkeGegevensPage() {
               {message.text}
             </div>
           )}
+          
+          {isLoadingUserData && (
+            <div className="flex justify-center items-center p-6">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Gegevens laden...</span>
+            </div>
+          )}
 
+          {!isLoadingUserData && (
           <div className="space-y-4 mt-4">
-            <div>
-              <label className="flex mb-1 text-sm font-medium items-center gap-1 text-gray-700">
-                <User2 size={14} /> Naam
-              </label>
-              <input
-                type="text"
-                defaultValue={user?.name || ''}
-                className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="flex mb-1 text-sm font-medium items-center gap-1 text-gray-700">
+                  <User2 size={14} /> Voornaam
+                </label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
+                />
+              </div>
+              <div>
+                <label className="flex mb-1 text-sm font-medium items-center gap-1 text-gray-700">
+                  <User2 size={14} /> Achternaam
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
+                />
+              </div>
             </div>
 
             <div>
@@ -128,11 +257,14 @@ export default function PersoonlijkeGegevensPage() {
               </label>
               <input
                 type="email"
-                defaultValue={user?.email || ''}
-                className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-200 px-3 py-2 rounded bg-gray-50"
                 readOnly
               />
-              <p className="mt-1 text-xs text-gray-500">E-mailadres kan niet worden gewijzigd.</p>
+              <p className="mt-1 text-xs text-gray-500">
+                E-mailadres kan niet worden gewijzigd. Neem contact op met de beheerder voor wijzigingen.
+              </p>
             </div>
 
             <div>
@@ -141,6 +273,8 @@ export default function PersoonlijkeGegevensPage() {
               </label>
               <input
                 type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Voer uw telefoonnummer in"
                 className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
               />
@@ -152,15 +286,34 @@ export default function PersoonlijkeGegevensPage() {
               </label>
               <input
                 type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
                 placeholder="Voer uw adres in"
                 className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
               />
             </div>
 
-            <button className="w-full sm:w-auto mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-              Gegevens opslaan
+            <button 
+              onClick={handleSaveUserInfo}
+              disabled={saveLoading || saveSuccess}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-75"
+            >
+              {saveSuccess ? (
+                <>
+                  <CheckCircle size={18} />
+                  Opgeslagen
+                </>
+              ) : saveLoading ? (
+                'Opslaan...'
+              ) : (
+                <>
+                  <Save size={18} />
+                  Gegevens opslaan
+                </>
+              )}
             </button>
           </div>
+            )}
         </div>
 
         {/* Wachtwoord vergeten */}
