@@ -59,7 +59,11 @@ export default function Fotoboek() {
   }, []);
 
   // Get a deterministic size for each media item based on its ID
-  const getItemSize = (id: string) => {
+  const getItemSize = (id: string, isVideo: boolean = false) => {
+    // If it's a video, use a standard size ('medium')
+    if (isVideo) return 'medium';
+    
+    // For images, keep the randomized sizing
     const charCode = id.charCodeAt(0) + id.charCodeAt(id.length - 1);
     if (charCode % 3 === 0) return 'small';
     if (charCode % 3 === 1) return 'medium';
@@ -178,6 +182,10 @@ export default function Fotoboek() {
     );
   };
 
+  // Separate media items into images and videos
+  const imageItems = mediaItems.filter(item => item.media.type === 'image');
+  const videoItems = mediaItems.filter(item => item.media.type === 'video');
+
   return (
     <div className="w-full min-h-screen bg-[#F2F2F2] py-12 pt-24 md:pt-20">
       <div className="max-w-6xl mx-auto px-6">
@@ -200,11 +208,26 @@ export default function Fotoboek() {
             <p className="text-gray-500">Nog geen foto's of video's beschikbaar.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-min">
-            {mediaItems.map((item) => {
-              const size = getItemSize(item._id);
-              return renderMediaItem(item, size);
-            })}
+          <div>
+            {/* Images section */}
+            {imageItems.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-min mb-8">
+                {imageItems.map((item) => {
+                  const size = getItemSize(item._id);
+                  return renderMediaItem(item, size);
+                })}
+              </div>
+            )}
+            
+            {/* Videos section - without header */}
+            {videoItems.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-min mt-4">
+                {videoItems.map((item) => {
+                  const size = getItemSize(item._id, true);
+                  return renderMediaItem(item, size);
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -34,20 +34,8 @@ interface Project {
   projectDate: string;
 }
 
-// Define Photo interface
-interface Photo {
-  _id: string;
-  title: string;
-  description?: string;
-  image: {
-    data: string;
-    contentType: string;
-  };
-}
-
-// Define CarouselItem interface for unified handling
+// Define CarouselItem interface for projects
 interface CarouselItem {
-  type: 'project' | 'photo';
   id: string;
   title: string;
   description?: string;
@@ -140,7 +128,7 @@ export default function Home() {
     fetchNotice();
   }, []);
 
-  // Fetch projects and photos for carousel
+  // Fetch projects for carousel
   useEffect(() => {
     const fetchCarouselContent = async () => {
       try {
@@ -153,18 +141,10 @@ export default function Home() {
         }
         const projectsData: Project[] = await projectsResponse.json();
         
-        // Fetch photos
-        const photosResponse = await fetch('/api/photos');
-        if (!photosResponse.ok) {
-          throw new Error('Failed to fetch photos');
-        }
-        const photosData: Photo[] = await photosResponse.json();
-        
-        // Combine and transform data
+        // Transform projects data
         const projectItems: CarouselItem[] = projectsData
           .filter(project => project.image && project.image.data)
           .map(project => ({
-            type: 'project',
             id: project._id,
             title: project.title,
             description: project.description,
@@ -173,28 +153,10 @@ export default function Home() {
             date: project.projectDate
           }));
         
-        const photoItems: CarouselItem[] = photosData.map(photo => ({
-          type: 'photo',
-          id: photo._id,
-          title: photo.title,
-          description: photo.description,
-          imageData: photo.image.data,
-          imageContentType: photo.image.contentType
-        }));
-        
-        // Interleave projects and photos
-        const combined: CarouselItem[] = [];
-        const maxLength = Math.max(projectItems.length, photoItems.length);
-        
-        for (let i = 0; i < maxLength; i++) {
-          if (i < projectItems.length) combined.push(projectItems[i]);
-          if (i < photoItems.length) combined.push(photoItems[i]);
-        }
-        
-        setCarouselItems(combined);
+        setCarouselItems(projectItems);
       } catch (err) {
         console.error('Error fetching carousel content:', err);
-        setCarouselError('Could not load carousel content');
+        setCarouselError('Could not load projects');
       } finally {
         setCarouselLoading(false);
       }
@@ -248,11 +210,7 @@ export default function Home() {
 
   // Handle carousel item click
   const handleCarouselItemClick = (item: CarouselItem) => {
-    if (item.type === 'project') {
-      router.push(`/projecten?id=${item.id}`);
-    } else {
-      router.push('/fotoboek');
-    }
+    router.push(`/projecten?id=${item.id}`);
   };
 
   return (
@@ -447,10 +405,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Projects and Photos Carousel Banner */}
+        {/* Projects Carousel Banner */}
         <div className="w-full bg-[#2E376E] py-12 md:py-16 mt-22 mb-16">
           <div className="max-w-6xl mx-auto px-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Projecten & Foto's</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-8">Onze Projecten</h2>
             
             {carouselLoading ? (
               <div className="flex justify-center">
@@ -459,7 +417,7 @@ export default function Home() {
             ) : carouselError ? (
               <p className="text-center text-white/80">{carouselError}</p>
             ) : carouselItems.length === 0 ? (
-              <p className="text-center text-white/80">Geen projecten of foto's beschikbaar</p>
+              <p className="text-center text-white/80">Geen projecten beschikbaar</p>
             ) : (
               <div className="relative">
                 {/* Carousel Navigation */}
@@ -500,7 +458,7 @@ export default function Home() {
                         <div className="p-6">
                           <div className="flex items-center mb-2">
                             <span className="bg-yellow-400 text-xs font-medium text-white px-2 py-1 rounded">
-                              {carouselItems[currentIndex].type === 'project' ? 'Project' : 'Foto'}
+                              Project
                             </span>
                             {carouselItems[currentIndex].date && (
                               <span className="ml-2 text-white/80 text-sm">
@@ -522,24 +480,26 @@ export default function Home() {
                         (currentIndex + 1) % carouselItems.length,
                         (currentIndex + 2) % carouselItems.length
                       ].map((index) => (
-                        <div
-                          key={`preview-${carouselItems[index].id}`}
-                          className="bg-white/10 backdrop-blur-md rounded-lg overflow-hidden cursor-pointer h-[calc(50%-0.5rem)] transition-transform duration-300 hover:scale-[1.02]"
-                          onClick={() => setCurrentIndex(index)}
-                        >
-                          <div className="h-32">
-                            {carouselItems[index].imageData && (
-                              <img 
-                                src={`data:${carouselItems[index].imageContentType};base64,${carouselItems[index].imageData}`}
-                                alt={carouselItems[index].title}
-                                className="w-full h-full object-cover"
-                              />
-                            )}
+                        carouselItems[index] && (
+                          <div
+                            key={`preview-${carouselItems[index].id}`}
+                            className="bg-white/10 backdrop-blur-md rounded-lg overflow-hidden cursor-pointer h-[calc(50%-0.5rem)] transition-transform duration-300 hover:scale-[1.02]"
+                            onClick={() => setCurrentIndex(index)}
+                          >
+                            <div className="h-32">
+                              {carouselItems[index].imageData && (
+                                <img 
+                                  src={`data:${carouselItems[index].imageContentType};base64,${carouselItems[index].imageData}`}
+                                  alt={carouselItems[index].title}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                            </div>
+                            <div className="p-4">
+                              <h4 className="text-sm font-medium text-white">{carouselItems[index].title}</h4>
+                            </div>
                           </div>
-                          <div className="p-4">
-                            <h4 className="text-sm font-medium text-white">{carouselItems[index].title}</h4>
-                          </div>
-                        </div>
+                        )
                       ))}
                     </div>
                   </div>
@@ -559,19 +519,13 @@ export default function Home() {
               </div>
             )}
             
-            {/* Call to action buttons */}
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+            {/* Call to action button */}
+            <div className="flex justify-center mt-8">
               <button
                 onClick={() => router.push("/projecten")}
                 className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold py-3 px-6 rounded-md transition-all"
               >
                 Bekijk alle projecten
-              </button>
-              <button
-                onClick={() => router.push("/fotoboek")}
-                className="bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-md transition-all"
-              >
-                Ga naar fotoboek
               </button>
             </div>
           </div>
