@@ -18,6 +18,17 @@ interface ActivityItem {
   createdAt: string;
 }
 
+// Define the session user type to include firstName and lastName properties
+interface SessionUser {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
 export default function DashboardPage() {
   const { data: session } = useSession()
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -111,6 +122,27 @@ export default function DashboardPage() {
     }
   }
 
+  // Get the user's full name from the session
+  const getUserFullName = () => {
+    if (!session || !session.user) return 'Beheerder';
+    
+    // Type assertion for session.user to use our interface
+    const user = session.user as SessionUser;
+    
+    // Try to use firstName and lastName if available
+    if (typeof user.firstName === 'string' && typeof user.lastName === 'string') {
+      return `${user.firstName} ${user.lastName}`;
+    } 
+    // Fall back to name if available
+    else if (user.name) {
+      return user.name;
+    }
+    // Last resort
+    else {
+      return 'Beheerder';
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6">
       {/* Welkomstkaart met profielfoto en naam */}
@@ -121,13 +153,13 @@ export default function DashboardPage() {
             {session?.user?.id ? (
               <ProfilePictureManager 
                 userId={session.user.id}
-                name={session.user.name || undefined}
+                name={getUserFullName()}
                 size={84}
                 editable={false}
               />
             ) : (
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold uppercase">
-                {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U'}
+                {getUserFullName().charAt(0).toUpperCase()}
               </div>
             )}
           </div>
@@ -135,7 +167,7 @@ export default function DashboardPage() {
           {/* Welkomsttekst */}
           <div className="text-center sm:text-left">
             <h1 className="text-2xl sm:text-3xl font-semibold text-[#1E2A78] mb-1">
-              Welkom, {session?.user?.name || 'Beheerder'}
+              Welkom, {getUserFullName()}
             </h1>
             <p className="text-sm text-gray-500 italic capitalize">
               {session?.user?.role || 'Onbekend'}
@@ -193,32 +225,6 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
-
-      {/* Statusoverzicht */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mt-6">
-        <h2 className="text-xl font-semibold mb-4">Systeemstatus</h2>
-        
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">CMS versie</span>
-            <span className="font-medium">1.5.2</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Server status</span>
-            <span className="text-green-500 font-medium flex items-center">
-              <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              Online
-            </span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Laatste update</span>
-            <span className="font-medium">14 april 2025</span>
-          </div>
-        </div>
-      </div>
-      
 
       {/* Recente activiteiten */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mt-6">
