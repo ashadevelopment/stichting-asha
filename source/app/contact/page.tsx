@@ -123,7 +123,7 @@ export default function Contact() {
       const response = await fetch("/api/volunteers", {
         method: "POST", 
         body: formData,
-        // Important: don't set Content-Type header here, it's automatically set with FormData
+        // Don't set Content-Type header with FormData
       });
       
       console.log("Response status:", response.status);
@@ -148,7 +148,7 @@ export default function Contact() {
     } catch (error: any) {
       console.error("Error submitting form:", error);
       setErrorMessage(
-        error.message.includes("duplicate") 
+        error.message?.includes("duplicate") 
           ? "Dit e-mailadres is al gebruikt voor een aanmelding."
           : error.message || "Er is een fout opgetreden bij het versturen van het formulier. Probeer het later opnieuw."
       );

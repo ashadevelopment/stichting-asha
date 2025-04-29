@@ -24,7 +24,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     to: email,
     subject: 'Uw wachtwoord resetten',
     text: `
-      Hallo,
+      Geachte heer/mevrouw,
 
       U heeft een verzoek ingediend om uw wachtwoord te resetten.
 
@@ -41,7 +41,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Wachtwoord Resetten</h2>
-        <p>Hallo,</p>
+        <p>Geachte heer/mevrouw,</p>
         <p>U heeft een verzoek ingediend om uw wachtwoord te resetten.</p>
         <p>Klik op de onderstaande knop om uw wachtwoord te resetten:</p>
         <p>
@@ -85,7 +85,7 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
     to: email,
     subject: 'Verifieer uw e-mailadres',
     text: `
-      Hallo,
+      Geachte heer/mevrouw,
 
       Bedankt voor uw registratie. Verifieer uw e-mailadres door op de onderstaande link te klikken:
       ${verificationUrl}
@@ -98,7 +98,7 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>E-mail Verificatie</h2>
-        <p>Hallo,</p>
+        <p>Geachte heer/mevrouw,</p>
         <p>Bedankt voor uw registratie. Verifieer uw e-mailadres door op de onderstaande knop te klikken:</p>
         <p>
           <a 
@@ -178,7 +178,7 @@ export async function sendVolunteerApplicationEmails(
     to: process.env.GMAIL_USER!,
     subject: 'Nieuwe vrijwilliger aanmelding',
     text: `
-      Hallo,
+      Geachte heer/mevrouw,
 
       Er is een nieuwe aanmelding als vrijwilliger binnengekomen.
 
