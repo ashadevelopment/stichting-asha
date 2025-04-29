@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ProfilePictureManager from '../../components/ProfilePictureManager';
-import { Send, Upload, FileText, Mail, User, Tab } from 'lucide-react';
+import { Send, Upload, FileText, Mail, User } from 'lucide-react';
 import EmailContactForm from '../../components/EmailContactForm';
 
 interface ContactPerson {
