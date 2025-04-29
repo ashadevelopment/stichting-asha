@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../lib/mongodb';
 import Volunteer from '../../lib/models/Volunteer';
+import { sendVolunteerApplicationEmails } from '../../lib/utils/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,17 @@ export async function POST(request: NextRequest) {
       },
       status: 'pending' // Default status
     });
+
+    // Send confirmation emails to both volunteer and admin
+    try {
+      await sendVolunteerApplicationEmails(
+        email,
+        `${firstName} ${lastName}`
+      );
+    } catch (emailError) {
+      console.error('Failed to send confirmation emails:', emailError);
+      // Continue with the response, even if email sending fails
+    }
 
     return NextResponse.json(
       { message: 'Aanmelding succesvol ontvangen', id: volunteer._id },

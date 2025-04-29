@@ -130,3 +130,188 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
     throw error;
   }
 }
+
+// Send volunteer application confirmation emails
+export async function sendVolunteerApplicationEmails(
+  volunteerEmail: string, 
+  volunteerName: string
+) {
+  const transporter = await createTransporter();
+  
+  // Email to the volunteer
+  const volunteerMailOptions = {
+    from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
+    to: volunteerEmail,
+    subject: 'Bevestiging aanmelding als vrijwilliger',
+    text: `
+      Beste ${volunteerName},
+
+      Hartelijk dank voor je aanmelding als vrijwilliger bij Stichting Asha!
+
+      We hebben je aanmelding in goede orde ontvangen en deze wordt momenteel door ons team beoordeeld.
+      Je hoort zo spoedig mogelijk van ons over de status van je aanmelding.
+
+      Mocht je vragen hebben, aarzel dan niet om contact met ons op te nemen.
+
+      Met vriendelijke groet,
+      Team Stichting Asha
+    `,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Bedankt voor je aanmelding!</h2>
+        <p>Beste ${volunteerName},</p>
+        <p>Hartelijk dank voor je aanmelding als vrijwilliger bij Stichting Asha!</p>
+        <p>We hebben je aanmelding in goede orde ontvangen en deze wordt momenteel door ons team beoordeeld. 
+           Je hoort zo spoedig mogelijk van ons over de status van je aanmelding.</p>
+        <p>Mocht je vragen hebben, aarzel dan niet om contact met ons op te nemen.</p>
+        <p>
+          Met vriendelijke groet,<br />
+          Team Stichting Asha
+        </p>
+      </div>
+    `,
+  };
+
+  // Email to the admin
+  const adminMailOptions = {
+    from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
+    to: process.env.GMAIL_USER!,
+    subject: 'Nieuwe vrijwilliger aanmelding',
+    text: `
+      Hallo,
+
+      Er is een nieuwe aanmelding als vrijwilliger binnengekomen.
+
+      Naam: ${volunteerName}
+      Email: ${volunteerEmail}
+
+      Log in op het beheerderspaneel om de volledige aanmelding te bekijken en te beoordelen.
+
+      Met vriendelijke groet,
+      Stichting Asha Systeem
+    `,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Nieuwe Vrijwilliger Aanmelding</h2>
+        <p>Hallo,</p>
+        <p>Er is een nieuwe aanmelding als vrijwilliger binnengekomen.</p>
+        <p>
+          <strong>Naam:</strong> ${volunteerName}<br />
+          <strong>Email:</strong> ${volunteerEmail}
+        </p>
+        <p>Log in op het beheerderspaneel om de volledige aanmelding te bekijken en te beoordelen.</p>
+        <p>
+          <a 
+            href="${process.env.NEXT_PUBLIC_BASE_URL}/beheer/vrijwilligers" 
+            style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"
+          >
+            Naar Vrijwilligers Beheer
+          </a>
+        </p>
+        <p>
+          Met vriendelijke groet,<br />
+          Stichting Asha Systeem
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    // Send email to volunteer
+    await transporter.sendMail(volunteerMailOptions);
+    
+    // Send notification to admin
+    await transporter.sendMail(adminMailOptions);
+    
+    return true;
+  } catch (error) {
+    console.error('Error sending volunteer application emails:', error);
+    throw error;
+  }
+}
+
+// Send volunteer application status update email (approved/rejected)
+export async function sendVolunteerStatusEmail(
+  volunteerEmail: string, 
+  volunteerName: string,
+  status: 'approved' | 'rejected'
+) {
+  const transporter = await createTransporter();
+  
+  const subject = status === 'approved' 
+    ? 'Goed nieuws! Je aanmelding als vrijwilliger is goedgekeurd' 
+    : 'Update over jouw vrijwilliger aanmelding';
+  
+  const textContent = status === 'approved'
+    ? `
+      Beste ${volunteerName},
+
+      Goed nieuws! We zijn verheugd je te laten weten dat je aanmelding als vrijwilliger bij Stichting Asha is goedgekeurd.
+
+      We kijken ernaar uit om samen met je te werken en samen impact te maken voor onze doelgroep. Iemand van ons team zal binnenkort contact met je opnemen om de volgende stappen te bespreken.
+
+      Hartelijk dank voor je enthousiasme en betrokkenheid!
+
+      Met vriendelijke groet,
+      Team Stichting Asha
+    `
+    : `
+      Beste ${volunteerName},
+
+      Hartelijk dank voor je interesse in vrijwilligerswerk bij Stichting Asha.
+
+      Na zorgvuldige overweging van alle aanmeldingen hebben we helaas moeten besluiten om op dit moment niet met je aanmelding verder te gaan.
+
+      We waarderen je interesse en inzet enorm en hopen dat je begrip hebt voor onze beslissing.
+
+      We wensen je alle succes in de toekomst.
+
+      Met vriendelijke groet,
+      Team Stichting Asha
+    `;
+  
+  const htmlContent = status === 'approved'
+    ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Je aanmelding is goedgekeurd!</h2>
+        <p>Beste ${volunteerName},</p>
+        <p>Goed nieuws! We zijn verheugd je te laten weten dat je aanmelding als vrijwilliger bij Stichting Asha is goedgekeurd.</p>
+        <p>We kijken ernaar uit om samen met je te werken en samen impact te maken voor onze doelgroep. Iemand van ons team zal binnenkort contact met je opnemen om de volgende stappen te bespreken.</p>
+        <p>Hartelijk dank voor je enthousiasme en betrokkenheid!</p>
+        <p>
+          Met vriendelijke groet,<br />
+          Team Stichting Asha
+        </p>
+      </div>
+    `
+    : `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Update over jouw aanmelding</h2>
+        <p>Beste ${volunteerName},</p>
+        <p>Hartelijk dank voor je interesse in vrijwilligerswerk bij Stichting Asha.</p>
+        <p>Na zorgvuldige overweging van alle aanmeldingen hebben we helaas moeten besluiten om op dit moment niet met je aanmelding verder te gaan.</p>
+        <p>We waarderen je interesse en inzet enorm en hopen dat je begrip hebt voor onze beslissing.</p>
+        <p>We wensen je alle succes in de toekomst.</p>
+        <p>
+          Met vriendelijke groet,<br />
+          Team Stichting Asha
+        </p>
+      </div>
+    `;
+
+  const mailOptions = {
+    from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
+    to: volunteerEmail,
+    subject: subject,
+    text: textContent,
+    html: htmlContent,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error(`Error sending volunteer ${status} email:`, error);
+    throw error;
+  }
+}

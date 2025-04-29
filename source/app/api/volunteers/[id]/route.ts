@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../lib/mongodb';
 import Volunteer from '../../../lib/models/Volunteer';
+import { sendVolunteerStatusEmail } from '../../../lib/utils/email';
 
 // Utility to extract [id] from URL
 function extractIdFromRequest(req: NextRequest): string {
@@ -47,12 +48,9 @@ export async function PUT(request: NextRequest) {
 
     const status = action === 'approve' ? 'approved' : 'rejected';
 
-    const volunteer = await Volunteer.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    ).select('-cv.data -motivationLetter.data');
-
+    // First get the volunteer to access email and name for notification
+    const volunteer = await Volunteer.findById(id);
+    
     if (!volunteer) {
       return NextResponse.json(
         { error: 'Vrijwilliger niet gevonden' },
@@ -60,9 +58,29 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Update status
+    volunteer.status = status;
+    await volunteer.save();
+
+    // Get updated volunteer without file data
+    const updatedVolunteer = await Volunteer.findById(id)
+      .select('-cv.data -motivationLetter.data');
+
+    // Send notification email based on status
+    try {
+      await sendVolunteerStatusEmail(
+        volunteer.email,
+        `${volunteer.firstName} ${volunteer.lastName}`,
+        status === 'approved' ? 'approved' : 'rejected'
+      );
+    } catch (emailError) {
+      console.error('Failed to send status update email:', emailError);
+      // Continue with the response, even if email sending fails
+    }
+
     return NextResponse.json({
       message: `Vrijwilliger succesvol ${status === 'approved' ? 'goedgekeurd' : 'afgewezen'}`,
-      volunteer
+      volunteer: updatedVolunteer
     });
   } catch (error) {
     console.error('Error updating volunteer status:', error);
