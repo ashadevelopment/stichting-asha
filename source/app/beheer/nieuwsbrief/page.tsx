@@ -63,7 +63,7 @@ export default function NieuwsbriefBeheer() {
     return (
       <div className="text-gray-800 p-4">
         <h2 className="text-xl sm:text-3xl font-bold mb-4 flex items-center gap-2">
-          <FileText size={24} /> Nieuwsbrief Beheer
+          <FileText size={24} /> Nieuwsbrief
         </h2>
         <p className="text-red-500">Je hebt geen toegang tot deze pagina.</p>
       </div>
