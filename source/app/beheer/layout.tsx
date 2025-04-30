@@ -2,13 +2,63 @@
 
 import Link from 'next/link'
 import { ReactNode, useState, useEffect } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+
+// Define user roles from the User model
+type UserRole = 'beheerder' | 'developer' | 'vrijwilliger' | 'stagiair' | 'user'
+
+// Define the structure for route permissions
+type RoutePermissions = {
+  [key in UserRole]: string[]
+}
 
 export default function BeheerLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { data: session } = useSession()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  // Get the role from session or fallback to 'user'
+  const [userRole, setUserRole] = useState<UserRole>((session?.user?.role as UserRole) || 'user')
+
+  // Define which routes each role can access
+  const routePermissions: RoutePermissions = {
+    beheerder: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+      '/beheer/gebruikers',
+      '/beheer/notities',
+      '/beheer/projecten',
+      '/beheer/agenda',
+      '/beheer/contact',
+      '/beheer/vrijwilligers',
+      '/beheer/fotoboek',
+    ],
+    developer: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+      '/beheer/notities',
+      '/beheer/projecten',
+      '/beheer/agenda',
+      '/beheer/contact',
+      '/beheer/fotoboek',
+    ],
+    vrijwilliger: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+      '/beheer/agenda',
+    ],
+    stagiair: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+    ],
+    user: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+    ],
+  }
 
   // Check if we're on mobile on initial render and when window resizes
   useEffect(() => {
@@ -35,7 +85,30 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
     }
   }, [pathname, isMobile])
 
-  const links = [
+  // Update user role when session changes
+  useEffect(() => {
+    if (session?.user?.role) {
+      setUserRole(session.user.role as UserRole)
+    }
+  }, [session])
+  
+  // Effect to check if user has access to current route
+  useEffect(() => {
+    // Make sure we have a valid role and pathname
+    if (!userRole || !pathname) return
+    
+    // Get the allowed routes for current user role
+    const allowedRoutes = routePermissions[userRole] || routePermissions.user
+    
+    // Check if current pathname is allowed
+    if (pathname && !allowedRoutes.includes(pathname)) {
+      // If not allowed, redirect to dashboard or another safe route
+      router.push('/beheer/dashboard')
+    }
+  }, [pathname, userRole, router])
+
+  // Main navigation links
+  const allLinks = [
     { href: '/beheer/dashboard', label: 'Dashboard' },
     { href: '/beheer/gegevens', label: 'Persoonlijke gegevens' },
     { href: '/beheer/gebruikers', label: 'Gebruikers' },
@@ -47,8 +120,18 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
     { href: '/beheer/fotoboek', label: 'Fotoboek' },
   ]
 
+  // Filter links based on user role
+  const authorizedLinks = allLinks.filter(link => 
+    routePermissions[userRole].includes(link.href)
+  )
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
+  }
+
+  // For testing purposes - allows changing the role to see different menus
+  const changeRole = (role: UserRole) => {
+    setUserRole(role)
   }
 
   return (
@@ -74,9 +157,12 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
           mb-4 md:mb-0 md:mr-6 z-10 md:z-auto
           ${isMobile ? 'sticky top-32' : ''}
         `}>
-          <h2 className="font-semibold text-gray-700 mb-3">Menu</h2>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-semibold text-gray-700">Menu</h2>
+          </div>
+          
           <nav className="space-y-2 text-sm">
-            {links.map(({ href, label }) => {
+            {authorizedLinks.map(({ href, label }) => {
               const isActive = pathname === href
               return (
                 <Link
