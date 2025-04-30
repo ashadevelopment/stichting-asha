@@ -35,6 +35,7 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
       '/beheer/contact',
       '/beheer/vrijwilligers',
       '/beheer/fotoboek',
+      '/beheer/nieuwsbrief',
     ],
     developer: [
       '/beheer/dashboard',
@@ -44,6 +45,7 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
       '/beheer/agenda',
       '/beheer/contact',
       '/beheer/fotoboek',
+      '/beheer/nieuwsbrief',
     ],
     vrijwilliger: [
       '/beheer/dashboard',
@@ -118,6 +120,7 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
     { href: '/beheer/contact', label: 'Contact' },
     { href: '/beheer/vrijwilligers', label: 'Vrijwilligers' },
     { href: '/beheer/fotoboek', label: 'Fotoboek' },
+    { href: '/beheer/nieuwsbrief', label: 'Nieuwsbrief' },
   ]
 
   // Filter links based on user role
