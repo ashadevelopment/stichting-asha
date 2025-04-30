@@ -38,12 +38,18 @@ export default function ProfilePictureManager({
   useEffect(() => {
     const checkUserImage = async () => {
       try {
-        const response = await fetch(`/api/users/profile-picture?userId=${userId}&t=${refreshTrigger}`);
+        // Add cache-busting parameter to prevent browser caching
+        const response = await fetch(`/api/users/profile-picture?userId=${userId}&cache=${Date.now()}`);
         
         if (response.ok) {
           const imageData = await response.json();
-          setHasImage(!!imageData.data); // Ensure data exists
-          setPreviewUrl(`data:${imageData.contentType};base64,${imageData.data}`);
+          if (imageData.data) {
+            setHasImage(true);
+            setPreviewUrl(`data:${imageData.contentType};base64,${imageData.data}`);
+          } else {
+            setHasImage(false);
+            setPreviewUrl(null);
+          }
         } else {
           setHasImage(false);
           setPreviewUrl(null);
@@ -134,7 +140,6 @@ export default function ProfilePictureManager({
     setError(null);
     
     try {
-      // Fixed: Use the correct DELETE method and endpoint
       const response = await fetch('/api/users/profile-picture', {
         method: 'DELETE',
         headers: {
@@ -172,8 +177,8 @@ export default function ProfilePictureManager({
             alt={name || "Profiel"} 
             className="w-full h-full object-cover"
             onError={() => {
-              console.error("Image failed to load");
               setHasImage(false);
+              setPreviewUrl(null);
             }}
           />
         ) : (
@@ -186,7 +191,7 @@ export default function ProfilePictureManager({
         )}
         
         {editable && (
-          <div className="absolute inset-0 bg-black bg-opacity-0 flex items-center justify-center transition-all duration-200 hover:bg-opacity-40">
+          <div className="absolute inset-0 bg-opacity-0 flex items-center justify-center transition-all duration-200 hover:bg-opacity-40">
             <Camera 
               size={size * 0.3} 
               className="text-transparent hover:text-white opacity-0 hover:opacity-100 transition-all duration-200"

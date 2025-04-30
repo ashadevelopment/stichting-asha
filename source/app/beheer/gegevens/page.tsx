@@ -199,6 +199,8 @@ export default function PersoonlijkeGegevensPage() {
                 name={`${firstName} ${lastName}`.trim() || user?.name || undefined}
                 size={120}
                 onSuccess={handleProfileUpdate}
+                // Force a key refresh whenever refreshTrigger changes to ensure re-render
+                key={`profile-pic-${refreshTrigger}`}
               />
             )}
             <h3 className="mt-4 text-lg font-semibold text-gray-800">
