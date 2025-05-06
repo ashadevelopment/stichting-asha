@@ -28,7 +28,7 @@ export default function Nieuwsbrief() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  /**useEffect(() => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
@@ -49,7 +49,7 @@ export default function Nieuwsbrief() {
     };
 
     fetchPosts();
-  }, []);
+  }, []);**/
 
   // Loading state
   if (isLoading) {
