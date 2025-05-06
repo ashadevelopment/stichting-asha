@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
     if (!email) {
       return NextResponse.json(
-        { error: "Email is required" },
+        { error: "E-mailadres is verplicht" },
         { status: 400 }
       );
     }
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     // Check if user exists and provide appropriate message
     if (!user) {
       return NextResponse.json(
-        { error: "No account with that email address exists" },
+        { error: "Er bestaat geen account met dit e-mailadres" },
         { status: 404 }
       );
     }
@@ -59,12 +59,12 @@ export async function POST(req: Request) {
 
     // Return success
     return NextResponse.json({ 
-      message: "Password reset link has been sent to your email." 
+      message: "Een wachtwoord reset link is naar uw e-mailadres verzonden." 
     });
   } catch (error) {
     console.error("Forgot password error:", error);
     return NextResponse.json(
-      { error: "Something went wrong. Please try again later." },
+      { error: "Er is iets misgegaan. Probeer het later opnieuw." },
       { status: 500 }
     );
   }

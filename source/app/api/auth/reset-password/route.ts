@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
     if (!token || !password) {
       return NextResponse.json(
-        { error: "Token and password are required" },
+        { error: "Token en wachtwoord zijn verplicht" },
         { status: 400 }
       );
     }
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     if (!resetRequest) {
       return NextResponse.json(
-        { error: "Invalid or expired token" },
+        { error: "Ongeldige of verlopen token" },
         { status: 400 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "User not found" },
+        { error: "Gebruiker niet gevonden" },
         { status: 404 }
       );
     }
@@ -69,12 +69,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       success: true,
-      message: "Password has been reset successfully" 
+      message: "Wachtwoord is succesvol gereset" 
     });
   } catch (error) {
     console.error("Password reset error:", error);
     return NextResponse.json(
-      { error: "Something went wrong. Please try again later." },
+      { error: "Er is iets misgegaan. Probeer het later opnieuw." },
       { status: 500 }
     );
   }

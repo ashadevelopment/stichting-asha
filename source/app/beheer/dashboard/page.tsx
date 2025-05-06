@@ -29,11 +29,17 @@ interface SessionUser {
   lastName?: string | null;
 }
 
+// Extend the Session type to use our custom user type
+interface CustomSession {
+  user?: SessionUser;
+}
+
 export default function DashboardPage() {
-  const { data: session } = useSession()
+  const { data: session } = useSession() as { data: CustomSession | null }
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   // Add state for storing the user's details
   const [userDetails, setUserDetails] = useState({
     firstName: '',
@@ -60,8 +66,8 @@ export default function DashboardPage() {
             // Fallback to session data
             const nameParts = session.user.name?.split(' ') || ['', ''];
             setUserDetails({
-              firstName: session.user.firstName as string || nameParts[0] || '',
-              lastName: session.user.lastName as string || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
+              firstName: (session.user.firstName as string) || nameParts[0] || '',
+              lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
               email: session.user.email || '',
               role: session.user.role || ''
             });
@@ -162,7 +168,7 @@ export default function DashboardPage() {
     }
   }
 
-  // Updated function to get the user's full name
+  // Updated function to get the user's full name with proper type handling
   const getUserFullName = () => {
     // First try from our fetched userDetails
     if (userDetails.firstName && userDetails.lastName) {
@@ -171,12 +177,13 @@ export default function DashboardPage() {
     else if (userDetails.firstName) {
       return userDetails.firstName;
     }
-    // Then try from session
-    else if (session?.user?.firstName && session?.user?.lastName) {
+    // Then try from session, with type assertions
+    else if (session?.user && 'firstName' in session.user && 'lastName' in session.user &&
+             session.user.firstName && session.user.lastName) {
       return `${session.user.firstName} ${session.user.lastName}`;
     } 
-    else if (session?.user?.firstName) {
-      return session.user.firstName;
+    else if (session?.user && 'firstName' in session.user && session.user.firstName) {
+      return session.user.firstName as string;
     }
     else if (session?.user?.name) {
       return session.user.name;
@@ -213,7 +220,7 @@ export default function DashboardPage() {
               Welkom, {getUserFullName()}
             </h1>
             <p className="text-sm text-gray-500 italic capitalize">
-              {userDetails.role || session?.user?.role || 'Onbekend'}
+              {userDetails.role || (session?.user && 'role' in session.user ? session.user.role : 'Onbekend')}
             </p>
           </div>
         </div>
