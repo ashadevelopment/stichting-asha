@@ -225,9 +225,9 @@ export default function Home() {
             <div className="h-3 sm:h-4 bg-gray-200 rounded w-full"></div>
           </div>
         ) : error ? (
-          <p className="text-center text-gray-500 mt-6 sm:mt-10">{error}</p>
+          <p className="text-center text-gray-500 mt-12 sm:mt-16">{error}</p>
         ) : notice ? (
-          <div className="p-4 sm:p-6 max-w-sm sm:max-w-xl mx-auto bg-yellow-200 opacity-90 rounded-md shadow-md mt-6 sm:mt-10">
+          <div className="p-4 sm:p-6 max-w-xs sm:max-w-md mx-auto bg-yellow-200 opacity-90 rounded-md shadow-md mt-20 sm:mt-24">
             <h2 className="text-base sm:text-xl font-bold text-yellow-900 flex items-center gap-2 mb-1 sm:mb-2">
               <CircleAlert className="w-4 h-4 sm:w-5 sm:h-5" />
               {notice.title}
@@ -238,7 +238,7 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <p className="text-center text-gray-500 mt-6 sm:mt-10"></p>
+          <p className="text-center text-gray-500 mt-12 sm:mt-16"></p>
         )}
       </div>
 
@@ -275,7 +275,7 @@ export default function Home() {
       </div>
 
       {/* Hoofdinhoud specifiek voor mobiel verder naar beneden geplaatst */}
-      <div className="relative w-full z-10 pt-[250px] md:pt-[280px] lg:pt-[400px]">
+      <div className="relative w-full z-10 pt-22 md:pt-[280px] lg:pt-[400px]">
         {/* Stichting Asha Block */}
         <div className="mx-6 md:ml-[50px] lg:ml-[100px] max-w-[90%] md:max-w-lg lg:max-w-xl mb-10 md:mb-20">
           <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] mb-2 md:mb-4">Stichting Asha</h2>

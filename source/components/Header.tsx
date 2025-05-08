@@ -38,6 +38,11 @@ export function Header({ className = "" }: HeaderProps) {
   return (
     <>
       {/* Sticky header met position: fixed */}
+      <style jsx global>{`
+        body {
+          margin-top: 4rem; /* Adjust this value based on your header height */
+        }
+      `}</style>
       <header 
         className={`fixed top-0 left-0 right-0 w-full z-[9999] bg-white shadow-md ${className}`}
         style={{ position: 'fixed', top: 0, left: 0, right: 0 }}
