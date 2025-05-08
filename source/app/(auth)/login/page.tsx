@@ -68,7 +68,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#F2F2F2] px-4 py-6 sm:py-12">
-      <div className="w-full max-w-md bg-white border border-gray-200 p-6 sm:p-10 rounded-2xl shadow-lg sm:mt-[-80px]">
+      <div className="w-full max-w-md bg-white border border-gray-200 p-6 sm:p-10 rounded-2xl shadow-lg mt-[-8rem]">
         <h1 className="text-2xl sm:text-3xl font-bold text-[#1E2A78] text-center mb-4 sm:mb-8">Inloggen</h1>
         <p className="text-[15px] text-gray-500 text-center mb-6 sm:mb-8">Deze inlogomgeving is uitsluitend bestemd voor geautoriseerde gebruikers.</p>
 

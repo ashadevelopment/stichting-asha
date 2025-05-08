@@ -131,7 +131,7 @@ function ResetPasswordForm() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#F2F2F2] px-4 py-6 sm:py-12">
-      <div className="w-full max-w-md bg-white border border-gray-200 p-6 sm:p-10 rounded-2xl shadow-lg sm:mt-[-80px]">
+      <div className="w-full max-w-md bg-white border border-gray-200 p-6 sm:p-10 rounded-2xl shadow-lg mt-[-8rem]">
         <h2 className="text-2xl font-bold text-[#1E2A78] text-center mb-6">
           {tokenValid ? 'Nieuw wachtwoord instellen' : 'Ongeldige token'}
         </h2>
