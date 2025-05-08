@@ -8,6 +8,7 @@ import { useEffect, useState, useRef } from "react";
 import Footer from "../components/Footer";
 
 import { animate } from 'animejs';
+import LogoSlider from "../components/LogoSlider";
 
 // Define the NoticeType interface
 interface NoticeType {
@@ -423,15 +424,16 @@ export default function Home() {
                 {/* Carousel Navigation */}
                 <button 
                   onClick={goToPrev}
-                  className="absolute top-1/2 left-2 md:left-[-12rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-4 rounded-full text-white"
+                  className="hidden md:block absolute top-1/2 left-2 md:left-[-12rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-4 rounded-full text-white"
                   aria-label="Previous slide"
                 >
                   <ChevronLeft size={24} />
                 </button>
-                
+
+                {/* Next button */}
                 <button 
                   onClick={goToNext}
-                  className="absolute top-1/2 right-2 md:right-[-12rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-4 rounded-full text-white"
+                  className="hidden md:block absolute top-1/2 right-2 md:right-[-12rem] z-10 -translate-y-1/2 bg-white/30 hover:bg-white/60 p-4 rounded-full text-white"
                   aria-label="Next slide"
                 >
                   <ChevronRight size={24} />
@@ -531,42 +533,10 @@ export default function Home() {
           </div>
         </div>
         {/* Partner Logos Carousel */}
-        <div className="flex items-center justify-center mt-12 mb-10 md:mb-20">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78] mb-2">Onze Partners</h2>
+        <div className="flex items-center justify-center mt-12 mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78]">Onze Partners</h2>
         </div>
-
-        <div className="w-full flex justify-center mb-12">
-          <div className="partner-logos-container relative w-[80%] overflow-hidden py-5">
-            <div className="partner-logos-track flex gap-10 animate-scroll">
-              {partnerLogos.map((logo) => (
-                <div
-                  key={`logo-${logo.id}`}
-                  className="partner-logo flex-shrink-0 w-40 h-20 mx-4 flex items-center justify-center"
-                >
-                  <img
-                    src={logo.src}
-                    alt={logo.alt}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ))}
-
-              {/* Duplicate set */}
-              {partnerLogos.map((logo) => (
-                <div
-                  key={`logo-dup-${logo.id}`}
-                  className="partner-logo flex-shrink-0 w-40 h-20 mx-4 flex items-center justify-center"
-                >
-                  <img
-                    src={logo.src}
-                    alt={logo.alt}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <LogoSlider />
       </div>
       <Footer />
     </div>

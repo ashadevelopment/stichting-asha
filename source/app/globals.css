@@ -11,14 +11,6 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Donkere modus instellingen */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a; /* Zwarte achtergrond voor donkere modus */
-    --foreground: #ededed; /* Lichtgrijze tekst voor donkere modus */
-  }
-}
-
 /* Body instellingen */
 body {
   background: var(--background);
@@ -44,26 +36,7 @@ body {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-@keyframes scrollX {
-  0% {
-    transform: translateX(0%);
-  }
-  50% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0%);
-  }
-}
-
-.animate-scroll-x {
-  animation: scrollX 130s ease-in-out infinite;
-  display: flex;
-  width: max-content;
-}
-
-/* Slow scroll speed for larger screens */
-@keyframes scroll {
+@keyframes slide {
   0% {
     transform: translateX(0);
   }
@@ -72,26 +45,10 @@ body {
   }
 }
 
-/* Use custom property to control speed */
-:root {
-  --scroll-speed: 20s; /* Default speed for larger screens */
+.animate-slide {
+  animation: slide 20s linear infinite;
 }
 
-/* Default scroll animation for larger screens */
-.animate-scroll {
-  animation: scroll var(--scroll-speed) linear infinite;
-}
-
-/* Faster scroll for mobile devices (up to 767px) */
-@media (max-width: 767px) {
-  :root {
-    --scroll-speed: 10s; /* Faster scroll for mobile */
-  }
-}
-
-/* Even faster scroll for smaller screens (up to 480px) */
-@media (max-width: 480px) {
-  :root {
-    --scroll-speed: 5s; /* Very fast scroll for very small screens */
-  }
+.hover\:animate-none:hover {
+  animation-play-state: paused;
 }
