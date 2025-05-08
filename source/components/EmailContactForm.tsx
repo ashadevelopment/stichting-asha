@@ -111,8 +111,8 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
 
   if (status === 'success') {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-36 sm:pt-32 md:pt-28 pb-10 px-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative my-10 sm:my-6">
           <button 
             onClick={onClose}
             className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
@@ -134,8 +134,8 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 relative mt-16 sm:mt-10 md:mt-6 lg:mt-8">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-46 sm:pt-32 md:pt-28 pb-10 px-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 relative my-10 sm:my-6">
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
@@ -232,7 +232,7 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
             <label className="block text-[#1E2A78] mb-1">
               Bijlage (optioneel):
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition">
                 <PaperclipIcon size={18} />
                 <span>Bijlage toevoegen</span>
@@ -246,12 +246,12 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
               </label>
               
               {fileName && (
-                <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded flex-1">
+                <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded flex-1 mt-2 sm:mt-0">
                   <span className="truncate">{fileName}</span>
                   <button 
                     type="button"
                     onClick={removeAttachment}
-                    className="text-gray-500 hover:text-red-500"
+                    className="text-gray-500 hover:text-red-500 flex-shrink-0"
                     disabled={sending}
                   >
                     <XCircle size={18} />
@@ -264,23 +264,23 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
             </p>
           </div>
 
-          <div className="flex justify-end mt-6 gap-4">
+          <div className="flex flex-wrap justify-end mt-6 gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
               disabled={sending}
             >
               Annuleren
             </button>
             <button
               type="submit"
-              className="bg-[#1E2A78] text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="bg-[#1E2A78] text-white py-2 px-4 rounded-md hover:bg-blue-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto"
               disabled={sending}
             >
               <Send size={18} />
               {sending ? "Bezig met versturen..." : "Verstuur e-mail"}
-              </button>
+            </button>
           </div>
         </form>
       </div>
