@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Vul een geldig e-mailadres in'),
@@ -52,9 +53,9 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#F2F2F2]">
-      <div className="w-full max-w-xl bg-white border border-gray-200 p-10 rounded-2xl shadow-lg mt-[-80px]">
-        <div className="">
+    <div className="flex items-center justify-center min-h-screen bg-[#F2F2F2] px-4 py-6 sm:py-12">
+      <div className="w-full max-w-md bg-white border border-gray-200 p-6 sm:p-10 rounded-2xl shadow-lg sm:mt-[-80px]">
+        <div className="mb-4">
           <h2 className="text-2xl font-bold text-[#1E2A78] text-center mb-6">Wachtwoord vergeten?</h2>
           {success ? (
             <div className="rounded-md bg-green-50 p-4">
@@ -82,7 +83,7 @@ export default function ForgotPassword() {
                     type="email"
                     autoComplete="email"
                     {...register('email')}
-                    className="w-full border border-gray-300 p-2 rounded-md text-lg focus:outline-none focus:ring-1 focus:ring-[#FFD700] text-black"
+                    className="w-full border border-gray-300 p-3 rounded-md text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-[#1E2A78] focus:border-transparent text-black"
                     placeholder="naam@voorbeeld.nl"
                   />
                   {errors.email && (
@@ -108,7 +109,7 @@ export default function ForgotPassword() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex w-full justify-center rounded-md bg-[#1E2A78] px-3 py-3 mt-8 text-sm font-semibold text-white shadow-sm hover:bg-[#2E376F] focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
+                  className="flex w-full justify-center rounded-md bg-[#1E2A78] px-3 py-3 mt-8 text-sm font-semibold text-white shadow-sm hover:bg-[#2E376F] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1E2A78] transition-colors disabled:bg-indigo-400"
                 >
                   {isSubmitting ? 'Bezig met verzenden...' : 'Stuur wachtwoord reset e-mail'}
                 </button>
@@ -116,7 +117,7 @@ export default function ForgotPassword() {
               
               <div className="text-center text-sm text-gray-500 mt-4">
                 <p>
-                  Terug naar <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Inloggen</a>
+                  Terug naar <Link href="/login" className="font-medium text-[#1E2A78] hover:text-[#2E376F] transition-colors">Inloggen</Link>
                 </p>
               </div>
             </form>
@@ -125,4 +126,4 @@ export default function ForgotPassword() {
       </div>
     </div>
   );
-}  
+}
