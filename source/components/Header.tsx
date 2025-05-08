@@ -37,9 +37,6 @@ export function Header({ className = "" }: HeaderProps) {
 
   return (
     <>
-      {/* Spacer div met dezelfde hoogte als de navbar om de content op de juiste plek te houden */}
-      <div className="h-[60px] md:h-[80px]"></div>
-      
       {/* Sticky header met position: fixed */}
       <header 
         className={`fixed top-0 left-0 right-0 w-full z-[9999] bg-white shadow-md ${className}`}
