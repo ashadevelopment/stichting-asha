@@ -133,7 +133,7 @@ export function Header({ className = "" }: HeaderProps) {
                 </Link>
                 <button 
                   onClick={handleSignOut}
-                  className="ml-4 text-[#2E376F]"
+                  className="ml-4 text-red-700"
                 >
                   Uitloggen <LogOut className="w-5 h-5 inline-block m-2" />
                 </button>
@@ -152,75 +152,73 @@ export function Header({ className = "" }: HeaderProps) {
         {/* Mobile Menu (Slide down when open) */}
         <div 
           className={`md:hidden w-full bg-white overflow-hidden transition-all duration-300 ease-in-out mb-4 ${
-            isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <nav className="flex flex-col px-4 pb-4 space-y-4">
+          <nav className="flex flex-col px-4 pb-6 space-y-3">
             <Link 
               href="/" 
-              className={`transition-colors duration-300 py-2 ${isActive('/') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              className={`transition-colors duration-300 py-2 ${isActive('/') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
             >
               Home
             </Link>
             <Link 
               href="/agenda" 
-              className={`transition-colors duration-300 py-2 ${isActive('/agenda') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              className={`transition-colors duration-300 py-2 ${isActive('/agenda') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
             >
               Agenda
             </Link>
             <Link 
               href="/projecten" 
-              className={`transition-colors duration-300 py-2 ${isActive('/projecten') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              className={`transition-colors duration-300 py-2 ${isActive('/projecten') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
             >
               Projecten
             </Link>
             <Link 
               href="/contact" 
-              className={`transition-colors duration-300 py-2 ${isActive('/contact') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              className={`transition-colors duration-300 py-2 ${isActive('/contact') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
             >
               Contact
             </Link>
             <Link 
               href="/nieuwsbrief" 
-              className={`transition-colors duration-300 py-2 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              className={`transition-colors duration-300 py-2 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
             >
               Nieuwsbrief
             </Link>
             <Link 
               href="/fotoboek" 
-              className={`transition-colors duration-300 py-2 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              className={`transition-colors duration-300 py-2 ${isActive('/fotoboek') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
             >
               Fotoboek
             </Link>
 
             {/* Mobile Auth Controls */}
-            <div className="pt-2 border-t border-gray-200 pb-8">
-              {status === "loading" ? (
-                <span className="text-[#2E376F]">Loading...</span>
-              ) : session ? (
-                <div className="flex flex-col space-y-4">
-                  <Link 
-                    href="/beheer/dashboard" 
-                    className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-                  >
-                    Dashboard
-                  </Link>
-                  <button 
-                    onClick={handleSignOut}
-                    className="flex items-center text-[#2E376F]"
-                  >
-                    Uitloggen <LogOut className="w-5 h-5 inline-block ml-2" />
-                  </button>
-                </div>
-              ) : (
+            {status === "loading" ? (
+              <span className="text-[#2E376F] py-2 border-t border-gray-200 mt-2">Loading...</span>
+            ) : session ? (
+              <>
                 <Link 
-                  href="/login" 
-                  className={`transition-colors duration-300 block py-2 ${isActive('/login') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                  href="/beheer/dashboard" 
+                  className={`transition-colors duration-300 py-2 border-t border-gray-200 mt-2 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
                 >
-                  Inloggen
+                  Dashboard
                 </Link>
-              )}
-            </div>
+                <button 
+                  onClick={handleSignOut}
+                  className="flex items-center text-red-700 py-2 w-full"
+                >
+                  <span>Uitloggen</span> <LogOut className="w-5 h-5 ml-2" />
+                </button>
+              </>
+            ) : (
+              <Link 
+                href="/login" 
+                className={`transition-colors duration-300 block py-2 border-t border-gray-200 mt-2 ${isActive('/login') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
+              >
+                Inloggen
+              </Link>
+            )}
           </nav>
         </div>
       </header>
