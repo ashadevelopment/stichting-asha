@@ -122,11 +122,11 @@ export default function Fotoboek() {
     
     return (
       <div 
-        className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 pt-52"
+        className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 overflow-y-auto"
         onClick={() => setSelectedItem(null)}
       >
         <div 
-          className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-white rounded-lg max-w-4xl w-full mx-auto my-auto overflow-hidden flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal header - made more visible with improved contrast */}
@@ -162,7 +162,7 @@ export default function Fotoboek() {
             {selectedItem.media.type === 'video' ? (
               <video 
                 src={`data:${selectedItem.media.contentType};base64,${selectedItem.media.data}`}
-                className="w-full h-full object-contain max-h-[50vh] md:max-h-[60vh]"
+                className="w-full object-contain max-h-[50vh]"
                 controls
                 autoPlay
               />
@@ -170,7 +170,7 @@ export default function Fotoboek() {
               <img 
                 src={`data:${selectedItem.media.contentType};base64,${selectedItem.media.data}`}
                 alt={selectedItem.title}
-                className="w-full h-full object-contain max-h-[50vh] md:max-h-[60vh]"
+                className="w-full object-contain max-h-[50vh]"
               />
             )}
           </div>
