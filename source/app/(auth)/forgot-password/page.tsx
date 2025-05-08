@@ -52,15 +52,10 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-md">
-        <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          Wachtwoord resetten
-        </h2>
-      </div>
-
-      <div className="mt-8 mx-auto w-full max-w-md">
-        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+    <div className="flex items-center justify-center min-h-screen bg-[#F2F2F2]">
+      <div className="w-full max-w-xl bg-white border border-gray-200 p-10 rounded-2xl shadow-lg mt-[-80px]">
+        <div className="">
+          <h2 className="text-2xl font-bold text-[#1E2A78] text-center mb-6">Wachtwoord vergeten?</h2>
           {success ? (
             <div className="rounded-md bg-green-50 p-4">
               <div className="flex">
@@ -78,7 +73,7 @@ export default function ForgotPassword() {
           ) : (
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+                <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900 mt-8">
                   E-mailadres
                 </label>
                 <div className="mt-2">
@@ -87,7 +82,7 @@ export default function ForgotPassword() {
                     type="email"
                     autoComplete="email"
                     {...register('email')}
-                    className="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    className="w-full border border-gray-300 p-2 rounded-md text-lg focus:outline-none focus:ring-1 focus:ring-[#FFD700] text-black"
                     placeholder="naam@voorbeeld.nl"
                   />
                   {errors.email && (
@@ -113,7 +108,7 @@ export default function ForgotPassword() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
+                  className="flex w-full justify-center rounded-md bg-[#1E2A78] px-3 py-3 mt-8 text-sm font-semibold text-white shadow-sm hover:bg-[#2E376F] focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
                 >
                   {isSubmitting ? 'Bezig met verzenden...' : 'Stuur wachtwoord reset e-mail'}
                 </button>
@@ -130,4 +125,4 @@ export default function ForgotPassword() {
       </div>
     </div>
   );
-}
+}  

@@ -68,6 +68,8 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-[#F2F2F2]">
       <div className="w-full max-w-xl bg-white border border-gray-200 p-10 rounded-2xl shadow-lg mt-[-80px]">
         <h1 className="text-3xl font-bold text-[#1E2A78] text-center mb-8">Inloggen</h1>
+        <p className="text-[14px] text-gray-500 text-center mb-8">Deze inlogomgeving is uitsluitend bestemd voor geautoriseerde gebruikers. Indien u geen geautoriseerde toegang heeft, kunt u geen gebruik maken van deze dienst.</p>
+
 
         <form onSubmit={handleSubmit} className="space-y-5 mt-20">
           <input
@@ -76,7 +78,7 @@ export default function LoginPage() {
             placeholder="Email"
             value={form.email}
             onChange={handleChange}
-            className="w-full border border-gray-300 p-3 rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] text-black"
+            className="w-full border border-gray-300 p-2 rounded-md text-lg focus:outline-none focus:ring-1 focus:ring-[#FFD700] text-black"
             required
             disabled={isLoading}
           />
@@ -86,20 +88,20 @@ export default function LoginPage() {
             placeholder="Wachtwoord"
             value={form.password}
             onChange={handleChange}
-            className="w-full border border-gray-300 p-3 rounded-md text-lg focus:outline-none focus:ring-2 focus:ring-[#FFD700] text-black"
+            className="w-full border border-gray-300 p-2 rounded-md text-lg focus:outline-none focus:ring-1 focus:ring-[#FFD700] text-black"
             required
             disabled={isLoading}
           />
 
           <div className="text-right">
-            <Link href="/forgot-password" className="text-[#1E2A78] font-medium hover:underline text-sm">
+            <Link href="/forgot-password" className="text-indigo-600 hover:text-indigo-500 font-medium hover:underline text-sm">
               Wachtwoord vergeten?
             </Link>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#E4C76B] hover:bg-[#FFD700] text-[#1E2A78] py-3 rounded-md font-semibold text-lg transition mt-10 disabled:opacity-70"
+            className="w-full bg-[#1E2A78] hover:bg-[#2E376F] text-white py-3 rounded-md font-semibold text-lg transition mt-10 disabled:opacity-70"
             disabled={isLoading}
           >
             {isLoading ? "Bezig met inloggen..." : "Inloggen"}
