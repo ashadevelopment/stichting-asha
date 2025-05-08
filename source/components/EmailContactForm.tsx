@@ -111,7 +111,7 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
 
   if (status === 'success') {
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-36 sm:pt-32 md:pt-28 pb-10 px-4">
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-12 sm:pt-32 md:pt-28 pb-10 px-4">
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative my-10 sm:my-6">
           <button 
             onClick={onClose}
@@ -134,7 +134,7 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-46 sm:pt-32 md:pt-28 pb-10 px-4">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto pt-28 sm:pt-32 md:pt-28 pb-10 px-4">
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 relative my-10 sm:my-6">
         <button 
           onClick={onClose}

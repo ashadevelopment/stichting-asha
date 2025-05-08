@@ -133,7 +133,7 @@ export default function Projecten() {
       {/* Project Details Modal */}
       {selectedProject && (
 <div 
-  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto pt-22"
+  className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto pt-28"
   onClick={closeProjectModal}
 >
   <div 

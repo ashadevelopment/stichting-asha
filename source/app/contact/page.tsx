@@ -157,7 +157,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2] pt-24 md:pt-20">
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2] pt-28 md:pt-20">
       
       <h1 className="text-3xl font-bold text-[#1E2A78] mb-8 text-center">
         {activeTab === 'contact' ? 'Contact' : 'Vrijwilliger'}
