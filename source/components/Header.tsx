@@ -3,8 +3,8 @@
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
-
+import { LogOut, Menu, X, ChartNoAxesGantt } from "lucide-react";
+import { useState, useEffect } from "react";
 
 type HeaderProps = {
   className?: string;
@@ -13,6 +13,12 @@ type HeaderProps = {
 export function Header({ className = "" }: HeaderProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Close mobile menu when pathname changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   // Function to handle sign-out
   const handleSignOut = (e: React.MouseEvent) => {
@@ -25,17 +31,21 @@ export function Header({ className = "" }: HeaderProps) {
     return pathname === path;
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <>
       {/* Spacer div met dezelfde hoogte als de navbar om de content op de juiste plek te houden */}
-      <div className="h-[140px] md:h-[80px]"></div>
+      <div className="h-[60px] md:h-[80px]"></div>
       
       {/* Sticky header met position: fixed */}
       <header 
         className={`fixed top-0 left-0 right-0 w-full z-[9999] bg-white shadow-md ${className}`}
         style={{ position: 'fixed', top: 0, left: 0, right: 0 }}
       >
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-row items-center justify-between">
           
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-4">
@@ -45,55 +55,77 @@ export function Header({ className = "" }: HeaderProps) {
             </span>
           </div>
 
-          {/* Center: Nav Menu */}
-          <nav className="flex flex-wrap justify-center gap-6 text-base font-medium">
-            <Link 
-              href="/" 
-              className={`transition-colors duration-300 ${isActive('/') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/agenda" 
-              className={`transition-colors duration-300 ${isActive('/agenda') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-            >
-              Agenda
-            </Link>
-            <Link 
-              href="/projecten" 
-              className={`transition-colors duration-300 ${isActive('/projecten') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-            >
-              Projecten
-            </Link>
-            <Link 
-              href="/contact" 
-              className={`transition-colors duration-300 ${isActive('/contact') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-            >
-              Contact
-            </Link>
-            <Link 
-              href="/nieuwsbrief" 
-              className={`transition-colors duration-300 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-            >
-              Nieuwsbrief
-            </Link>
-            <Link 
-              href="/fotoboek" 
-              className={`transition-colors duration-300 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-              Fotoboek
-              </Link>
-          </nav>
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden flex items-center justify-center w-10 h-10 text-[#2E376F] transition-all duration-300"
+            onClick={toggleMenu}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          >
+            <div className="relative w-6 h-6">
+              <ChartNoAxesGantt 
+                className={`absolute inset-0 transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                }`} 
+              />
+              <X 
+                className={`absolute inset-0 transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-0'
+                }`} 
+              />
+            </div>
+          </button>
 
-          {/* Right: Auth Controls */}
-          <div className="font-semibold text-center md:text-right">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <nav className="flex flex-wrap justify-center gap-6 text-base font-medium">
+              <Link 
+                href="/" 
+                className={`transition-colors duration-300 ${isActive('/') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+                Home
+              </Link>
+              <Link 
+                href="/agenda" 
+                className={`transition-colors duration-300 ${isActive('/agenda') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+                Agenda
+              </Link>
+              <Link 
+                href="/projecten" 
+                className={`transition-colors duration-300 ${isActive('/projecten') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+                Projecten
+              </Link>
+              <Link 
+                href="/contact" 
+                className={`transition-colors duration-300 ${isActive('/contact') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+                Contact
+              </Link>
+              <Link 
+                href="/nieuwsbrief" 
+                className={`transition-colors duration-300 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+                Nieuwsbrief
+              </Link>
+              <Link 
+                href="/fotoboek" 
+                className={`transition-colors duration-300 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+              >
+                Fotoboek
+              </Link>
+            </nav>
+          </div>
+
+          {/* Desktop Auth Controls */}
+          <div className="hidden md:block font-semibold text-right">
             {status === "loading" ? (
               <span className="text-[#2E376F]">Loading...</span>
             ) : session ? (
               <>
                 <Link 
                   href="/beheer/dashboard" 
-                  className={`transition-colors duration-300 mt-5 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                  className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
                 >
                   Dashboard
                 </Link>
@@ -113,6 +145,81 @@ export function Header({ className = "" }: HeaderProps) {
               </Link>
             )}
           </div>
+        </div>
+
+        {/* Mobile Menu (Slide down when open) */}
+        <div 
+          className={`md:hidden w-full bg-white overflow-hidden transition-all duration-300 ease-in-out mb-4 ${
+            isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <nav className="flex flex-col px-4 pb-4 space-y-4">
+            <Link 
+              href="/" 
+              className={`transition-colors duration-300 py-2 ${isActive('/') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Home
+            </Link>
+            <Link 
+              href="/agenda" 
+              className={`transition-colors duration-300 py-2 ${isActive('/agenda') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Agenda
+            </Link>
+            <Link 
+              href="/projecten" 
+              className={`transition-colors duration-300 py-2 ${isActive('/projecten') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Projecten
+            </Link>
+            <Link 
+              href="/contact" 
+              className={`transition-colors duration-300 py-2 ${isActive('/contact') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Contact
+            </Link>
+            <Link 
+              href="/nieuwsbrief" 
+              className={`transition-colors duration-300 py-2 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Nieuwsbrief
+            </Link>
+            <Link 
+              href="/fotoboek" 
+              className={`transition-colors duration-300 py-2 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+            >
+              Fotoboek
+            </Link>
+
+            {/* Mobile Auth Controls */}
+            <div className="pt-2 border-t border-gray-200 pb-8">
+              {status === "loading" ? (
+                <span className="text-[#2E376F]">Loading...</span>
+              ) : session ? (
+                <div className="flex flex-col space-y-4">
+                  <Link 
+                    href="/beheer/dashboard" 
+                    className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                  >
+                    Dashboard
+                  </Link>
+                  <button 
+                    onClick={handleSignOut}
+                    className="flex items-center text-[#2E376F]"
+                  >
+                    Uitloggen <LogOut className="w-5 h-5 inline-block ml-2" />
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className={`transition-colors duration-300 block py-2 ${isActive('/login') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                >
+                  Inloggen
+                </Link>
+              )}
+            </div>
+          </nav>
         </div>
       </header>
     </>
