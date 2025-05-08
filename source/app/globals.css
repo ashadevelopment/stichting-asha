@@ -62,6 +62,7 @@ body {
   width: max-content;
 }
 
+/* Slow scroll speed for larger screens */
 @keyframes scroll {
   0% {
     transform: translateX(0);
@@ -71,6 +72,26 @@ body {
   }
 }
 
+/* Use custom property to control speed */
+:root {
+  --scroll-speed: 20s; /* Default speed for larger screens */
+}
+
+/* Default scroll animation for larger screens */
 .animate-scroll {
-  animation: scroll 20s linear infinite;
+  animation: scroll var(--scroll-speed) linear infinite;
+}
+
+/* Faster scroll for mobile devices (up to 767px) */
+@media (max-width: 767px) {
+  :root {
+    --scroll-speed: 10s; /* Faster scroll for mobile */
+  }
+}
+
+/* Even faster scroll for smaller screens (up to 480px) */
+@media (max-width: 480px) {
+  :root {
+    --scroll-speed: 5s; /* Very fast scroll for very small screens */
+  }
 }

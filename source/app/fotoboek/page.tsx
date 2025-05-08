@@ -190,7 +190,7 @@ export default function Fotoboek() {
     <div className="w-full min-h-screen bg-[#F2F2F2] py-12 pt-24 md:pt-20">
       <div className="max-w-6xl mx-auto px-6">
         <h1 className="text-3xl font-bold text-[#1E2A78] mb-8 text-center">Fotoboek</h1>
-        <p className="text-gray-500 text-center mb-8">Bekijk onze mooiste momenten!</p>
+        <p className="text-gray-500 text-center mb-8">Bekijk onze mooiste momenten! Klik op een foto/video voor meer informatie!</p>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4 text-center">

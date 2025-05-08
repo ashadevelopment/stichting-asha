@@ -158,6 +158,10 @@ export default function Contact() {
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-[#F2F2F2] pt-24 md:pt-20">
+      
+      <h1 className="text-3xl font-bold text-[#1E2A78] mb-8 text-center">
+        {activeTab === 'contact' ? 'Contact' : 'Vrijwilliger'}
+      </h1>
       <div className="container mx-auto py-10 px-4 bg-[#F2F2F2]">
         {/* Tab Navigation */}
         <div className="flex mb-6 shadow-sm border border-gray-200 rounded-lg overflow-hidden bg-white">
@@ -204,11 +208,12 @@ export default function Contact() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {contacts.map((contact) => (
-                  <div 
-                    key={contact._id} 
-                    className="bg-gray-50 p-4 rounded-lg flex items-center hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200 hover:border-blue-300"
-                    onClick={() => handleContactClick(contact)}
-                  >
+                  <div
+                  key={contact._id}
+                  className="bg-gray-50 p-4 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200 hover:border-blue-300 flex flex-col sm:flex-row sm:items-center gap-4"
+                  onClick={() => handleContactClick(contact)}
+                >
+                  <div className="flex-shrink-0">
                     <ProfilePictureManager
                       userId={contact._id}
                       name={getFullName(contact)}
@@ -217,22 +222,27 @@ export default function Contact() {
                       editable={false}
                       showButtons={false}
                     />
-                    <div className="ml-4">
-                      <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>
-                      {contact.function && (
-                        <p className="text-gray-600">Functie: {contact.function}</p>
-                      )}
-                      <p className="text-gray-600">Telefoonnummer: {contact.phoneNumber || "Geen telefoonnummer"}</p>
-                      <p className="text-gray-600">
-                        E-mail: <span className="text-blue-500">{contact.email}</span>
-                      </p>
-                    </div>
-                    <div className="ml-auto">
-                      <div className="bg-blue-100 p-2 rounded-full text-blue-600 hover:bg-blue-200">
-                        <Mail size={20} />
-                      </div>
+                  </div>
+                
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-semibold text-black">{getFullName(contact)}</h3>
+                    {contact.function && (
+                      <p className="text-gray-600">Functie: {contact.function}</p>
+                    )}
+                    <p className="text-gray-600">
+                      Telefoonnummer: {contact.phoneNumber || "Geen telefoonnummer"}
+                    </p>
+                    <p className="text-gray-600">
+                      E-mail: <span className="text-blue-500">{contact.email}</span>
+                    </p>
+                  </div>
+                
+                  <div className="self-start sm:self-center">
+                    <div className="bg-blue-100 p-2 rounded-full text-blue-600 hover:bg-blue-200">
+                      <Mail size={20} />
                     </div>
                   </div>
+                </div>
                 ))}
               </div>
             )}

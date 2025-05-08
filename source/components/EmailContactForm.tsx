@@ -135,7 +135,7 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 relative">
+      <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full p-6 relative mt-16 sm:mt-10 md:mt-6 lg:mt-8">
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
@@ -153,7 +153,7 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="fromName" className="block text-[#1E2A78] mb-1">
                 Je naam:
@@ -264,11 +264,11 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
             </p>
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end mt-6 gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 mr-2 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               disabled={sending}
             >
               Annuleren
@@ -280,7 +280,7 @@ export default function EmailContactForm({ contactPerson, onClose }: EmailContac
             >
               <Send size={18} />
               {sending ? "Bezig met versturen..." : "Verstuur e-mail"}
-            </button>
+              </button>
           </div>
         </form>
       </div>
