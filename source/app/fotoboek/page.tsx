@@ -126,11 +126,12 @@ export default function Fotoboek() {
         onClick={() => setSelectedItem(null)}
       >
         <div 
-          className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+          className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-4 flex justify-between items-center">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+          {/* Modal header - made more visible with improved contrast */}
+          <div className="p-4 flex justify-between items-center bg-white border-b sticky top-0 z-10">
+            <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-800">
               {selectedItem.title}
               {selectedItem.media.type === 'video' && (
                 <span className="inline-flex items-center text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
@@ -140,7 +141,8 @@ export default function Fotoboek() {
             </h3>
             <button 
               onClick={() => setSelectedItem(null)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+              aria-label="Close"
             >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -155,11 +157,12 @@ export default function Fotoboek() {
             </button>
           </div>
           
-          <div className="relative h-[50vh] overflow-hidden bg-black">
+          {/* Media container with responsive height */}
+          <div className="relative flex-grow bg-black">
             {selectedItem.media.type === 'video' ? (
               <video 
                 src={`data:${selectedItem.media.contentType};base64,${selectedItem.media.data}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain max-h-[50vh] md:max-h-[60vh]"
                 controls
                 autoPlay
               />
@@ -167,13 +170,14 @@ export default function Fotoboek() {
               <img 
                 src={`data:${selectedItem.media.contentType};base64,${selectedItem.media.data}`}
                 alt={selectedItem.title}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain max-h-[50vh] md:max-h-[60vh]"
               />
             )}
           </div>
           
+          {/* Description section */}
           {selectedItem.description && (
-            <div className="p-4 border-t">
+            <div className="p-4 border-t bg-white">
               <p className="text-gray-700">{selectedItem.description}</p>
             </div>
           )}

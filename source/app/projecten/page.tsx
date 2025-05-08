@@ -132,110 +132,118 @@ export default function Projecten() {
 
       {/* Project Details Modal */}
       {selectedProject && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+  <div 
+    className="fixed inset-0 bg-black bg-opacity-80 z-50 overflow-y-auto pt-20 pb-4 px-2"
+    onClick={closeProjectModal}
+  >
+    <div 
+      className="bg-white rounded-xl max-w-2xl w-full mx-auto my-4 overflow-hidden flex flex-col"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header with Close Button - sticky for mobile */}
+      <div className="sticky top-0 z-10 bg-white border-b p-4 flex justify-between items-center shadow-sm">
+        <h2 className="text-xl font-bold text-[#1E2A78] break-words pr-8">
+          {selectedProject.title}
+        </h2>
+        
+        {/* Close Button */}
+        <button 
           onClick={closeProjectModal}
+          className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100"
+          aria-label="Sluiten"
         >
-          <div 
-            className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
-            onClick={(e) => e.stopPropagation()}
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
           >
-            {/* Close Button */}
-            <button 
-              onClick={closeProjectModal}
-              className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="24" 
-                height="24" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
 
-            {/* Project Image */}
-            {selectedProject.image && selectedProject.image.data && (
-              <div className="w-full h-64 md:h-96 overflow-hidden">
-                <img 
-                  src={`data:${selectedProject.image.contentType};base64,${selectedProject.image.data}`}
-                  alt={selectedProject.title} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            {/* Project Details */}
-            <div className="p-8">
-              <h2 className="text-3xl font-bold text-[#1E2A78] mb-4 break-words">{selectedProject.title}</h2>
-              
-              {/* Date and Tags */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center text-gray-600">
-                  <Calendar size={20} className="mr-2" />
-                  {selectedProject.projectDate 
-                    ? format(
-                        isNaN(new Date(selectedProject.projectDate).getTime()) 
-                          ? new Date() 
-                          : new Date(selectedProject.projectDate), 
-                        'd MMMM yyyy', 
-                        { locale: nl }
-                      )
-                    : format(new Date(), 'd MMMM yyyy', { locale: nl })}
-                </div>
-                
-                {selectedProject.tags && selectedProject.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.tags.map((tag) => (
-                      <span 
-                        key={tag} 
-                        className="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full flex items-center"
-                      >
-                        <Tag size={12} className="mr-1" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Short Description */}
-              <p className="text-gray-700 mb-6">{selectedProject.description}</p>
-
-              {/* Long Description */}
-              {selectedProject.longDescription && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-[#1E2A78] mb-2">Meer Details</h3>
-                  <p className="text-gray-700 whitespace-pre-line">
-                    {selectedProject.longDescription}
-                  </p>
-                </div>
-              )}
-
-              {/* Document Download */}
-              {selectedProject.document && selectedProject.document.data && (
-                <div className="mt-6">
-                  <a
-                    href={`data:${selectedProject.document.contentType};base64,${selectedProject.document.data}`}
-                    download={selectedProject.document.filename}
-                    className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md"
-                  >
-                    <FileText size={20} className="mr-2" />
-                    Download Project Document
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Project Image */}
+      {selectedProject.image && selectedProject.image.data && (
+        <div className="w-full h-48 md:h-64 lg:h-80 overflow-hidden">
+          <img 
+            src={`data:${selectedProject.image.contentType};base64,${selectedProject.image.data}`}
+            alt={selectedProject.title} 
+            className="w-full h-full object-cover"
+          />
         </div>
       )}
+
+      {/* Project Details */}
+      <div className="p-4 md:p-8">
+        {/* Date and Tags */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div className="flex items-center text-gray-600">
+            <Calendar size={20} className="mr-2 shrink-0" />
+            <span>
+              {selectedProject.projectDate 
+                ? format(
+                    isNaN(new Date(selectedProject.projectDate).getTime()) 
+                      ? new Date() 
+                      : new Date(selectedProject.projectDate), 
+                    'd MMMM yyyy', 
+                    { locale: nl }
+                  )
+                : format(new Date(), 'd MMMM yyyy', { locale: nl })}
+            </span>
+          </div>
+          
+          {selectedProject.tags && selectedProject.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedProject.tags.map((tag) => (
+                <span 
+                  key={tag} 
+                  className="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full flex items-center"
+                >
+                  <Tag size={12} className="mr-1" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Short Description */}
+        <p className="text-gray-700 mb-6">{selectedProject.description}</p>
+
+        {/* Long Description */}
+        {selectedProject.longDescription && (
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-[#1E2A78] mb-2">Meer Details</h3>
+            <p className="text-gray-700 whitespace-pre-line">
+              {selectedProject.longDescription}
+            </p>
+          </div>
+        )}
+
+        {/* Document Download */}
+        {selectedProject.document && selectedProject.document.data && (
+          <div className="mt-6">
+            <a
+              href={`data:${selectedProject.document.contentType};base64,${selectedProject.document.data}`}
+              download={selectedProject.document.filename}
+              className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md"
+            >
+              <FileText size={20} className="mr-2" />
+              Download Project Document
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
