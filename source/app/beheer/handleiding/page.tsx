@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { animate } from 'animejs'
 
 export default function HandleidingPage() {
   const [activeSection, setActiveSection] = useState<string>('general')
+  const activeSectionRef = useRef<HTMLElement | null>(null);
 
   const menuItems = [
     { key: 'general', label: 'Algemeen' },
@@ -18,6 +20,31 @@ export default function HandleidingPage() {
     { key: 'newsletter', label: 'Nieuwsbrief' },
     { key: 'troubleshooting', label: 'Probleemoplossing' },
   ]
+    const handleSectionChange = (key: string) => {
+        setActiveSection(key);
+    };
+
+    const setSectionRef = (element: HTMLElement | null) => {
+        activeSectionRef.current = element;
+        if (element) {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(50px)';
+        }
+    };
+
+    useEffect(() => {
+        if (activeSectionRef.current) {
+            activeSectionRef.current.style.opacity = '0';
+            activeSectionRef.current.style.transform = 'translateY(50px)';
+
+            animate(activeSectionRef.current, {
+            opacity: [0, 1],
+            translateY: [50, 0],
+            easing: 'easeOutExpo',
+            duration: 1000,
+            });
+        }
+    }, [activeSection]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -85,7 +112,7 @@ export default function HandleidingPage() {
           )}
 
           {activeSection === 'dashboard' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Dashboard</h2>
               <p className="mb-4 text-gray-700">
                 Het dashboard geeft een overzicht van recente activiteiten en belangrijke informatie. 
@@ -113,7 +140,7 @@ export default function HandleidingPage() {
           )}
 
           {activeSection === 'users' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Gebruikersbeheer</h2>
               <p className="mb-4 text-gray-700">
                 In deze sectie kun je gebruikers toevoegen, bewerken en verwijderen. Je kunt ook 
@@ -149,7 +176,7 @@ export default function HandleidingPage() {
           )}
 
           {activeSection === 'troubleshooting' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Probleemoplossing</h2>
               <p className="mb-6 text-gray-700">
                 Hier vind je oplossingen voor veelvoorkomende problemen met de website en het beheersysteem.
@@ -190,7 +217,7 @@ export default function HandleidingPage() {
           )}
 
             {activeSection === 'notes' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Notities</h2>
               <p className="mb-4 text-gray-700">
                 De notities module stelt je in staat om belangrijke mededelingen aan te maken die worden weergegeven op de homepage van de website.
@@ -248,7 +275,7 @@ export default function HandleidingPage() {
 
           
           {activeSection === 'projects' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Projecten</h2>
               <p className="mb-4 text-gray-700">
                 De projecten module stelt je in staat om projecten toe te voegen en te beheren die op de website worden weergegeven. 
@@ -318,7 +345,7 @@ export default function HandleidingPage() {
           )}
 
           {activeSection === 'calendar' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Agenda</h2>
               <p className="mb-4 text-gray-700">
                 In deze sectie kun je evenementen toevoegen, bewerken en verwijderen. De agenda wordt getoond op de website en is zichtbaar voor alle bezoekers.
@@ -368,7 +395,7 @@ export default function HandleidingPage() {
           )}
 
           {activeSection === 'photos' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Fotoboek</h2>
               <p className="mb-4 text-gray-700">
                 In het Fotoboek kun je foto's en video's uploaden en beheren die op de website worden getoond. Deze media zijn belangrijk voor het visueel weergeven van activiteiten en projecten.
@@ -455,8 +482,8 @@ export default function HandleidingPage() {
             </section>
           )}
 
-                    {activeSection === 'contact' && (
-            <section>
+            {activeSection === 'contact' && (
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact</h2>
               <p className="mb-4 text-gray-700">
                 In de contactmodule kunt u beheren welke personen als contactpersonen worden weergegeven op de openbare contactpagina van de website.
@@ -497,7 +524,7 @@ export default function HandleidingPage() {
           )}
 
           {activeSection === 'volunteers' && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Vrijwilligers</h2>
               <p className="mb-4 text-gray-700">
                 De vrijwilligersmodule stelt u in staat om aanmeldingen van potentiële vrijwilligers te beheren, goed te keuren of af te wijzen.
@@ -566,7 +593,7 @@ export default function HandleidingPage() {
             activeSection !== 'volunteers' && 
             activeSection !== 'photos' && 
             activeSection !== 'troubleshooting') && (
-            <section>
+            <section ref={setSectionRef}>
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">
                 {menuItems.find(item => item.key === activeSection)?.label}
               </h2>
