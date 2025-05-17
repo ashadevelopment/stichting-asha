@@ -35,6 +35,7 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
       '/beheer/vrijwilligers',
       '/beheer/fotoboek',
       '/beheer/nieuwsbrief',
+      '/beheer/handleiding',
     ],
     developer: [
       '/beheer/dashboard',
@@ -45,19 +46,23 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
       '/beheer/contact',
       '/beheer/fotoboek',
       '/beheer/nieuwsbrief',
+      '/beheer/handleiding',
     ],
     vrijwilliger: [
       '/beheer/dashboard',
       '/beheer/gegevens',
       '/beheer/agenda',
+      '/beheer/handleiding',
     ],
     stagiair: [
       '/beheer/dashboard',
       '/beheer/gegevens',
+      '/beheer/handleiding',
     ],
     user: [
       '/beheer/dashboard',
       '/beheer/gegevens',
+      '/beheer/handleiding',
     ],
   }
 
@@ -127,6 +132,10 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
     routePermissions[userRole].includes(link.href)
   )
 
+  // Handle the Handleiding link separately to style it differently
+  const handleidingLink = { href: '/beheer/handleiding', label: 'Handleiding' }
+  const showHandleiding = routePermissions[userRole].includes(handleidingLink.href)
+
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
@@ -180,6 +189,23 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
                 </Link>
               )
             })}
+            
+            {/* Handleiding link with special styling */}
+            {showHandleiding && (
+              <>
+                <div className="my-4 border-t border-gray-200"></div>
+                <Link
+                  href={handleidingLink.href}
+                  className={`block py-2 px-3 rounded-md border border-red-400 text-center ${
+                    pathname === handleidingLink.href
+                      ? 'bg-yellow-50 text-red-700 font-semibold'
+                      : 'text-red-600 hover:bg-yellow-50 hover:text-red-700'
+                  } hover:no-underline transition-colors`}
+                >
+                  {handleidingLink.label}
+                </Link>
+              </>
+            )}
           </nav>
         </div>
 
