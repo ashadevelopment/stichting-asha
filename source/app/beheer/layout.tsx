@@ -196,12 +196,15 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
                 <div className="my-4 border-t border-gray-200"></div>
                 <Link
                   href={handleidingLink.href}
-                  className={`block py-2 px-3 rounded-md border border-red-400 text-center ${
+                  className={`block py-2 px-3 rounded-md ${
                     pathname === handleidingLink.href
-                      ? 'bg-yellow-50 text-red-700 font-semibold'
-                      : 'text-red-600 hover:bg-yellow-50 hover:text-red-700'
-                  } hover:no-underline transition-colors`}
+                      ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                      : 'text-indigo-800 hover:bg-indigo-50 hover:text-indigo-700'
+                  } hover:no-underline transition-colors flex items-center gap-2`}
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                  </svg>
                   {handleidingLink.label}
                 </Link>
               </>
