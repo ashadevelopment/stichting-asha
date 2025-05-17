@@ -200,16 +200,19 @@ export default function HandleidingPage() {
                   <h3 className="text-lg font-medium text-gray-800">Aanmelden en toegang</h3>
                   <ul className="space-y-2 text-gray-700">
                     <li><strong>Kan niet inloggen:</strong> Controleer je inloggegevens en gebruik "Wachtwoord vergeten" indien nodig.</li>
-                    <li><strong>Geen toegang tot functies:</strong> Rechten zijn rolgebaseerd. Neem contact op met de beheerder.</li>
+                    <li><strong>Geen toegang tot functies:</strong> Rechten zijn rolgebaseerd. Neem contact op met de Developers</li>
                   </ul>
                 </div>
 
                 <div>
                   <h3 className="text-lg font-medium text-gray-800">Technische ondersteuning</h3>
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <p><strong>Email:</strong> ectn033@gamil.com</p>
+                    <p><strong>Telefoon:</strong>06 38 41 51 73</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-3">
                     <p><strong>Email:</strong> support@example.com</p>
                     <p><strong>Telefoon:</strong> 070-1234567</p>
-                    <p className="italic text-sm mt-1">Werkdagen: 09:00 – 17:00</p>
                   </div>
                 </div>
               </div>
