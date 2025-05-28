@@ -15,20 +15,27 @@ async function checkAdminAccess(req: NextRequest) {
   return null
 }
 
-// GET single newsletter post
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+function getIdFromRequest(req: NextRequest): string | null {
+  const urlParts = req.nextUrl.pathname.split('/')
+  return urlParts[urlParts.length - 1] || null
+}
+
+
+export async function GET(req: NextRequest) {
+  const id = getIdFromRequest(req)
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  }
+
   try {
     await dbConnect()
-    
-    const post = await Newsletter.findById(params.id)
-    
+
+    const post = await Newsletter.findById(id)
+
     if (!post) {
       return NextResponse.json({ error: 'Newsletter post not found' }, { status: 404 })
     }
-    
+
     return NextResponse.json(post)
   } catch (error) {
     console.error('Error fetching newsletter post:', error)
@@ -36,32 +43,28 @@ export async function GET(
   }
 }
 
-// PUT update an existing newsletter post
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Check admin access
+export async function PUT(req: NextRequest) {
+  const id = getIdFromRequest(req)
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  }
+
   const authCheck = await checkAdminAccess(req)
   if (authCheck) return authCheck
 
   try {
     await dbConnect()
-    
-    // Parse multipart form data
     const formData = await req.formData()
-    
-    // Prepare update data
+
     const updateData: any = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      content: formData.get('content') as string,
-      type: formData.get('type') as 'article' | 'video',
-      link: formData.get('link') as string,
-      videoUrl: formData.get('videoUrl') as string,
+      title: formData.get('title'),
+      description: formData.get('description'),
+      content: formData.get('content'),
+      type: formData.get('type'),
+      link: formData.get('link'),
+      videoUrl: formData.get('videoUrl'),
     }
 
-    // Handle image upload
     const imageFile = formData.get('image') as File | null
     if (imageFile && imageFile.size > 0) {
       const bytes = await imageFile.arrayBuffer()
@@ -74,32 +77,31 @@ export async function PUT(
       }
     }
 
-    // Auto-detect YouTube videos and set embed URL
-    if (updateData.link && updateData.link.includes('youtube.com/watch')) {
-      const videoIdMatch = updateData.link.match(/v=([^&]+)/)
-      if (videoIdMatch) {
+    // YouTube handling
+    if (updateData.link?.includes('youtube.com/watch')) {
+      const match = updateData.link.match(/v=([^&]+)/)
+      if (match) {
         updateData.type = 'video'
-        updateData.videoUrl = `https://www.youtube.com/embed/${videoIdMatch[1]}`
+        updateData.videoUrl = `https://www.youtube.com/embed/${match[1]}`
       }
-    } else if (updateData.link && updateData.link.includes('youtu.be/')) {
-      const videoIdMatch = updateData.link.match(/youtu\.be\/([^?]+)/)
-      if (videoIdMatch) {
+    } else if (updateData.link?.includes('youtu.be/')) {
+      const match = updateData.link.match(/youtu\.be\/([^?]+)/)
+      if (match) {
         updateData.type = 'video'
-        updateData.videoUrl = `https://www.youtube.com/embed/${videoIdMatch[1]}`
+        updateData.videoUrl = `https://www.youtube.com/embed/${match[1]}`
       }
     }
 
-    // Update the post
     const updatedPost = await Newsletter.findByIdAndUpdate(
-      params.id, 
-      updateData, 
+      id,
+      updateData,
       { new: true, runValidators: true }
     )
-    
+
     if (!updatedPost) {
       return NextResponse.json({ error: 'Newsletter post not found' }, { status: 404 })
     }
-    
+
     return NextResponse.json(updatedPost)
   } catch (error) {
     console.error('Error updating newsletter post:', error)
@@ -107,25 +109,24 @@ export async function PUT(
   }
 }
 
-// DELETE a newsletter post
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  // Check admin access
+export async function DELETE(req: NextRequest) {
+  const id = getIdFromRequest(req)
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  }
+
   const authCheck = await checkAdminAccess(req)
   if (authCheck) return authCheck
 
   try {
     await dbConnect()
-    
-    // Delete the post
-    const deletedPost = await Newsletter.findByIdAndDelete(params.id)
-    
+
+    const deletedPost = await Newsletter.findByIdAndDelete(id)
+
     if (!deletedPost) {
       return NextResponse.json({ error: 'Newsletter post not found' }, { status: 404 })
     }
-    
+
     return NextResponse.json({ message: 'Newsletter post deleted successfully' })
   } catch (error) {
     console.error('Error deleting newsletter post:', error)
