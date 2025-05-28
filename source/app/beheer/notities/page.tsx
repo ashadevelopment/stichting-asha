@@ -220,7 +220,7 @@ export default function NotitiesPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+              <label className="text-sm font-medium mb-1 flex items-center gap-2">
                 <Calendar size={16} /> Verloopdatum
               </label>
               <select 
