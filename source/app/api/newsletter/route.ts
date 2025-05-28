@@ -73,6 +73,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Auto-detect YouTube videos and set embed URL
+    if (newsletterPost.link && newsletterPost.link.includes('youtube.com/watch')) {
+      const videoIdMatch = newsletterPost.link.match(/v=([^&]+)/)
+      if (videoIdMatch) {
+        newsletterPost.type = 'video'
+        newsletterPost.videoUrl = `https://www.youtube.com/embed/${videoIdMatch[1]}`
+      }
+    } else if (newsletterPost.link && newsletterPost.link.includes('youtu.be/')) {
+      const videoIdMatch = newsletterPost.link.match(/youtu\.be\/([^?]+)/)
+      if (videoIdMatch) {
+        newsletterPost.type = 'video'
+        newsletterPost.videoUrl = `https://www.youtube.com/embed/${videoIdMatch[1]}`
+      }
+    }
+
     // Create new newsletter post
     const newPost = await Newsletter.create(newsletterPost)
     
@@ -80,93 +95,5 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error creating newsletter post:', error)
     return NextResponse.json({ error: 'Failed to create newsletter post' }, { status: 500 })
-  }
-}
-
-// PUT update an existing newsletter post
-export async function PUT(req: NextRequest) {
-  // Check admin access
-  const authCheck = await checkAdminAccess(req)
-  if (authCheck) return authCheck
-
-  try {
-    await dbConnect()
-    
-    // Parse multipart form data
-    const formData = await req.formData()
-    
-    // Get post ID from URL
-    const postId = req.nextUrl.pathname.split('/').pop()
-    if (!postId) {
-      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
-    }
-
-    // Prepare update data
-    const updateData: any = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      content: formData.get('content') as string,
-      type: formData.get('type') as 'article' | 'video',
-      link: formData.get('link') as string,
-      videoUrl: formData.get('videoUrl') as string,
-    }
-
-    // Handle image upload
-    const imageFile = formData.get('image') as File | null
-    if (imageFile && imageFile.size > 0) {
-      const bytes = await imageFile.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
-      updateData.image = {
-        filename: imageFile.name,
-        contentType: imageFile.type,
-        data: buffer.toString('base64')
-      }
-    }
-
-    // Update the post
-    const updatedPost = await Newsletter.findByIdAndUpdate(
-      postId, 
-      updateData, 
-      { new: true, runValidators: true }
-    )
-    
-    if (!updatedPost) {
-      return NextResponse.json({ error: 'Newsletter post not found' }, { status: 404 })
-    }
-    
-    return NextResponse.json(updatedPost)
-  } catch (error) {
-    console.error('Error updating newsletter post:', error)
-    return NextResponse.json({ error: 'Failed to update newsletter post' }, { status: 500 })
-  }
-}
-
-// DELETE a newsletter post
-export async function DELETE(req: NextRequest) {
-  // Check admin access
-  const authCheck = await checkAdminAccess(req)
-  if (authCheck) return authCheck
-
-  try {
-    await dbConnect()
-    
-    // Get post ID from URL
-    const postId = req.nextUrl.pathname.split('/').pop()
-    if (!postId) {
-      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
-    }
-
-    // Delete the post
-    const deletedPost = await Newsletter.findByIdAndDelete(postId)
-    
-    if (!deletedPost) {
-      return NextResponse.json({ error: 'Newsletter post not found' }, { status: 404 })
-    }
-    
-    return NextResponse.json({ message: 'Newsletter post deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting newsletter post:', error)
-    return NextResponse.json({ error: 'Failed to delete newsletter post' }, { status: 500 })
   }
 }
