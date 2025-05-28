@@ -186,7 +186,7 @@ export default function PersoonlijkeGegevensPage() {
   return (
     <div className="p-4 sm:p-6">
       <h2 className="text-xl sm:text-2xl font-bold mb-6 flex items-center gap-2">
-        <User2 size={20} className="text-blue-600" /> Persoonlijke Gegevens
+        <User2 size={24} /> Persoonlijke Gegevens
       </h2>
 
       <div className="space-y-6">

@@ -196,7 +196,7 @@ export default function DashboardPage() {
   return (
     <div className="p-4 sm:p-6">
       {/* Welkomstkaart met profielfoto en naam */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+      <div className="bg-white p-4 sm:p-6 mb-6">
         <div className="flex flex-col sm:flex-row items-center gap-4">
           {/* Profielfoto sectie */}
           <div className="flex-shrink-0">
@@ -277,9 +277,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Recente activiteiten */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mt-6">
+      <div className="bg-white p-4 sm:p-6 mt-6">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Activity size={20} /> Recente activiteiten
+          <Activity size={24} /> Recente activiteiten
         </h2>
         
         {isLoading ? (
@@ -291,7 +291,7 @@ export default function DashboardPage() {
             <p>Fout bij laden van activiteiten: {error}</p>
           </div>
         ) : activities.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-4 cursor-pointer">
             {activities.map((activity, index) => {
               const { message, timestamp, iconColor } = formatActivityMessage(activity);
               return (

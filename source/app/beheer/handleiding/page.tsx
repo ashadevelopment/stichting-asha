@@ -508,6 +508,85 @@ export default function HandleidingPage() {
             </div>
           </section>
         );
+      
+      case 'newsletter':
+        return (
+          <section>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4">Nieuwsbrief</h2>
+            <p className="mb-4 text-gray-700">
+              De nieuwsbrief module stelt je in staat om interessante artikelen en video's te delen met de website bezoekers. 
+              Deze functie is alleen beschikbaar voor gebruikers met de rol 'beheerder' of 'developer'.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-800">Nieuwe post toevoegen</h3>
+                <p className="text-gray-700">
+                  Om een nieuwe nieuwsbrief post toe te voegen:
+                </p>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1 mt-2">
+                  <li>Klik op de knop "Nieuwe Post" rechtsboven op de pagina.</li>
+                  <li><strong>Link/URL:</strong> Voer de URL in van het artikel of de video die je wilt delen. Voor YouTube video's wordt automatisch een preview gegenereerd.</li>
+                  <li><strong>Titel:</strong> Een duidelijke titel voor de post (wordt automatisch ingevuld bij link preview).</li>
+                  <li><strong>Type:</strong> Kies tussen 'Artikel' of 'Video' afhankelijk van de content.</li>
+                  <li><strong>Beschrijving:</strong> Een korte samenvatting van de content (verplicht).</li>
+                  <li><strong>Content:</strong> Optioneel veld voor aanvullende informatie of commentaar.</li>
+                  <li><strong>Video URL:</strong> Voor video posts, de embed URL (wordt automatisch ingevuld voor YouTube).</li>
+                </ul>
+                <p className="text-gray-700 mt-2">
+                  Klik op "Opslaan" om de post toe te voegen aan de nieuwsbrief sectie van de website.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-800">Link Preview Functie</h3>
+                <p className="text-gray-700">
+                  Wanneer je een URL invoert, wordt automatisch een preview gegenereerd:
+                </p>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1 mt-2">
+                  <li><strong>YouTube video's:</strong> Worden automatisch gedetecteerd en als video type ingesteld.</li>
+                  <li><strong>Andere websites:</strong> Er wordt geprobeerd titel, beschrijving en afbeelding op te halen.</li>
+                  <li>De preview helpt bij het controleren of je de juiste content deelt.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-800">Posts beheren</h3>
+                <p className="text-gray-700">
+                  In het overzicht van bestaande posts kun je:
+                </p>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1 mt-2">
+                  <li><strong>Bewerken:</strong> Klik op het bewerk-icoon (potlood) om een bestaande post aan te passen.</li>
+                  <li><strong>Verwijderen:</strong> Klik op het prullenbak-icoon om een post te verwijderen. Er wordt om bevestiging gevraagd.</li>
+                  <li><strong>Link openen:</strong> Klik op de blauwe link onder elke post om naar de originele bron te gaan.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-800">Post Types</h3>
+                <p className="text-gray-700">
+                  Er zijn twee hoofdtypes posts:
+                </p>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1 mt-2">
+                  <li><strong>Artikel:</strong> Voor nieuwsartikelen, blogposts en andere tekstgebaseerde content.</li>
+                  <li><strong>Video:</strong> Voor YouTube video's en andere video content met embedded speler.</li>
+                </ul>
+              </div>
+
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md">
+                <p className="text-blue-800">
+                  <strong>Tips voor nieuwsbrief posts:</strong>
+                </p>
+                <ul className="list-disc pl-5 text-blue-800 space-y-1 mt-1">
+                  <li>Gebruik relevante en interessante content die past bij jullie organisatie.</li>
+                  <li>Schrijf duidelijke, beknopte beschrijvingen.</li>
+                  <li>Voor YouTube video's kun je de gewone YouTube URL gebruiken - deze wordt automatisch omgezet.</li>
+                  <li>Controleer altijd de preview voordat je een post opslaat.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        );
 
       case 'troubleshooting':
         return (
@@ -540,12 +619,12 @@ export default function HandleidingPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-gray-800">Technische ondersteuning</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <p><strong>Email:</strong> ectn033@gamil.com</p>
+                  <h3 className="text-lg font-medium text-gray-800 mb-5">Technische ondersteuning</h3>
+                  <div className="bg-blue-100 p-4 rounded-lg border border-blue-300">
+                    <p><strong>Email:</strong> ectn033@gmail.com</p>
                     <p><strong>Telefoon:</strong>06 38 41 51 73</p>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-3">
+                  <div className="bg-blue-100 p-4 rounded-lg border border-blue-300 mt-3">
                     <p><strong>Email:</strong> support@example.com</p>
                     <p><strong>Telefoon:</strong> 070-1234567</p>
                   </div>

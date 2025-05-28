@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { Plus, Edit, Trash2, Save, X, ExternalLink, Video } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, ExternalLink, Video, Newspaper } from 'lucide-react'
 
 interface NewsletterPost {
   _id?: string
@@ -200,7 +200,9 @@ export default function NewsletterManagementPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Newsletter Beheer</h1>
+        <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
+            <Newspaper size={24} />Nieuwsbrief
+        </h2>
         <button
           onClick={() => setIsCreating(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"

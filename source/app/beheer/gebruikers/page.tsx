@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProfilePictureManager from '../../../components/ProfilePictureManager';
+import { Users } from "lucide-react";
 
 interface User {
   _id: string;
@@ -98,7 +99,9 @@ export default function GebruikersPage() {
   return (
     <div className="px-4 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Gebruikers</h1>
+        <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
+          <Users size={24} /> Gebruikers
+        </h2>
         <button
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
           onClick={() => setShowAddModal(true)}

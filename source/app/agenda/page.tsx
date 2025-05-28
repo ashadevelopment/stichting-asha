@@ -172,7 +172,6 @@ export default function Agenda() {
 
           {/* Calendar */}
           <div className="flex-1 md:w-[240px] bg-white rounded-lg shadow-lg p-6 flex flex-col h-auto">
-            <h2 className="text-2xl font-bold text-[#1E2A78] mb-4 text-center">Agenda</h2>
 
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md mb-3 text-sm">
