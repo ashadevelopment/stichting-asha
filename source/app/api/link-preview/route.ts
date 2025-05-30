@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       $('meta[property="og:description"]').attr('content') ||
       $('meta[name="twitter:description"]').attr('content') ||
       $('meta[name="description"]').attr('content') ||
-      'No description found'
+      'Geen geen beschrijving gevonden'
 
     let image = 
       $('meta[property="og:image"]').attr('content') ||
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     // Return basic fallback data
     return NextResponse.json({
       title: 'Link Preview',
-      description: 'Unable to fetch preview for this link',
+      description: 'Geen beschrijving beschikbaar',
       image: '',
       url: url
     })

@@ -204,11 +204,11 @@ export default function NewsletterManagementPage() {
           ...prev, 
           type: 'video', 
           videoUrl: `https://www.youtube.com/embed/${videoId}`,
-          title: prev.title || 'YouTube Video',
+          title: prev.title || 'Stiching Asha YouTube Video',
           description: prev.description || 'Video vanuit YouTube'
         }))
         setLinkPreview({
-          title: 'YouTube Video',
+          title: `Stichting Asha YouTube Video`,
           description: 'Video vanuit YouTube',
           image: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
           url: url
@@ -265,7 +265,7 @@ export default function NewsletterManagementPage() {
 
   // Handle delete
   const handleDelete = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post?')) return
+    if (!confirm('Weet u zeker dat u deze post wilt verwijderen?')) return
 
     try {
       const response = await fetch(`/api/newsletter/${postId}`, {
@@ -319,7 +319,7 @@ export default function NewsletterManagementPage() {
   }, [formData.link])
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>
+    return <div className="flex justify-center items-center h-64">Laden...</div>
   }
 
   return (

@@ -159,7 +159,6 @@ export default function NewsletterPage() {
       return `data:${post.image.contentType};base64,${post.image.data}`
     }
     
-    // For YouTube videos, we'll handle thumbnails separately with the YouTubeThumbnail component
     return null
   }
 
@@ -302,37 +301,67 @@ export default function NewsletterPage() {
           const youtubeId = getYouTubeVideoId(post)
           
           return (
-            <div key={post._id} className="bg-white rounded-lg shadow p-4">
-              <div className="flex gap-3">
-                {(imageUrl || youtubeId) && (
-                  <div className="w-16 h-16 flex-shrink-0">
-                    {imageUrl ? (
-                      <img 
-                        src={imageUrl} 
-                        alt={post.title}
-                        className="w-full h-full object-cover rounded"
-                      />
-                    ) : youtubeId ? (
-                      <YouTubeThumbnail
-                        videoId={youtubeId}
-                        alt={post.title}
-                        className="w-full h-full object-cover rounded"
-                      />
-                    ) : null}
+            <div key={post._id} className="bg-white rounded-lg shadow-lg p-6">
+              {(imageUrl || youtubeId) && (
+                <div className="w-full h-32 mb-4">
+                  {imageUrl ? (
+                    <img 
+                      src={imageUrl} 
+                      alt={post.title}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  ) : youtubeId ? (
+                    <YouTubeThumbnail
+                      videoId={youtubeId}
+                      alt={post.title}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  ) : null}
+                </div>
+              )}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  {post.type === 'video' ? (
+                    <Video className="text-red-500" size={16} />
+                  ) : (
+                    <ExternalLink className="text-blue-500" size={16} />
+                  )}
+                  <span className="text-xs font-medium text-gray-500 uppercase">
+                    {post.type === 'video' ? 'Video' : 'Artikel'}
+                  </span>
+                </div>
+                <h4 className="font-bold text-base leading-tight">{post.title}</h4>
+                <p className="text-sm text-gray-600 line-clamp-3">{post.description}</p>
+                
+                <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
+                  <div className="flex items-center gap-1">
+                    <User size={12} />
+                    <span>{post.author}</span>
                   </div>
-                )}
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm mb-1">{post.title}</h4>
-                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">{post.description}</p>
-                  {post.link && (
+                  <div className="flex items-center gap-1">
+                    <Calendar size={12} />
+                    <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  {post.link ? (
                     <a
                       href={post.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-1 rounded text-xs font-medium hover:bg-yellow-500"
+                      className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-500 transition-colors w-full justify-center"
                     >
                       Lees Meer
+                      <ExternalLink size={14} />
                     </a>
+                  ) : (
+                    <button
+                      className="inline-flex items-center gap-2 bg-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium w-full justify-center cursor-not-allowed"
+                      disabled
+                    >
+                      Geen link beschikbaar
+                    </button>
                   )}
                 </div>
               </div>
