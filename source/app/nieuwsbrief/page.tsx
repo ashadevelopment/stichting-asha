@@ -184,9 +184,9 @@ export default function NewsletterPage() {
         ))}
       </div>
       
-      {/* Sidebar */}
+      {/* Sidebar - Show remaining posts */}
       <div className="space-y-6">
-        {posts.slice(2, 5).map((post) => (
+        {posts.slice(2).map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow p-4">
             <div className="flex gap-3">
               {getImageUrl(post) && (
@@ -217,13 +217,12 @@ export default function NewsletterPage() {
     </div>
   )
 
-  // Template 2: Two column layout
+  // Template 2: Grid layout - show all posts
   const renderTemplate2 = () => (
     <div className="space-y-8">
-      
-      {/* Bottom articles */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {posts.slice(0, 4).map((post) => (
+      {/* Show all posts in responsive grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {posts.map((post) => (
           <div key={post._id}>
             {renderArticleCard(post, 'h-full')}
           </div>
@@ -232,15 +231,92 @@ export default function NewsletterPage() {
     </div>
   )
 
-  // Template 3: Single column with sidebar
+  // Template 3: Single column layout - show all posts
   const renderTemplate3 = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      {/* Sidebar with articles */}
-      <div className="space-y-6">
-        {posts.slice(0, 4).map((post) => (
+    <div className="max-w-4xl mx-auto">
+      <div className="space-y-8">
+        {posts.map((post) => (
           <div key={post._id}>
-            {renderArticleCard(post)}
+            {post.type === 'video' ? (
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Video className="text-red-500" size={20} />
+                  <h3 className="text-xl font-bold">{post.title}</h3>
+                </div>
+                {renderVideo(post)}
+                <p className="text-gray-600 mt-4">{post.description}</p>
+                {post.content && (
+                  <div className="text-gray-700 mt-4">{post.content}</div>
+                )}
+                <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+                  <span>{post.author}</span>
+                  <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
+                </div>
+                {post.link && (
+                  <div className="mt-4">
+                    <a
+                      href={post.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded font-medium hover:bg-yellow-500 transition-colors"
+                    >
+                      Bekijk op YouTube
+                      <ExternalLink size={16} />
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="md:flex">
+                  {getImageUrl(post) && (
+                    <div className="md:w-1/3">
+                      <img 
+                        src={getImageUrl(post)!} 
+                        alt={post.title}
+                        className="w-full h-48 md:h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className={`p-6 ${getImageUrl(post) ? 'md:w-2/3' : 'w-full'}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <ExternalLink className="text-blue-500" size={18} />
+                      <span className="text-sm font-medium text-gray-500 uppercase">Artikel</span>
+                    </div>
+                    
+                    <h3 className="text-2xl font-bold mb-3">{post.title}</h3>
+                    <p className="text-gray-600 mb-4">{post.description}</p>
+                    
+                    {post.content && (
+                      <div className="text-gray-700 mb-4">{post.content}</div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center gap-1">
+                        <User size={14} />
+                        <span>{post.author}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar size={14} />
+                        <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
+                      </div>
+                    </div>
+                    
+                    {post.link && (
+                      <a
+                        href={post.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded font-medium hover:bg-yellow-500 transition-colors"
+                      >
+                        Lees Meer
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
