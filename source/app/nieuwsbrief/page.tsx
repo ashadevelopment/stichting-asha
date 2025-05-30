@@ -23,11 +23,101 @@ interface NewsletterPost {
 
 type LayoutType = 'template1' | 'template2' | 'template3'
 
+// Component for YouTube thumbnail with fallback
+const YouTubeThumbnail = ({ 
+  videoId, 
+  alt, 
+  className 
+}: {
+  videoId: string
+  alt: string
+  className?: string
+}) => {
+  const [showFallback, setShowFallback] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+
+  const fallbackIcon = (
+    <div className={`${className} bg-red-100 flex items-center justify-center border-2 border-red-200 rounded`}>
+      <div className="text-center">
+        <Video className="text-red-500 mx-auto mb-1" size={20} />
+        <span className="text-xs text-red-600 font-medium">YouTube</span>
+      </div>
+    </div>
+  )
+
+  // Try hqdefault first as it's more reliable than maxresdefault
+  const thumbnailSrc = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    
+    // Check if the image is likely a placeholder by checking dimensions
+    // YouTube's placeholder images are typically 480x360 but appear as gray boxes
+    // We can detect this by checking if the image is too small or has specific dimensions
+    if (img.naturalWidth === 120 && img.naturalHeight === 90) {
+      // This is likely the default placeholder
+      setShowFallback(true)
+    } else if (img.naturalWidth < 120 || img.naturalHeight < 90) {
+      // Image too small, likely an error
+      setShowFallback(true)
+    } else {
+      setImageLoaded(true)
+    }
+  }
+
+  const handleImageError = () => {
+    setShowFallback(true)
+  }
+
+  useEffect(() => {
+    // Reset states when videoId changes
+    setShowFallback(false)
+    setImageLoaded(false)
+  }, [videoId])
+
+  if (showFallback) {
+    return fallbackIcon
+  }
+
+  return (
+    <div className="relative">
+      <img 
+        src={thumbnailSrc}
+        alt={alt}
+        className={`${className} ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        style={{ transition: 'opacity 0.2s' }}
+      />
+      {!imageLoaded && !showFallback && (
+        <div className={`${className} bg-gray-100 flex items-center justify-center animate-pulse absolute inset-0`}>
+          <Video className="text-gray-400" size={16} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function NewsletterPage() {
   const [posts, setPosts] = useState<NewsletterPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [layout, setLayout] = useState<LayoutType>('template1')
   const [showLayoutSelector, setShowLayoutSelector] = useState(false)
+
+  // Extract YouTube video ID from URL
+  const extractYouTubeId = (url: string): string | null => {
+    const regexPatterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+      /youtube\.com\/embed\/([^&\n?#]+)/,
+      /youtube\.com\/v\/([^&\n?#]+)/
+    ]
+    
+    for (const pattern of regexPatterns) {
+      const match = url.match(pattern)
+      if (match) return match[1]
+    }
+    return null
+  }
 
   // Load layout preference from localStorage
   useEffect(() => {
@@ -63,20 +153,30 @@ export default function NewsletterPage() {
     fetchPosts()
   }, [])
 
-  // Get image URL for display
+  // Get image URL for display with improved YouTube handling
   const getImageUrl = (post: NewsletterPost) => {
     if (post.image?.data) {
       return `data:${post.image.contentType};base64,${post.image.data}`
     }
     
-    // Extract YouTube thumbnail if it's a YouTube video
-    if (post.type === 'video' && post.videoUrl) {
-      const videoIdMatch = post.videoUrl.match(/embed\/([^?]+)/)
-      if (videoIdMatch) {
-        return `https://img.youtube.com/vi/${videoIdMatch[1]}/maxresdefault.jpg`
+    // For YouTube videos, we'll handle thumbnails separately with the YouTubeThumbnail component
+    return null
+  }
+
+  // Get YouTube video ID from post
+  const getYouTubeVideoId = (post: NewsletterPost): string | null => {
+    if (post.type === 'video') {
+      // Try videoUrl first (embed format)
+      if (post.videoUrl) {
+        const embedMatch = post.videoUrl.match(/embed\/([^?]+)/)
+        if (embedMatch) return embedMatch[1]
+      }
+      
+      // Try link (regular YouTube URL)
+      if (post.link) {
+        return extractYouTubeId(post.link)
       }
     }
-    
     return null
   }
 
@@ -96,18 +196,29 @@ export default function NewsletterPage() {
     )
   }
 
-  // Render article card
+  // Render article card with YouTube thumbnail fallback
   const renderArticleCard = (post: NewsletterPost, className = '') => {
     const imageUrl = getImageUrl(post)
+    const youtubeId = getYouTubeVideoId(post)
     
     return (
       <div className={`bg-white rounded-lg shadow-lg overflow-hidden ${className}`}>
-        {imageUrl && (
-          <img 
-            src={imageUrl} 
-            alt={post.title}
-            className="w-full h-48 object-cover"
-          />
+        {(imageUrl || youtubeId) && (
+          <div className="w-full h-48 relative">
+            {imageUrl ? (
+              <img 
+                src={imageUrl} 
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            ) : youtubeId ? (
+              <YouTubeThumbnail
+                videoId={youtubeId}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            ) : null}
+          </div>
         )}
         <div className="p-6">
           <div className="flex items-center gap-2 mb-3">
@@ -186,33 +297,48 @@ export default function NewsletterPage() {
       
       {/* Sidebar - Show remaining posts */}
       <div className="space-y-6">
-        {posts.slice(2).map((post) => (
-          <div key={post._id} className="bg-white rounded-lg shadow p-4">
-            <div className="flex gap-3">
-              {getImageUrl(post) && (
-                <img 
-                  src={getImageUrl(post)!} 
-                  alt={post.title}
-                  className="w-16 h-16 object-cover rounded"
-                />
-              )}
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm mb-1">{post.title}</h4>
-                <p className="text-xs text-gray-600 mb-2 line-clamp-2">{post.description}</p>
-                {post.link && (
-                  <a
-                    href={post.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-1 rounded text-xs font-medium hover:bg-yellow-500"
-                  >
-                    Lees Meer
-                  </a>
+        {posts.slice(2).map((post) => {
+          const imageUrl = getImageUrl(post)
+          const youtubeId = getYouTubeVideoId(post)
+          
+          return (
+            <div key={post._id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex gap-3">
+                {(imageUrl || youtubeId) && (
+                  <div className="w-16 h-16 flex-shrink-0">
+                    {imageUrl ? (
+                      <img 
+                        src={imageUrl} 
+                        alt={post.title}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : youtubeId ? (
+                      <YouTubeThumbnail
+                        videoId={youtubeId}
+                        alt={post.title}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : null}
+                  </div>
                 )}
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm mb-1">{post.title}</h4>
+                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">{post.description}</p>
+                  {post.link && (
+                    <a
+                      href={post.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-1 rounded text-xs font-medium hover:bg-yellow-500"
+                    >
+                      Lees Meer
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -235,90 +361,103 @@ export default function NewsletterPage() {
   const renderTemplate3 = () => (
     <div className="max-w-4xl mx-auto">
       <div className="space-y-8">
-        {posts.map((post) => (
-          <div key={post._id}>
-            {post.type === 'video' ? (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Video className="text-red-500" size={20} />
-                  <h3 className="text-xl font-bold">{post.title}</h3>
-                </div>
-                {renderVideo(post)}
-                <p className="text-gray-600 mt-4">{post.description}</p>
-                {post.content && (
-                  <div className="text-gray-700 mt-4">{post.content}</div>
-                )}
-                <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
-                  <span>{post.author}</span>
-                  <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
-                </div>
-                {post.link && (
-                  <div className="mt-4">
-                    <a
-                      href={post.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded font-medium hover:bg-yellow-500 transition-colors"
-                    >
-                      Bekijk op YouTube
-                      <ExternalLink size={16} />
-                    </a>
+        {posts.map((post) => {
+          const imageUrl = getImageUrl(post)
+          const youtubeId = getYouTubeVideoId(post)
+          
+          return (
+            <div key={post._id}>
+              {post.type === 'video' ? (
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Video className="text-red-500" size={20} />
+                    <h3 className="text-xl font-bold">{post.title}</h3>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div className="md:flex">
-                  {getImageUrl(post) && (
-                    <div className="md:w-1/3">
-                      <img 
-                        src={getImageUrl(post)!} 
-                        alt={post.title}
-                        className="w-full h-48 md:h-full object-cover"
-                      />
-                    </div>
+                  {renderVideo(post)}
+                  <p className="text-gray-600 mt-4">{post.description}</p>
+                  {post.content && (
+                    <div className="text-gray-700 mt-4">{post.content}</div>
                   )}
-                  <div className={`p-6 ${getImageUrl(post) ? 'md:w-2/3' : 'w-full'}`}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <ExternalLink className="text-blue-500" size={18} />
-                      <span className="text-sm font-medium text-gray-500 uppercase">Artikel</span>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold mb-3">{post.title}</h3>
-                    <p className="text-gray-600 mb-4">{post.description}</p>
-                    
-                    {post.content && (
-                      <div className="text-gray-700 mb-4">{post.content}</div>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <div className="flex items-center gap-1">
-                        <User size={14} />
-                        <span>{post.author}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
-                      </div>
-                    </div>
-                    
-                    {post.link && (
+                  <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+                    <span>{post.author}</span>
+                    <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
+                  </div>
+                  {post.link && (
+                    <div className="mt-4">
                       <a
                         href={post.link}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded font-medium hover:bg-yellow-500 transition-colors"
                       >
-                        Lees Meer
+                        Bekijk op YouTube
                         <ExternalLink size={16} />
                       </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="md:flex">
+                    {(imageUrl || youtubeId) && (
+                      <div className="md:w-1/3">
+                        {imageUrl ? (
+                          <img 
+                            src={imageUrl} 
+                            alt={post.title}
+                            className="w-full h-48 md:h-full object-cover"
+                          />
+                        ) : youtubeId ? (
+                          <YouTubeThumbnail
+                            videoId={youtubeId}
+                            alt={post.title}
+                            className="w-full h-48 md:h-full object-cover"
+                          />
+                        ) : null}
+                      </div>
                     )}
+                    <div className={`p-6 ${(imageUrl || youtubeId) ? 'md:w-2/3' : 'w-full'}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <ExternalLink className="text-blue-500" size={18} />
+                        <span className="text-sm font-medium text-gray-500 uppercase">Artikel</span>
+                      </div>
+                      
+                      <h3 className="text-2xl font-bold mb-3">{post.title}</h3>
+                      <p className="text-gray-600 mb-4">{post.description}</p>
+                      
+                      {post.content && (
+                        <div className="text-gray-700 mb-4">{post.content}</div>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <div className="flex items-center gap-1">
+                          <User size={14} />
+                          <span>{post.author}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar size={14} />
+                          <span>{new Date(post.createdAt).toLocaleDateString('nl-NL')}</span>
+                        </div>
+                      </div>
+                      
+                      {post.link && (
+                        <a
+                          href={post.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-yellow-400 text-black px-4 py-2 rounded font-medium hover:bg-yellow-500 transition-colors"
+                        >
+                          Lees Meer
+                          <ExternalLink size={16} />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
