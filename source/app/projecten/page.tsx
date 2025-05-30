@@ -240,10 +240,10 @@ export default function Projecten() {
                 </a>
               </div>
             )}
-    </div>
-  </div>
-</div>
-)}
+          </div>
+        </div>
+      </div>
+      )}
     </div>
   );
 }

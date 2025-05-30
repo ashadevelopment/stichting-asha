@@ -66,7 +66,7 @@ export default function Footer() {
 
         {/* Copyright  with     Poppins*/}
 
-        <p className={`text-sm text-gray-400 ${poppins.className} text-center md:text-right`}>
+        <p className={`text-sm text-yellow-400 ${poppins.className} text-center md:text-right`}>
           &copy; {new Date().getFullYear()} Stichting Asha. Alle rechten voorbehouden.
         </p>
       </div>

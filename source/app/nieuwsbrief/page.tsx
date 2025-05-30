@@ -307,6 +307,6 @@ export default function NewsletterPage() {
             </div>
             )}
         </div>
-        </div>
+    </div>
   )
 }

@@ -50,12 +50,14 @@ export function Header({ className = "" }: HeaderProps) {
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-row items-center justify-between">
           
           {/* Left: Logo + Title */}
-          <div className="flex items-center gap-4">
-            <img src="/logo.png" alt="Logo" className="h-12 w-12" />
-            <span className="text-2xl font-bold text-[#2E376F]">
-              Stichting Asha
-            </span>
-          </div>
+          <Link href="/">
+            <div className="flex items-center gap-4">
+              <img src="/logo.png" alt="Logo" className="h-12 w-12" />
+              <span className="text-2xl font-bold text-[#2E376F]">
+                Stichting Asha
+              </span>
+            </div>
+          </Link>
 
           {/* Mobile Menu Button */}
           <button 

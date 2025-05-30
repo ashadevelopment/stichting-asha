@@ -62,6 +62,12 @@ export default function Home() {
   const visieRef = useRef(null);
   const missieRef = useRef(null);
   const mediaRef = useRef(null);
+  const meerOverTitleRef = useRef(null);
+  const geschiedenisRef = useRef(null);
+  const brugRef = useRef(null);
+  const imageRef = useRef(null);
+  const featuresRef = useRef(null);
+  const bottomBannerRef = useRef(null);
   
   // Carousel states
   const [carouselItems, setCarouselItems] = useState<CarouselItem[]>([]);
@@ -83,22 +89,99 @@ export default function Home() {
         duration: 1000,
       });
     };
+
+    const animateTitle = (element: HTMLElement) => {
+      animate(element, {
+        opacity: [0, 1],
+        scale: [0.8, 1],
+        translateY: [30, 0],
+        easing: "easeOutElastic(1, .8)",
+        duration: 1200,
+      });
+    };
+
+    const animateFromLeft = (element: HTMLElement) => {
+      animate(element, {
+        opacity: [0, 1],
+        translateX: [-100, 0],
+        easing: "easeOutCubic",
+        duration: 1000,
+      });
+    };
+
+    const animateFromRight = (element: HTMLElement) => {
+      animate(element, {
+        opacity: [0, 1],
+        translateX: [100, 0],
+        easing: "easeOutCubic",
+        duration: 1000,
+      });
+    };
+
+    const animateStagger = (element: HTMLElement) => {
+      const children = element.children;
+      Array.from(children).forEach((child, index) => {
+        animate(child as HTMLElement, {
+          opacity: [0, 1],
+          translateY: [60, 0],
+          scale: [0.9, 1],
+          easing: "easeOutBack(1.7)",
+          duration: 800,
+          delay: index * 200,
+        });
+      });
+    };
+
+    const animateBounce = (element: HTMLElement) => {
+      animate(element, {
+        opacity: [0, 1],
+        translateY: [80, 0],
+        scale: [0.7, 1.1, 1],
+        easing: "easeOutElastic(1, .6)",
+        duration: 1500,
+      });
+    };
   
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            animateOnScroll(entry.target as HTMLElement);
+            const element = entry.target as HTMLElement;
+
+            // Pas specifieke animaties toe op bepaalde elementen
+            if (element === meerOverTitleRef.current) {
+              animateTitle(element);
+            } else if (element === geschiedenisRef.current) {
+              animateFromLeft(element);
+            } else if (element === brugRef.current) {
+              animateFromLeft(element);
+            } else if (element === imageRef.current) {
+              animateFromRight(element);
+            } else if (element === featuresRef.current) {
+              animateStagger(element);
+            } else if (element === bottomBannerRef.current) {
+              animateBounce(element);
+            } else {
+              // Fallback voor algemene elementen
+              animateOnScroll(element);
+            }
+
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 } // of 0.2, afhankelijk van je voorkeur
     );
   
     if (visieRef.current) observer.observe(visieRef.current);
     if (missieRef.current) observer.observe(missieRef.current);
     if (mediaRef.current) observer.observe(mediaRef.current);
+    if (meerOverTitleRef.current) observer.observe(meerOverTitleRef.current);
+    if (geschiedenisRef.current) observer.observe(geschiedenisRef.current);
+    if (brugRef.current) observer.observe(brugRef.current);
+    if (imageRef.current) observer.observe(imageRef.current);
+    if (featuresRef.current) observer.observe(featuresRef.current);
+    if (bottomBannerRef.current) observer.observe(bottomBannerRef.current);
   
     return () => observer.disconnect();
   }, []);
@@ -542,7 +625,7 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
               {/* Left Column - Main Story */}
               <div className="space-y-8">
-                <div className="bg-white rounded-xl shadow-lg p-8">
+                <div ref={geschiedenisRef} className="bg-white rounded-xl shadow-lg p-8 opacity-0 transform hover:shadow-xl transition-shadow duration-300">
                   <h3 className="text-xl font-bold text-[#1E2A78] mb-4">Onze Geschiedenis</h3>
                   <p className="text-gray-700 text-base leading-relaxed mb-4">
                     Stichting Asha is een maatschappelijk betrokken organisatie in Utrecht die zich sinds 1992 inzet voor Hindostaanse ouderen. Wat ooit begon als een kleinschalige ontmoeting is uitgegroeid tot een bloeiend project waar wekelijks tientallen deelnemers samenkomen.
@@ -552,7 +635,7 @@ export default function Home() {
                   </p>
                 </div>
                 
-                <div className="bg-white rounded-xl shadow-lg p-8">
+                <div ref={brugRef} className="bg-white rounded-xl shadow-lg p-8 opacity-0 transform hover:shadow-xl transition-shadow duration-300">
                   <h3 className="text-xl font-bold text-[#1E2A78] mb-4">Brug tussen Generaties</h3>
                   <p className="text-gray-700 text-base leading-relaxed">
                     We helpen ouderen actief mee te doen in de Nederlandse samenleving, zonder hun eigen cultuur en identiteit te verliezen. We bieden praktische ondersteuning, kennisdeling en ruimte voor persoonlijke groei door middel van diverse activiteiten en programma's.
@@ -562,7 +645,7 @@ export default function Home() {
               
               {/* Right Column - Image */}
               <div className="flex justify-center items-start">
-                <div className="relative">
+                <div ref={imageRef} className="relative opacity-0 transform hover:scale-105 transition-transform duration-300">
                   <Image
                     src="/activity.png"
                     alt="Stichting Asha groepsfoto"
@@ -579,9 +662,9 @@ export default function Home() {
             </div>
             
             {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div ref={featuresRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center opacity-0 transform hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 transform hover:rotate-12 transition-transform duration-300">
                   <span className="text-white font-bold text-xl"><Handshake /></span>
                 </div>
                 <h4 className="text-lg font-bold text-[#1E2A78] mb-2">Inclusief & Welkom</h4>
@@ -590,8 +673,8 @@ export default function Home() {
                 </p>
               </div>
               
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center opacity-0 transform hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 transform hover:rotate-12 transition-transform duration-300">
                   <span className="text-white font-bold text-xl"><BookCopy /></span>
                 </div>
                 <h4 className="text-lg font-bold text-[#1E2A78] mb-2">Digitale Vaardigheden</h4>
@@ -600,8 +683,8 @@ export default function Home() {
                 </p>
               </div>
               
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center opacity-0 transform hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+                <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-4 transform hover:rotate-12 transition-transform duration-300">
                   <span className="text-white font-bold text-xl"><Globe /></span>
                 </div>
                 <h4 className="text-lg font-bold text-[#1E2A78] mb-2">Cultuur & Traditie</h4>
@@ -612,18 +695,18 @@ export default function Home() {
             </div>
             
             {/* Bottom Banner */}
-            <div className="bg-[#1E2A78] rounded-xl p-8 text-center text-white">
+            <div className="bg-[#1E2A78] rounded-xl p-8 text-center text-white transform hover:bg-[#2E376E] transition-colors duration-300 cursor-pointer">
               <h3 className="text-xl font-bold mb-4">Wordt onderdeel van onze gemeenschap</h3>
               <p className="text-white/90 mb-6 max-w-2xl mx-auto">
                 Of je nu op zoek bent naar ontmoeting, ondersteuning of gewoon gezelligheid - bij Stichting Asha vind je een warme gemeenschap die je verwelkomt zoals je bent.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <div className="flex items-center gap-2 text-yellow-400">
+                <div className="flex items-center gap-2 text-yellow-400 transform hover:scale-110 transition-transform duration-200">
                   <MapPin className="w-5 h-5" />
                   <span>Cartesiusweg 11, Utrecht</span>
                 </div>
                 <div className="hidden sm:block w-px h-6 bg-white/30"></div>
-                <div className="flex items-center gap-2 text-yellow-400">
+                <div className="flex items-center gap-2 text-yellow-400 transform hover:scale-110 transition-transform duration-200">
                   <Calendar className="w-5 h-5" />
                   <span>Elke week nieuwe activiteiten</span>
                 </div>
