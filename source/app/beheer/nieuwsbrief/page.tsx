@@ -29,6 +29,118 @@ interface LinkPreview {
   url: string
 }
 
+// Component for handling image with fallback
+const ImageWithFallback = ({ 
+  src, 
+  alt, 
+  className, 
+  fallbackSrc = '/images/video-placeholder.jpg' 
+}: {
+  src: string
+  alt: string
+  className?: string
+  fallbackSrc?: string
+}) => {
+  const [imgSrc, setImgSrc] = useState(src)
+  const [hasError, setHasError] = useState(false)
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true)
+      setImgSrc(fallbackSrc)
+    }
+  }
+
+  useEffect(() => {
+    setImgSrc(src)
+    setHasError(false)
+  }, [src])
+
+  return (
+    <img 
+      src={imgSrc}
+      alt={alt}
+      className={className}
+      onError={handleError}
+    />
+  )
+}
+
+// Component for YouTube thumbnail with fallback
+const YouTubeThumbnail = ({ 
+  videoId, 
+  alt, 
+  className 
+}: {
+  videoId: string
+  alt: string
+  className?: string
+}) => {
+  const [showFallback, setShowFallback] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
+
+  const fallbackIcon = (
+    <div className={`${className} bg-red-100 flex items-center justify-center border-2 border-red-200 rounded`}>
+      <div className="text-center">
+        <Video className="text-red-500 mx-auto mb-1" size={20} />
+        <span className="text-xs text-red-600 font-medium">YouTube</span>
+      </div>
+    </div>
+  )
+
+  // Try hqdefault first as it's more reliable than maxresdefault
+  const thumbnailSrc = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    
+    // Check if the image is likely a placeholder by checking dimensions
+    // YouTube's placeholder images are typically 480x360 but appear as gray boxes
+    // We can detect this by checking if the image is too small or has specific dimensions
+    if (img.naturalWidth === 120 && img.naturalHeight === 90) {
+      // This is likely the default placeholder
+      setShowFallback(true)
+    } else if (img.naturalWidth < 120 || img.naturalHeight < 90) {
+      // Image too small, likely an error
+      setShowFallback(true)
+    } else {
+      setImageLoaded(true)
+    }
+  }
+
+  const handleImageError = () => {
+    setShowFallback(true)
+  }
+
+  useEffect(() => {
+    // Reset states when videoId changes
+    setShowFallback(false)
+    setImageLoaded(false)
+  }, [videoId])
+
+  if (showFallback) {
+    return fallbackIcon
+  }
+
+  return (
+    <>
+      <img 
+        src={thumbnailSrc}
+        alt={alt}
+        className={`${className} ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        style={{ transition: 'opacity 0.2s' }}
+      />
+      {!imageLoaded && !showFallback && (
+        <div className={`${className} bg-gray-100 flex items-center justify-center animate-pulse absolute inset-0`}>
+          <Video className="text-gray-400" size={16} />
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function NewsletterManagementPage() {
   const { data: session } = useSession()
   const [posts, setPosts] = useState<NewsletterPost[]>([])
@@ -48,6 +160,21 @@ export default function NewsletterManagementPage() {
     author: session?.user?.name || 'Admin'
   })
 
+  // Extract YouTube video ID from URL
+  const extractYouTubeId = (url: string): string | null => {
+    const regexPatterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+      /youtube\.com\/embed\/([^&\n?#]+)/,
+      /youtube\.com\/v\/([^&\n?#]+)/
+    ]
+    
+    for (const pattern of regexPatterns) {
+      const match = url.match(pattern)
+      if (match) return match[1]
+    }
+    return null
+  }
+
   // Fetch all newsletter posts
   const fetchPosts = async () => {
     try {
@@ -63,18 +190,16 @@ export default function NewsletterManagementPage() {
     }
   }
 
-  // Generate link preview
+  // Generate link preview with better fallback handling
   const generateLinkPreview = async (url: string) => {
     if (!url) return
 
     setIsPreviewLoading(true)
     try {
       // Check if it's a YouTube URL
-      const youtubeRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
-      const youtubeMatch = url.match(youtubeRegex)
+      const videoId = extractYouTubeId(url)
       
-      if (youtubeMatch) {
-        const videoId = youtubeMatch[1]
+      if (videoId) {
         setFormData(prev => ({ 
           ...prev, 
           type: 'video', 
@@ -237,17 +362,28 @@ export default function NewsletterManagementPage() {
               {isPreviewLoading && <p className="text-sm text-gray-500 mt-1">Generating preview...</p>}
             </div>
 
-            {/* Link Preview */}
+            {/* Link Preview with fallback handling */}
             {linkPreview && (
               <div className="border rounded-lg p-4 bg-gray-50">
                 <h3 className="font-medium mb-2">Preview:</h3>
                 <div className="flex gap-4">
                   {linkPreview.image && (
-                    <img 
-                      src={linkPreview.image} 
-                      alt="Preview" 
-                      className="w-24 h-24 object-cover rounded"
-                    />
+                    <div className="w-24 h-24 flex-shrink-0 relative">
+                      {extractYouTubeId(linkPreview.url) ? (
+                        <YouTubeThumbnail
+                          videoId={extractYouTubeId(linkPreview.url)!}
+                          alt="YouTube Preview"
+                          className="w-full h-full object-cover rounded"
+                        />
+                      ) : (
+                        <ImageWithFallback
+                          src={linkPreview.image}
+                          alt="Preview"
+                          className="w-full h-full object-cover rounded"
+                          fallbackSrc="/images/article-placeholder.jpg"
+                        />
+                      )}
+                    </div>
                   )}
                   <div>
                     <h4 className="font-medium">{linkPreview.title}</h4>
@@ -337,38 +473,68 @@ export default function NewsletterManagementPage() {
         </div>
       )}
 
-      {/* Posts List */}
+      {/* Posts List with fallback images */}
       <div className="space-y-4">
         {posts.map((post) => (
           <div key={post._id} className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  {post.type === 'video' ? (
-                    <Video className="text-red-500" size={20} />
-                  ) : (
-                    <ExternalLink className="text-blue-500" size={20} />
-                  )}
-                  <span className="text-sm font-medium text-gray-500 uppercase">
-                    {post.type}
-                  </span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                <p className="text-gray-600 mb-2">{post.description}</p>
-                {post.link && (
-                  <a
-                    href={post.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    {post.link}
-                  </a>
+              <div className="flex gap-4 flex-1">
+                {/* Thumbnail with fallback */}
+                {(post.link || post.image) && (
+                  <div className="w-20 h-20 flex-shrink-0 relative">
+                    {post.type === 'video' && post.link && extractYouTubeId(post.link) ? (
+                      <YouTubeThumbnail
+                        videoId={extractYouTubeId(post.link)!}
+                        alt={post.title}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : post.image ? (
+                      <img
+                        src={`data:${post.image.contentType};base64,${post.image.data}`}
+                        alt={post.title}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
+                        {post.type === 'video' ? (
+                          <Video className="text-gray-400" size={24} />
+                        ) : (
+                          <ExternalLink className="text-gray-400" size={24} />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
-                <p className="text-sm text-gray-500 mt-2">
-                  Door: {post.author} • {new Date(post.createdAt!).toLocaleDateString('nl-NL')}
-                </p>
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    {post.type === 'video' ? (
+                      <Video className="text-red-500" size={20} />
+                    ) : (
+                      <ExternalLink className="text-blue-500" size={20} />
+                    )}
+                    <span className="text-sm font-medium text-gray-500 uppercase">
+                      {post.type}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
+                  <p className="text-gray-600 mb-2">{post.description}</p>
+                  {post.link && (
+                    <a
+                      href={post.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      {post.link}
+                    </a>
+                  )}
+                  <p className="text-sm text-gray-500 mt-2">
+                    Door: {post.author} • {new Date(post.createdAt!).toLocaleDateString('nl-NL')}
+                  </p>
+                </div>
               </div>
+              
               <div className="flex gap-2 ml-4">
                 <button
                   onClick={() => startEdit(post)}
