@@ -530,6 +530,106 @@ export default function Home() {
             </div>
           </div>
         </div>
+        
+        {/* Over Stichting Asha Section */}
+        <h3 className="text-2xl md:text-3xl font-bold text-[#1E2A78] text-center mb-8 mt-12">
+          Meer over Stichting Asha
+        </h3>
+        <div className="container mx-auto px-4 py-12 space-y-24">
+          {/* Introductie */}
+          <div className="flex flex-col-reverse md:flex-row items-center md:items-start md:space-x-12">
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <Image
+                src="/groepsfoto.png"
+                alt="Stichting Asha groepsfoto"
+                width={650}
+                height={400}
+                className="rounded-lg shadow-lg object-cover w-full md:w-[80%] h-auto"
+              />
+            </div>
+            <div className="md:w-1/2">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-gray-700 text-base mb-4">
+                  <strong>Stichting Asha is een maatschappelijk betrokken organisatie in Utrecht die zich sinds 1992 inzet voor Hindostaanse ouderen.</strong>
+                </p>
+                <p className="text-gray-700 text-base mb-4">
+                  Met wekelijkse ontmoetingsmiddagen, informatieve bijeenkomsten, beweeglessen en culturele activiteiten vormen we een veilige en vertrouwde plek waar ouderen zich gezien, gehoord en gewaardeerd voelen.
+                </p>
+                <p className="text-gray-700 text-base">
+                  Wat ooit begon als een kleinschalige ontmoeting is uitgegroeid tot een bloeiend project waar wekelijks tientallen deelnemers samenkomen in Buurtcentrum Oase. We bieden niet alleen gezelligheid, maar ook praktische ondersteuning, kennisdeling en ruimte voor persoonlijke groei.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Brug tussen generaties */}
+          <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-12">
+            <div className="md:w-1/2">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-gray-700 text-base mb-4">
+                  <strong>Een brug tussen culturen en generaties</strong>
+                </p>
+                <p className="text-gray-700 text-base mb-4">
+                  Stichting Asha helpt ouderen actief mee te doen in de Nederlandse samenleving, zónder hun eigen cultuur en identiteit te verliezen. We stimuleren participatie via groepsactiviteiten, digitale vaardigheden, taalondersteuning en gesprekken over gezondheid, zorg en actuele thema’s.
+                </p>
+                <p className="text-gray-700 text-base">
+                  Dankzij samenwerkingen met o.a. de gemeente Utrecht, bibliotheken, scholen en vrijwilligersorganisaties blijven we groeien én vernieuwen.
+                </p>
+              </div>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <Image
+                src="/samenwerking.png"
+                alt="Samenwerking met gemeente en instellingen"
+                width={650}
+                height={400}
+                className="rounded-lg shadow-lg object-cover w-full md:w-[80%] h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Wat maakt ons bijzonder */}
+          <div className="flex justify-center">
+            <div className="bg-white rounded-lg shadow-lg p-8 md:w-3/4 text-center">
+              <h4 className="text-xl font-bold text-[#1E2A78] mb-4">Wat maakt Stichting Asha bijzonder?</h4>
+              <ul className="list-disc list-inside text-gray-700 text-base text-left space-y-2">
+                <li>Meer dan 30 jaar actief in de Utrechtse gemeenschap</li>
+                <li>Ruimte voor cultuur, spiritualiteit en zingeving</li>
+                <li>Aandacht voor lichamelijk én mentaal welzijn</li>
+                <li>Sterke inzet op digitale zelfredzaamheid voor ouderen</li>
+                <li>Ondersteund door vrijwilligers én stagiairs van MBO/HBO</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Voor wie is Asha */}
+          <div className="flex flex-col md:flex-row-reverse items-center md:items-start md:space-x-reverse md:space-x-12">
+            <div className="md:w-1/2">
+              <div className="bg-white rounded-lg shadow-lg p-8">
+                <p className="text-gray-700 text-base mb-4">
+                  <strong>Voor wie is Stichting Asha?</strong>
+                </p>
+                <p className="text-gray-700 text-base mb-4">
+                  Onze activiteiten richten zich primair op Hindostaanse 50-plussers in Utrecht, maar iedereen is welkom – ongeacht afkomst, religie of achtergrond.
+                </p>
+                <p className="text-gray-700 text-base">
+                  We geloven in inclusiviteit en zijn er voor iedereen die op zoek is naar ontmoeting, zingeving en ondersteuning in een warme gemeenschap.
+                </p>
+              </div>
+            </div>
+            <div className="md:w-1/2 mt-8 md:mt-0">
+              <Image
+                src="/welkom.png"
+                alt="Iedereen is welkom bij Stichting Asha"
+                width={650}
+                height={400}
+                className="rounded-lg shadow-lg object-cover w-full md:w-[80%] h-auto"
+              />
+            </div>
+          </div>
+        </div>
+
+
         {/* Partner Logos Carousel */}
         <div className="flex items-center justify-center mt-12 mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-[#1E2A78]">Onze Partners</h2>
