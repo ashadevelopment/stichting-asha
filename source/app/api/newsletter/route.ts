@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
     // Fetch posts, sorted by most recent first
     const posts = await Newsletter.find({})
       .sort({ [sort]: order === 'desc' ? -1 : 1 })
-      .select('-image.data') // Exclude large image data from initial fetch
     
     return NextResponse.json(posts)
   } catch (error) {
