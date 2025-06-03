@@ -354,7 +354,7 @@ export default function FotoboekPage() {
 
       {/* Media Upload Form */}
       {showForm && (
-        <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm max-w-xl mb-6 sm:mb-8">
+        <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl max-w-xl mb-6 sm:mb-8">
           <h3 className="text-lg sm:text-xl font-semibold mb-4">Nieuwe foto of video toevoegen</h3>
           
           {/* File Size Information */}
@@ -460,7 +460,7 @@ export default function FotoboekPage() {
       )}
 
       {/* Existing Media Items */}
-      <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm">
+      <div className="bg-white p-4 sm:p-6  rounded-xl">
         <h3 className="text-lg sm:text-xl font-semibold mb-4">Bestaande media</h3>
         
         {loading && mediaItems.length === 0 ? (

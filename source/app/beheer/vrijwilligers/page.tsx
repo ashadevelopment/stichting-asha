@@ -232,9 +232,10 @@ export default function VrijwilligersPage() {
   };
 
   if (loading) return (
-    <div className="text-gray-800 px-6 py-4">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <UserCheck size={24} /> Vrijwilligers
+    <div className="text-gray-800 px-4 sm:px-6 py-4">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-2">
+        <UserCheck size={24} className="flex-shrink-0" /> 
+        <span className="break-words">Vrijwilligers</span>
       </h2>
       <div className="flex justify-center">
         <p>Laden...</p>
@@ -248,135 +249,179 @@ export default function VrijwilligersPage() {
   const deniedVolunteers = volunteers.filter(vol => vol.status === 'rejected')
 
   return (
-    <div className="text-gray-800 px-6 py-4">
-      <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-        <UserCheck size={24} /> Vrijwilligers
+    <div className="text-gray-800 px-4 sm:px-6 py-4 max-w-full overflow-x-hidden">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-2">
+        <UserCheck size={24} className="flex-shrink-0" /> 
+        <span className="break-words">Vrijwilligers</span>
       </h2>
 
-      {/* Error Message - in consistent style with other admin pages */}
+      {/* Error Message - responsive */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-3 rounded-md mb-4 text-sm break-words">
           {error}
         </div>
       )}
 
-      {/* Success Message - in consistent style with other admin pages */}
+      {/* Success Message - responsive */}
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md mb-4 transition-opacity duration-300">
+        <div className="bg-green-50 border border-green-200 text-green-600 px-3 sm:px-4 py-3 rounded-md mb-4 transition-opacity duration-300 text-sm break-words">
           {successMessage}
         </div>
       )}
 
       {/* Aanmeldingen */}
-      <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-4 mb-8">
-        <h3 className="text-xl font-semibold flex items-center gap-2">
-          <FileText size={20} /> Openstaande Aanmeldingen
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm space-y-4 mb-6 sm:mb-8">
+        <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+          <FileText size={20} className="flex-shrink-0" />
+          <span className="break-words">Openstaande Aanmeldingen</span>
         </h3>
         <p className="text-sm text-gray-700">Overzicht van aanmeldingen die nog goedgekeurd moeten worden.</p>
 
         {pendingVolunteers.length === 0 ? (
           <p className="text-sm text-gray-500 italic">Er zijn geen openstaande aanmeldingen.</p>
         ) : (
-          pendingVolunteers.map(volunteer => (
-            <div key={volunteer._id} className="border-t pt-4">
-              <h3 className="font-semibold text-lg">{volunteer.firstName} {volunteer.lastName}</h3>
-              <p className="text-sm text-gray-600">Email: {volunteer.email}</p>
-              <p className="text-sm text-gray-600">Telefoon: {volunteer.phoneNumber}</p>
-              <p className="text-sm text-gray-600">Bericht: {volunteer.message}</p>
-              <p className="text-sm text-gray-600">Aangemeld op: {new Date(volunteer.createdAt).toLocaleDateString('nl-NL')}</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button 
-                  onClick={() => handleApprove(volunteer._id)}
-                  className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center gap-1 flex-inline"
-                >
-                  <Check size={16} /> Goedkeuren
-                </button>
-                <button 
-                  onClick={() => handleDeny(volunteer._id)}
-                  className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 flex items-center gap-1 flex-inline"
-                >
-                  <X size={16} /> Afkeuren
-                </button>
-                <button 
-                  onClick={() => openFile(volunteer._id, 'cv')}
-                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Bekijk CV
-                </button>
-                <button 
-                  onClick={() => openFile(volunteer._id, 'motivationLetter')}
-                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Bekijk Motivatie
-                </button>
+          <div className="space-y-6">
+            {pendingVolunteers.map(volunteer => (
+              <div key={volunteer._id} className="border-t pt-4">
+                <h3 className="font-semibold text-base sm:text-lg break-words mb-2">
+                  {volunteer.firstName} {volunteer.lastName}
+                </h3>
+                <div className="space-y-1 mb-3">
+                  <p className="text-sm text-gray-600 break-all">
+                    <span className="font-medium">Email:</span> {volunteer.email}
+                  </p>
+                  <p className="text-sm text-gray-600 break-all">
+                    <span className="font-medium">Telefoon:</span> {volunteer.phoneNumber}
+                  </p>
+                  <p className="text-sm text-gray-600 break-words">
+                    <span className="font-medium">Bericht:</span> {volunteer.message}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Aangemeld op:</span> {new Date(volunteer.createdAt).toLocaleDateString('nl-NL')}
+                  </p>
+                </div>
+                
+                {/* Mobile-first button layout */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+                    <button 
+                      onClick={() => handleApprove(volunteer._id)}
+                      className="text-sm bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 flex items-center justify-center gap-1 min-h-[36px]"
+                    >
+                      <Check size={16} className="flex-shrink-0" /> 
+                      <span>Goedkeuren</span>
+                    </button>
+                    <button 
+                      onClick={() => handleDeny(volunteer._id)}
+                      className="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 flex items-center justify-center gap-1 min-h-[36px]"
+                    >
+                      <X size={16} className="flex-shrink-0" /> 
+                      <span>Afkeuren</span>
+                    </button>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <button 
+                      onClick={() => openFile(volunteer._id, 'cv')}
+                      className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 min-h-[36px] whitespace-nowrap"
+                    >
+                      Bekijk CV
+                    </button>
+                    <button 
+                      onClick={() => openFile(volunteer._id, 'motivationLetter')}
+                      className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 min-h-[36px] whitespace-nowrap"
+                    >
+                      Bekijk Motivatie
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       {/* Actieve Vrijwilligers */}
-      <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-4 mb-8">
-        <h3 className="text-xl font-semibold flex items-center gap-2">
-          <User size={20} /> Actieve Vrijwilligers
+      <div className="bg-white p-4 sm:p-6 rounded-xl space-y-4 mb-6 sm:mb-8">
+        <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+          <User size={20} className="flex-shrink-0" />
+          <span className="break-words">Actieve Vrijwilligers</span>
         </h3>
         <p className="text-sm text-gray-700">Overzicht van goedgekeurde vrijwilligers.</p>
 
         {approvedVolunteers.length === 0 ? (
           <p className="text-sm text-gray-500 italic">Er zijn geen actieve vrijwilligers.</p>
         ) : (
-          approvedVolunteers.map(volunteer => (
-            <div key={volunteer._id} className="border-t pt-4">
-              <h3 className="font-semibold text-lg">{volunteer.firstName} {volunteer.lastName}</h3>
-              <p className="text-sm text-gray-600">Email: {volunteer.email}</p>
-              <p className="text-sm text-gray-600">Telefoon: {volunteer.phoneNumber}</p>
-              <div className="mt-2 space-x-3">
-                <button 
-                  onClick={() => openFile(volunteer._id, 'cv')}
-                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Bekijk CV
-                </button>
-                <button 
-                  onClick={() => openFile(volunteer._id, 'motivationLetter')}
-                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                >
-                  Bekijk Motivatie
-                </button>
-                <button 
-                  onClick={() => handleDeleteClick(volunteer._id)}
-                  className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                >
-                  Verwijderen
-                </button>
+          <div className="space-y-6">
+            {approvedVolunteers.map(volunteer => (
+              <div key={volunteer._id} className="border-t pt-4">
+                <h3 className="font-semibold text-base sm:text-lg break-words mb-2">
+                  {volunteer.firstName} {volunteer.lastName}
+                </h3>
+                <div className="space-y-1 mb-3">
+                  <p className="text-sm text-gray-600 break-all">
+                    <span className="font-medium">Email:</span> {volunteer.email}
+                  </p>
+                  <p className="text-sm text-gray-600 break-all">
+                    <span className="font-medium">Telefoon:</span> {volunteer.phoneNumber}
+                  </p>
+                </div>
+                
+                {/* Mobile-first button layout */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+                    <button 
+                      onClick={() => openFile(volunteer._id, 'cv')}
+                      className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 min-h-[36px] whitespace-nowrap"
+                    >
+                      Bekijk CV
+                    </button>
+                    <button 
+                      onClick={() => openFile(volunteer._id, 'motivationLetter')}
+                      className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 min-h-[36px] whitespace-nowrap"
+                    >
+                      Bekijk Motivatie
+                    </button>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteClick(volunteer._id)}
+                    className="text-sm bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 min-h-[36px] whitespace-nowrap"
+                  >
+                    Verwijderen
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       {/* Afgewezen Aanmeldingen */}
       {deniedVolunteers.length > 0 && (
-        <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm space-y-4">
-          <h3 className="text-xl font-semibold flex items-center gap-2">
-            <X size={20} /> Afgewezen Aanmeldingen
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm space-y-4">
+          <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <X size={20} className="flex-shrink-0" />
+            <span className="break-words">Afgewezen Aanmeldingen</span>
           </h3>
           <p className="text-sm text-gray-700">Overzicht van afgewezen vrijwilligers.</p>
 
-          {deniedVolunteers.map(volunteer => (
-            <div key={volunteer._id} className="border-t pt-4">
-              <h3 className="font-semibold text-lg text-gray-500">{volunteer.firstName} {volunteer.lastName}</h3>
-              <p className="text-sm text-gray-500">Email: {volunteer.email}</p>
-              <div className="mt-2 space-x-3">
+          <div className="space-y-6">
+            {deniedVolunteers.map(volunteer => (
+              <div key={volunteer._id} className="border-t pt-4">
+                <h3 className="font-semibold text-base sm:text-lg text-gray-500 break-words mb-2">
+                  {volunteer.firstName} {volunteer.lastName}
+                </h3>
+                <p className="text-sm text-gray-500 break-all mb-3">
+                  <span className="font-medium">Email:</span> {volunteer.email}
+                </p>
                 <button 
                   onClick={() => handleDeleteClick(volunteer._id)}
-                  className="text-sm bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                  className="text-sm bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 min-h-[36px] whitespace-nowrap"
                 >
                   Verwijderen
                 </button>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

@@ -191,7 +191,7 @@ export default function PersoonlijkeGegevensPage() {
 
       <div className="space-y-6">
         {/* Profielkaart */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6">
           <div className="flex flex-col items-center mb-6">
             {user?.id && (
               <ProfilePictureManager 
@@ -215,7 +215,7 @@ export default function PersoonlijkeGegevensPage() {
             )}
           </div>
           
-          <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm">
+          <div className="mb-6 bg-blue-50 p-4 rounded-lg border-blue-100 text-blue-800 text-sm">
             <h4 className="font-medium mb-1">Persoonlijke gegevens beheren</h4>
             <p>Op deze pagina kunt u uw persoonlijke gegevens bekijken en bijwerken. Wijzigingen worden automatisch opgeslagen wanneer u op de knop "Gegevens opslaan" klikt.</p>
           </div>
@@ -326,7 +326,7 @@ export default function PersoonlijkeGegevensPage() {
         </div>
 
         {/* Wachtwoord vergeten */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Lock size={18} className="text-blue-600" />
             <h3 className="text-lg font-semibold">Wachtwoord vergeten</h3>
@@ -344,7 +344,7 @@ export default function PersoonlijkeGegevensPage() {
         </div>
 
         {/* Wachtwoord wijzigen */}
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+        <div className="bg-white rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
             <RefreshCw size={18} className="text-green-600" />
             <h3 className="text-lg font-semibold">Wachtwoord wijzigen</h3>

@@ -194,7 +194,7 @@ export default function NotitiesPage() {
 
       {/* Notice Form */}
       {showForm && (
-        <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm mb-6">
+        <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl mb-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Titel</label>
@@ -253,7 +253,7 @@ export default function NotitiesPage() {
       )}
 
       {/* Notices Overview */}
-      <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-xl shadow-sm">
+      <div className="bg-white p-4 sm:p-6 rounded-xl">
         <h3 className="text-lg sm:text-xl font-semibold mb-4">Notities overzicht</h3>
         
         {notices.length === 0 ? (
