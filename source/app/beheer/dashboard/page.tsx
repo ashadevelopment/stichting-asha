@@ -48,6 +48,12 @@ export default function DashboardPage() {
     role: ''
   });
 
+  // Function to check if user has access to activities
+  const hasActivityAccess = () => {
+    const userRole = userDetails.role || (session?.user && 'role' in session.user ? session.user.role : '');
+    return userRole === 'beheerder' || userRole === 'developer';
+  };
+
   // Fetch user details whenever session changes
   useEffect(() => {
     async function fetchUserData() {
@@ -83,6 +89,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchRecentActivities() {
+      // Only fetch activities if user has access
+      if (!hasActivityAccess()) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
@@ -112,13 +124,17 @@ export default function DashboardPage() {
       }
     }
     
-    fetchRecentActivities();
-    
-    // Set up a polling mechanism to refresh activities every minute
-    const intervalId = setInterval(fetchRecentActivities, 60000);
-    
-    return () => clearInterval(intervalId);
-  }, []);
+    // Only fetch if user details are loaded
+    if (userDetails.role || (session?.user && 'role' in session.user)) {
+      fetchRecentActivities();
+      
+      // Set up a polling mechanism to refresh activities every minute (only if user has access)
+      if (hasActivityAccess()) {
+        const intervalId = setInterval(fetchRecentActivities, 60000);
+        return () => clearInterval(intervalId);
+      }
+    }
+  }, [userDetails.role, session?.user]);
 
   function formatActivityMessage(activity: ActivityItem) {
     try {
@@ -276,44 +292,46 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recente activiteiten */}
-      <div className="bg-white p-4 sm:p-6 mt-6">
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Activity size={24} /> Recente activiteiten
-        </h2>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-4">
-            <div className="w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
-          </div>
-        ) : error ? (
-          <div className="p-4 bg-red-50 text-red-600 rounded-md">
-            <p>Fout bij laden van activiteiten: {error}</p>
-          </div>
-        ) : activities.length > 0 ? (
-          <div className="space-y-4 cursor-pointer">
-            {activities.map((activity, index) => {
-              const { message, timestamp, iconColor } = formatActivityMessage(activity);
-              return (
-                <div 
-                  key={`activity-${activity._id || index}`} 
-                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className={`mt-1 ${iconColor}`}>
-                    <Activity size={18} />
+      {/* Recente activiteiten - only show for beheerder and developer */}
+      {hasActivityAccess() && (
+        <div className="bg-white p-4 sm:p-6 mt-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Activity size={24} /> Recente activiteiten
+          </h2>
+          
+          {isLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="w-6 h-6 border-2 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-red-50 text-red-600 rounded-md">
+              <p>Fout bij laden van activiteiten: {error}</p>
+            </div>
+          ) : activities.length > 0 ? (
+            <div className="space-y-4 cursor-pointer">
+              {activities.map((activity, index) => {
+                const { message, timestamp, iconColor } = formatActivityMessage(activity);
+                return (
+                  <div 
+                    key={`activity-${activity._id || index}`} 
+                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className={`mt-1 ${iconColor}`}>
+                      <Activity size={18} />
+                    </div>
+                    <div>
+                      <p className="text-gray-800 text-sm">{message}</p>
+                      <p className="text-xs text-gray-500">{timestamp}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-800 text-sm">{message}</p>
-                    <p className="text-xs text-gray-500">{timestamp}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-gray-500 italic text-center py-4">Geen recente activiteiten gevonden.</p>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic text-center py-4">Geen recente activiteiten gevonden.</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
