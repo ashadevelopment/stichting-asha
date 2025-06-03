@@ -29,6 +29,14 @@ export default function GebruikersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncResults, setSyncResults] = useState<{
+    processed: number;
+    created: number;
+    skipped: number;
+    errors: { email: string; error: string }[];
+  } | null>(null);
   const router = useRouter();
 
   // Fetch users on component mount
@@ -75,6 +83,40 @@ export default function GebruikersPage() {
     }
   }
 
+  async function syncApprovedVolunteers() {
+    setSyncLoading(true);
+    setSyncResults(null);
+    
+    try {
+      const response = await fetch('/api/volunteers/sync-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to sync volunteers');
+      }
+
+      const data = await response.json();
+      setSyncResults(data.results);
+      
+      // Refresh the user list to show newly created users
+      fetchUsers();
+    } catch (error) {
+      console.error('Error syncing volunteers:', error);
+      setSyncResults({
+        processed: 0,
+        created: 0,
+        skipped: 0,
+        errors: [{ email: 'System Error', error: 'Failed to sync volunteers' }]
+      });
+    } finally {
+      setSyncLoading(false);
+    }
+  }
+
   function handleEdit(user: User) {
     setSelectedUser(user);
     setShowEditModal(true);
@@ -102,12 +144,20 @@ export default function GebruikersPage() {
         <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
           <Users size={24} /> Gebruikers
         </h2>
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
-          onClick={() => setShowAddModal(true)}
-        >
-          Nieuwe gebruiker
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <button
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded w-full sm:w-auto"
+            onClick={() => setShowSyncModal(true)}
+          >
+            Sync Vrijwilligers
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
+            onClick={() => setShowAddModal(true)}
+          >
+            Nieuwe gebruiker
+          </button>
+        </div>
       </div>
 
       {/* Mobile User Cards - Shown on small screens */}
@@ -271,6 +321,113 @@ export default function GebruikersPage() {
           }}
           isEdit={showEditModal}
         />
+      )}
+            {/* Volunteer Sync Modal */}
+      {showSyncModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Vrijwilligers Synchroniseren</h2>
+                <button
+                  onClick={() => {
+                    setShowSyncModal(false);
+                    setSyncResults(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                  disabled={syncLoading}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {!syncResults && !syncLoading && (
+                <div>
+                  <p className="text-gray-700 mb-4">
+                    Deze actie zal alle goedgekeurde vrijwilligers die nog geen gebruikersaccount hebben automatisch toevoegen als gebruikers.
+                  </p>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Bestaande gebruikers worden overgeslagen. Voor nieuwe gebruikers wordt een tijdelijk wachtwoord gegenereerd.
+                  </p>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => {
+                        setShowSyncModal(false);
+                        setSyncResults(null);
+                      }}
+                      className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                    >
+                      Annuleren
+                    </button>
+                    <button
+                      onClick={syncApprovedVolunteers}
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
+                    >
+                      Synchroniseren
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {syncLoading && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto mb-4"></div>
+                  <p className="text-gray-700">Vrijwilligers aan het synchroniseren...</p>
+                </div>
+              )}
+
+              {syncResults && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Synchronisatie Resultaten</h3>
+                  
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Verwerkt:</span>
+                      <span className="font-medium">{syncResults.processed}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-green-600">Aangemaakt:</span>
+                      <span className="font-medium text-green-600">{syncResults.created}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-yellow-600">Overgeslagen:</span>
+                      <span className="font-medium text-yellow-600">{syncResults.skipped}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-red-600">Fouten:</span>
+                      <span className="font-medium text-red-600">{syncResults.errors.length}</span>
+                    </div>
+                  </div>
+
+                  {syncResults.errors.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium text-red-600 mb-2">Fouten:</h4>
+                      <div className="max-h-32 overflow-y-auto bg-red-50 p-3 rounded">
+                        {syncResults.errors.map((error, index) => (
+                          <div key={index} className="text-sm text-red-700 mb-1">
+                            <strong>{error.email}:</strong> {error.error}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => {
+                        setShowSyncModal(false);
+                        setSyncResults(null);
+                      }}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
+                    >
+                      Sluiten
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
