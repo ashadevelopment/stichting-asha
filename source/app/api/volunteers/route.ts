@@ -4,8 +4,8 @@ import Volunteer from '../../lib/models/Volunteer';
 import { sendVolunteerApplicationEmails } from '../../lib/utils/email';
 
 // File size limits (in bytes)
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per file
-const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB total for both files
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file (reduced for Vercel)
+const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4MB total (within Vercel's 4.5MB limit)
 
 // Allowed file types
 const ALLOWED_FILE_TYPES = [
@@ -51,17 +51,17 @@ export async function POST(request: NextRequest) {
 
     // Validate file sizes
     if (cvFile.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `CV bestand is te groot. Maximum grootte is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
-        { status: 400 }
-      );
+        return NextResponse.json(
+            { error: `CV bestand is te groot. Maximum grootte is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
+            { status: 400 }
+        );
     }
 
     if (motivationFile.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `Motivatiebrief bestand is te groot. Maximum grootte is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
-        { status: 400 }
-      );
+        return NextResponse.json(
+            { error: `Motivatiebrief bestand is te groot. Maximum grootte is ${MAX_FILE_SIZE / (1024 * 1024)}MB` },
+            { status: 400 }
+        );
     }
 
     // Check total file size (base64 encoding increases size by ~33%)
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
     const estimatedBase64Size = totalSize * 1.33; // Account for base64 expansion
     
     if (estimatedBase64Size > MAX_TOTAL_SIZE) {
-      return NextResponse.json(
-        { error: `Gecombineerde bestandsgrootte is te groot. Maximum totaal is ${MAX_TOTAL_SIZE / (1024 * 1024)}MB` },
-        { status: 400 }
-      );
+        return NextResponse.json(
+            { error: `Gecombineerde bestandsgrootte is te groot. Maximum totaal is ${MAX_TOTAL_SIZE / (1024 * 1024)}MB` },
+            { status: 400 }
+        );
     }
 
     // Validate file types

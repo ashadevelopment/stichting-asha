@@ -25,6 +25,7 @@ export default function Contact() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'contact' | 'volunteer'>('contact');
   const [selectedContact, setSelectedContact] = useState<ContactPerson | null>(null);
+  const [fileSizeWarning, setFileSizeWarning] = useState<string>("");
   
   // Volunteer form state
   const [firstName, setFirstName] = useState('');
@@ -76,7 +77,14 @@ export default function Contact() {
   // Volunteer form handlers
   const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    setFileSizeWarning("");
+    
     if (file) {
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        setFileSizeWarning(`CV bestand is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Maximum is 2MB.`);
+        return;
+      }
       setCvFile(file);
       setCvFileName(file.name);
     }
@@ -84,7 +92,14 @@ export default function Contact() {
 
   const handleMotivationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    setFileSizeWarning("");
+    
     if (file) {
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        setFileSizeWarning(`Motivatiebrief is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Maximum is 2MB.`);
+        return;
+      }
       setMotivationFile(file);
       setMotivationFileName(file.name);
     }
@@ -422,6 +437,11 @@ export default function Contact() {
                       <p className="text-sm text-gray-500">Upload je motivatiebrief als PDF of Word document</p>
                     )}
                   </div>
+                  {fileSizeWarning && (
+                    <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+                      {fileSizeWarning}
+                    </div>
+                  )}
                 </div>
 
                 <button
