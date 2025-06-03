@@ -139,14 +139,14 @@ export default function GebruikersPage() {
   }
 
   return (
-    <div className="px-4 py-8">
+    <div className="px-4 py-8 max-w-full">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
           <Users size={24} /> Gebruikers
         </h2>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <button
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded w-full sm:w-auto"
+            className="bg-green-600 hover:bg-green-800 text-white px-4 py-2 rounded w-full sm:w-auto"
             onClick={() => setShowSyncModal(true)}
           >
             Sync Vrijwilligers
@@ -214,28 +214,28 @@ export default function GebruikersPage() {
         )}
       </div>
 
-      {/* Desktop Table - Hidden on small screens */}
+      {/* Desktop Table - Hidden on small screens, improved layout */}
       <div className="hidden sm:block bg-white shadow-md rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
                   Gebruiker
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                   Rol
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                   Functie
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Telefoonnummer
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/8 hidden lg:table-cell">
+                  Telefoon
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                   Acties
                 </th>
               </tr>
@@ -250,7 +250,7 @@ export default function GebruikersPage() {
               ) : (
                 users.map((user) => (
                   <tr key={user._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 relative">
                           <ProfilePictureManager 
@@ -262,38 +262,53 @@ export default function GebruikersPage() {
                             showButtons={false}
                           />
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900 truncate max-w-[150px]" title={user.fullName}>
+                            {user.fullName}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
+                    <td className="px-3 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 truncate max-w-[180px]" title={user.email}>
+                        {user.email}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${roleColors[user.role] || 'bg-gray-100 text-gray-800'} capitalize`}>
-                        {user.role}
+                        {user.role === 'beheerder' ? 'Beheerder' : 
+                         user.role === 'developer' ? 'Developer' :
+                         user.role === 'vrijwilliger' ? 'Vrijwilliger' :
+                         user.role === 'stagiair' ? 'Stagiair' : 'User'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                      {user.function || 'N/A'}
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                      <div className="truncate max-w-[100px]" title={user.function || 'N/A'}>
+                        {user.function || 'N/A'}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.phoneNumber || 'N/A'}
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
+                      <div className="truncate max-w-[120px]" title={user.phoneNumber || 'N/A'}>
+                        {user.phoneNumber || 'N/A'}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        Bewerken
-                      </button>
-                      <button
-                        onClick={() => deleteUser(user._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Verwijderen
-                      </button>
+                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          onClick={() => handleEdit(user)}
+                          className="text-indigo-600 hover:text-indigo-900 text-xs px-2 py-1 border border-indigo-300 rounded hover:bg-indigo-50"
+                          title="Bewerken"
+                        >
+                          Bewerken
+                        </button>
+                        <button
+                          onClick={() => deleteUser(user._id)}
+                          className="text-red-600 hover:text-red-900 text-xs px-2 py-1 border border-red-300 rounded hover:bg-red-50"
+                          title="Verwijderen"
+                        >
+                          Verwijderen
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
