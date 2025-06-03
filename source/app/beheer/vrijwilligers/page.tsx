@@ -49,14 +49,23 @@ export default function VrijwilligersPage() {
     }
   }, [needsRefresh]);
 
-  const fetchVolunteers = async () => {
+    const fetchVolunteers = async () => {
     try {
       setLoading(true);
       // Explicitly request all volunteers
       const response = await fetch('/api/volunteers?status=all')
       if (!response.ok) throw new Error('Fout bij ophalen vrijwilligers')
       const data = await response.json()
-      setVolunteers(data)
+      
+      // Fix: Extract the volunteers array from the response
+      if (data.volunteers) {
+        setVolunteers(data.volunteers) // Use data.volunteers instead of data
+      } else if (Array.isArray(data)) {
+        setVolunteers(data) // Fallback if the API returns array directly
+      } else {
+        console.error('Unexpected API response structure:', data)
+        setVolunteers([])
+      }
     } catch (err) {
       setError('Er is een fout opgetreden bij het laden van vrijwilligers')
       console.error(err)
