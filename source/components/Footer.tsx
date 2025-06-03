@@ -180,7 +180,7 @@ export default function Footer() {
               © {new Date().getFullYear()} Stichting Asha. Alle rechten voorbehouden.
             </p>
             <p className={`text-sm text-gray-400 mt-2 mr-22 md:mt-0 ${poppins.className}`}>
-              Sinds 1992 • Utrecht, Nederland
+              Sinds 1976
             </p>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Grid, List, Video, ExternalLink, Calendar, User, Settings } from 'lucide-react'
+import Footer from '../../components/Footer'
 
 interface NewsletterPost {
   _id: string
@@ -551,6 +552,7 @@ export default function NewsletterPage() {
             </div>
             )}
         </div>
+        <Footer />
     </div>
   )
 }
