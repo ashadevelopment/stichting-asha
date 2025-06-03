@@ -285,16 +285,21 @@ export default function PersoonlijkeGegevensPage() {
             </div>
 
             <div>
-              <label className="mb-1 text-sm font-medium flex items-center gap-1 text-gray-700">
-                <Phone size={14} /> Telefoonnummer
-              </label>
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Voer uw telefoonnummer in"
-                className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
-              />
+                <label className="mb-1 text-sm font-medium flex items-center gap-1 text-gray-700">
+                  <Phone size={14} /> Telefoonnummer
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const numericValue = e.target.value.replace(/\D/g, ''); // Remove all non-digit characters
+                    setPhoneNumber(numericValue);
+                  }}
+                  placeholder="Voer uw telefoonnummer in"
+                  className="w-full border border-gray-200 px-3 py-2 rounded bg-white"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                />
             </div>
 
             <button 

@@ -52,17 +52,14 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
       '/beheer/dashboard',
       '/beheer/gegevens',
       '/beheer/agenda',
-      '/beheer/handleiding',
     ],
     stagiair: [
       '/beheer/dashboard',
       '/beheer/gegevens',
-      '/beheer/handleiding',
     ],
     user: [
       '/beheer/dashboard',
       '/beheer/gegevens',
-      '/beheer/handleiding',
     ],
   }
 

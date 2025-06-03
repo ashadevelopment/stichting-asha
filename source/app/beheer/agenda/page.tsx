@@ -229,7 +229,7 @@ export default function AgendaPage() {
   }
 
   // Render check voor beheerders
-  if (session?.user?.role !== 'beheerder') {
+  if (session?.user?.role !== 'beheerder' && session?.user?.role !== 'vrijwilliger') {
     return (
       <div className="text-gray-800 p-4">
         <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
