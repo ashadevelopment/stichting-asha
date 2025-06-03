@@ -232,79 +232,116 @@ export async function sendVolunteerApplicationEmails(
 
 // Send volunteer application status update email (approved/rejected)
 export async function sendVolunteerStatusEmail(
-  volunteerEmail: string, 
-  volunteerName: string,
-  status: 'approved' | 'rejected'
+  email: string, 
+  name: string, 
+  status: 'approved' | 'rejected',
+  tempPassword?: string
 ) {
-  const transporter = await createTransporter();
-  
-  const subject = status === 'approved' 
-    ? 'Goed nieuws! Je aanmelding als vrijwilliger is goedgekeurd' 
-    : 'Update over jouw vrijwilliger aanmelding';
-  
-  const textContent = status === 'approved'
-    ? `
-      Beste ${volunteerName},
+  const transporter = await createTransporter(); // Your existing transporter setup
 
-      Goed nieuws! We zijn verheugd je te laten weten dat je aanmelding als vrijwilliger bij Stichting Asha is goedgekeurd.
+  let subject: string;
+  let htmlContent: string;
 
-      We kijken ernaar uit om samen met je te werken en samen impact te maken voor onze doelgroep. Iemand van ons team zal binnenkort contact met je opnemen om de volgende stappen te bespreken.
-
-      Hartelijk dank voor je enthousiasme en betrokkenheid!
-
-      Met vriendelijke groet,
-      Team Stichting Asha
-    `
-    : `
-      Beste ${volunteerName},
-
-      Hartelijk dank voor je interesse in vrijwilligerswerk bij Stichting Asha.
-
-      Na zorgvuldige overweging van alle aanmeldingen hebben we helaas moeten besluiten om op dit moment niet met je aanmelding verder te gaan.
-
-      We waarderen je interesse en inzet enorm en hopen dat je begrip hebt voor onze beslissing.
-
-      We wensen je alle succes in de toekomst.
-
-      Met vriendelijke groet,
-      Team Stichting Asha
-    `;
-  
-  const htmlContent = status === 'approved'
-    ? `
+  if (status === 'approved') {
+    subject = 'Uw vrijwilligersaanmelding is goedgekeurd! 🎉';
+    
+    htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Je aanmelding is goedgekeurd!</h2>
-        <p>Beste ${volunteerName},</p>
-        <p>Goed nieuws! We zijn verheugd je te laten weten dat je aanmelding als vrijwilliger bij Stichting Asha is goedgekeurd.</p>
-        <p>We kijken ernaar uit om samen met je te werken en samen impact te maken voor onze doelgroep. Iemand van ons team zal binnenkort contact met je opnemen om de volgende stappen te bespreken.</p>
-        <p>Hartelijk dank voor je enthousiasme en betrokkenheid!</p>
-        <p>
-          Met vriendelijke groet,<br />
-          Team Stichting Asha
-        </p>
-      </div>
-    `
-    : `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Update over jouw aanmelding</h2>
-        <p>Beste ${volunteerName},</p>
-        <p>Hartelijk dank voor je interesse in vrijwilligerswerk bij Stichting Asha.</p>
-        <p>Na zorgvuldige overweging van alle aanmeldingen hebben we helaas moeten besluiten om op dit moment niet met je aanmelding verder te gaan.</p>
-        <p>We waarderen je interesse en inzet enorm en hopen dat je begrip hebt voor onze beslissing.</p>
-        <p>We wensen je alle succes in de toekomst.</p>
-        <p>
-          Met vriendelijke groet,<br />
-          Team Stichting Asha
-        </p>
+        <div style="background-color: #10b981; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">Gefeliciteerd! 🎉</h1>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f9fafb;">
+          <h2 style="color: #374151;">Beste ${name},</h2>
+          
+          <p style="color: #6b7280; line-height: 1.6;">
+            Geweldig nieuws! Uw aanmelding als vrijwilliger is goedgekeurd. 
+            We zijn verheugd u te verwelkomen in ons team van vrijwilligers.
+          </p>
+
+          ${tempPassword ? `
+          <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #1e40af; margin-top: 0;">Uw account gegevens</h3>
+            <p style="color: #374151; margin-bottom: 10px;">
+              Er is automatisch een gebruikersaccount voor u aangemaakt:
+            </p>
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; font-family: monospace;">
+              <strong>Email:</strong> ${email}<br>
+              <strong>Tijdelijk wachtwoord:</strong> ${tempPassword}
+            </div>
+            <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+              <strong>Belangrijk:</strong> Log in met deze gegevens en wijzig uw wachtwoord zo snel mogelijk.
+            </p>
+          </div>
+          ` : ''}
+
+          <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #065f46; margin-top: 0;">Volgende stappen</h3>
+            <ul style="color: #374151; line-height: 1.6;">
+              <li>U ontvangt binnenkort meer informatie over uw rol als vrijwilliger</li>
+              <li>Houd uw e-mail in de gaten voor verdere instructies</li>
+              ${tempPassword ? '<li>Log in op uw account om uw profiel aan te vullen</li>' : ''}
+              <li>Bij vragen kunt u contact met ons opnemen</li>
+            </ul>
+          </div>
+
+          <p style="color: #6b7280; line-height: 1.6;">
+            Bedankt voor uw interesse en welkom bij ons team!
+          </p>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 14px;">
+              Met vriendelijke groet,<br>
+              Het Vrijwilligers Team
+            </p>
+          </div>
+        </div>
       </div>
     `;
+  } else {
+    subject = 'Update over uw vrijwilligersaanmelding';
+    
+    htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
+          <h1 style="margin: 0;">Vrijwilligersaanmelding</h1>
+        </div>
+        
+        <div style="padding: 30px; background-color: #f9fafb;">
+          <h2 style="color: #374151;">Beste ${name},</h2>
+          
+          <p style="color: #6b7280; line-height: 1.6;">
+            Bedankt voor uw interesse om vrijwilliger te worden. 
+            Na zorgvuldige overweging kunnen we u op dit moment helaas niet toelaten als vrijwilliger.
+          </p>
+
+          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0;">
+            <p style="color: #374151; margin: 0;">
+              Dit betekent niet dat u in de toekomst geen kansen heeft. 
+              We moedigen u aan om in de toekomst opnieuw te solliciteren.
+            </p>
+          </div>
+
+          <p style="color: #6b7280; line-height: 1.6;">
+            Bedankt voor uw begrip en uw interesse in onze organisatie.
+          </p>
+
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #9ca3af; font-size: 14px;">
+              Met vriendelijke groet,<br>
+              Het Vrijwilligers Team
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   const mailOptions = {
-    from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
-    to: volunteerEmail,
-    subject: subject,
-    text: textContent,
-    html: htmlContent,
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject,
+    html: htmlContent
   };
 
   try {

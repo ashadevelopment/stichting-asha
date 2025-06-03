@@ -18,6 +18,14 @@ const UserSchema = new Schema({
     contentType: { type: String, default: null },
     data: { type: String, default: null }
   },
+  createdFromVolunteer: {
+    type: Boolean,
+    default: false
+  },
+  volunteerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Volunteer'
+  },
 });
 
 // 👇 Add this!

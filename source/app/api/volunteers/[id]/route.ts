@@ -1,11 +1,63 @@
+// source/app/api/volunteers/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../lib/mongodb';
 import Volunteer from '../../../lib/models/Volunteer';
+import User from '../../../lib/models/User'; // Import User model
 import { sendVolunteerStatusEmail } from '../../../lib/utils/email';
+import bcrypt from 'bcryptjs'; // For password hashing
 
 // Utility to extract [id] from URL
 function extractIdFromRequest(req: NextRequest): string {
   return req.nextUrl.pathname.split('/')[3]; // /api/volunteers/[id] → index 4 = [id]
+}
+
+// Function to generate a random password
+function generateRandomPassword(length: number = 12): string {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+}
+
+// Function to create user from approved volunteer
+async function createUserFromVolunteer(volunteer: any): Promise<{ user: any; tempPassword: string } | null> {
+  try {
+    // Check if user already exists with this email
+    const existingUser = await User.findOne({ email: volunteer.email.toLowerCase() });
+    if (existingUser) {
+      console.log(`User with email ${volunteer.email} already exists`);
+      return null;
+    }
+
+    // Generate temporary password
+    const tempPassword = generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+    // Create user document
+    const userData = {
+      firstName: volunteer.firstName,
+      lastName: volunteer.lastName,
+      name: `${volunteer.firstName} ${volunteer.lastName}`,
+      email: volunteer.email.toLowerCase(),
+      password: hashedPassword,
+      role: 'vrijwilliger',
+      function: 'vrijwilliger',
+      phoneNumber: volunteer.phoneNumber || '',
+      isVerified: true, // Auto-verify since they went through volunteer approval
+      createdFromVolunteer: true,
+      volunteerId: volunteer._id
+    };
+
+    const newUser = await User.create(userData);
+    console.log(`Created user account for approved volunteer: ${volunteer.email}`);
+
+    return { user: newUser, tempPassword };
+  } catch (error) {
+    console.error('Error creating user from volunteer:', error);
+    return null;
+  }
 }
 
 // GET a specific volunteer
@@ -69,6 +121,12 @@ export async function PUT(request: NextRequest) {
     await volunteer.save();
     console.log(`Volunteer status updated to: ${status}`);
 
+    // If approved, create user account
+    let userCreationResult = null;
+    if (status === 'approved') {
+      userCreationResult = await createUserFromVolunteer(volunteer);
+    }
+
     // Get updated volunteer without file data
     const updatedVolunteer = await Volunteer.findById(id)
       .select('-cv.data -motivationLetter.data');
@@ -78,7 +136,8 @@ export async function PUT(request: NextRequest) {
       await sendVolunteerStatusEmail(
         volunteer.email,
         `${volunteer.firstName} ${volunteer.lastName}`,
-        status === 'approved' ? 'approved' : 'rejected'
+        status === 'approved' ? 'approved' : 'rejected',
+        userCreationResult?.tempPassword // Include temp password if user was created
       );
       console.log(`Status notification email sent to ${volunteer.email}`);
     } catch (emailError) {
@@ -86,9 +145,16 @@ export async function PUT(request: NextRequest) {
       // Continue with the response, even if email sending fails
     }
 
+    const responseMessage = status === 'approved' 
+      ? userCreationResult 
+        ? 'Vrijwilliger goedgekeurd en gebruikersaccount aangemaakt'
+        : 'Vrijwilliger goedgekeurd (gebruikersaccount bestond al)'
+      : 'Vrijwilliger afgewezen';
+
     return NextResponse.json({
-      message: `Vrijwilliger succesvol ${status === 'approved' ? 'goedgekeurd' : 'afgewezen'}`,
-      volunteer: updatedVolunteer
+      message: responseMessage,
+      volunteer: updatedVolunteer,
+      userCreated: !!userCreationResult
     });
   } catch (error) {
     console.error('Error updating volunteer status:', error);
@@ -114,6 +180,22 @@ export async function DELETE(request: NextRequest) {
         { error: 'Vrijwilliger niet gevonden' },
         { status: 404 }
       );
+    }
+
+    // Also delete associated user if it exists
+    try {
+      const associatedUser = await User.findOne({ 
+        email: volunteer.email.toLowerCase(),
+        createdFromVolunteer: true 
+      });
+      
+      if (associatedUser) {
+        await User.findByIdAndDelete(associatedUser._id);
+        console.log(`Also deleted associated user account for: ${volunteer.email}`);
+      }
+    } catch (userDeleteError) {
+      console.error('Error deleting associated user:', userDeleteError);
+      // Continue even if user deletion fails
     }
 
     console.log(`Successfully deleted volunteer with ID: ${id}`);
