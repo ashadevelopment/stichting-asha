@@ -383,14 +383,55 @@ export default function Home() {
         </div>
 
         {/* Information location */}
-        <div className="mb-10 md:mb-25 text-right mr-4 md:mr-16 mt-4 md:-mt-16">
-          <div className="flex justify-end items-center mb-2">
+        <div className="mb-10 md:mb-25 text-right mr-4 md:mr-16 mt-4 md:-mt-16 relative group">
+          <div className="flex justify-end items-center mb-2 cursor-pointer transition-all duration-300">
             <p className="text-xl md:text-2xl font-semibold text-[#1E2A78] mr-2">Locatie</p>
-            <MapPin className="w-7 h-7 text-[#1E2A78]" />
+            <MapPin className="w-7 h-7 text-[#1E2A78] group-hover:text-yellow-400 transition-colors duration-300" />
           </div>
           <div className="mr-1 mt-2">
             <p className="text-lg md:text-xl text-gray-700">Cartesiusweg 11</p>
             <p className="text-lg md:text-xl text-gray-700">3534 BA, Utrecht</p>
+          </div>
+          
+          {/* Hover Map */}
+          <div className="absolute top-full right-0 mt-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-30">
+            <div className="bg-white rounded-lg shadow-2xl border-2 border-gray-200 overflow-hidden w-80 md:w-96">
+              <div className="p-3 bg-[#1E2A78] text-white">
+                <h4 className="font-semibold text-sm">Stichting Asha - Buurtcentrum Oase</h4>
+                <p className="text-xs text-gray-200">Cartesiusweg 11, 3534 BA Utrecht</p>
+              </div>
+              <div className="relative h-48 md:h-56">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2451.8234567890123!2d5.0833333!3d52.0833333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c665f4d4b4b4b4%3A0x1234567890abcdef!2sCartesiusweg%2011%2C%203534%20BA%20Utrecht%2C%20Netherlands!5e0!3m2!1sen!2snl!4v1234567890123!5m2!1sen!2snl"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full"
+                ></iframe>
+                <div className="absolute bottom-2 right-2">
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=Cartesiusweg+11+3534+BA+Utrecht"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white/90 hover:bg-white px-2 py-1 rounded text-xs text-gray-700 hover:text-[#1E2A78] transition-all duration-200 shadow-md"
+                  >
+                    Open in Maps
+                  </a>
+                </div>
+              </div>
+              <div className="p-3 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
+                <span>Hover om kaart te bekijken</span>
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span>Utrecht, Nederland</span>
+                </div>
+              </div>
+            </div>
+            {/* Arrow pointing up */}
+            <div className="absolute -top-2 right-6 w-4 h-4 bg-white border-l-2 border-t-2 border-gray-200 transform rotate-45"></div>
           </div>
         </div>
 
