@@ -15,7 +15,6 @@ export const createTransporter = async () => {
   });
 };
 
-// Professional email template base
 const getEmailTemplate = (content: string) => `
   <!DOCTYPE html>
   <html lang="nl">
@@ -32,8 +31,7 @@ const getEmailTemplate = (content: string) => `
                       <!-- Header -->
                       <tr>
                           <td style="background-color: #1e3a8a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                              <img src="/logo.png" alt="Logo">
-                              <h1 style="color: #ffffff; margin: 20px 0 0 0; font-size: 28px; font-weight: 300; letter-spacing: 1px;">STICHTING ASHA</h1>
+                              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 300; letter-spacing: 1px;">STICHTING ASHA</h1>
                               <p style="color: #e2e8f0; margin: 5px 0 0 0; font-size: 14px; letter-spacing: 0.5px;">UTRECHT</p>
                           </td>
                       </tr>
@@ -48,21 +46,6 @@ const getEmailTemplate = (content: string) => `
                       <!-- Footer -->
                       <tr>
                           <td style="background-color: #1e3a8a; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;">
-                              <h3 style="color: #ffffff; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Volg Ons</h3>
-                              <div style="margin-bottom: 20px;">
-                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
-                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">X</span>
-                                  </a>
-                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
-                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">IG</span>
-                                  </a>
-                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
-                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">F</span>
-                                  </a>
-                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
-                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">•••</span>
-                                  </a>
-                              </div>
                               <p style="color: #e2e8f0; margin: 0; font-size: 12px;">© 2025 Stichting Asha. Alle rechten voorbehouden.</p>
                           </td>
                       </tr>
