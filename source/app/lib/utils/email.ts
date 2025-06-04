@@ -22,37 +22,85 @@ const getEmailTemplate = (content: string) => `
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Stichting Asha</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        /* Custom styles for email clients that don't support all Tailwind classes */
+        @media screen and (max-width: 640px) {
+          .email-container {
+            margin: 10px !important;
+          }
+          .email-content {
+            padding: 20px !important;
+          }
+          .email-header {
+            padding: 20px !important;
+          }
+          .email-footer {
+            padding: 20px !important;
+          }
+          .email-button {
+            display: block !important;
+            width: 100% !important;
+            text-align: center !important;
+          }
+        }
+        
+        /* Ensure consistent styling across email clients */
+        .email-text {
+          color: #374151;
+          line-height: 1.6;
+          font-size: 16px;
+        }
+        
+        .email-heading {
+          color: #1e3a8a;
+          font-weight: 600;
+          font-size: 24px;
+          margin-bottom: 25px;
+        }
+        
+        .email-button-primary {
+          background-color: #1e3a8a;
+          color: #ffffff;
+          padding: 15px 30px;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 16px;
+          display: inline-block;
+          box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
+        }
+        
+        .email-button-success {
+          background-color: #059669;
+          color: #ffffff;
+          padding: 15px 30px;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 16px;
+          display: inline-block;
+          box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+        }
+      </style>
   </head>
-  <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      <table role="presentation" style="width: 100%; border-collapse: collapse;">
-          <tr>
-              <td style="padding: 40px 20px;">
-                  <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                      <!-- Header -->
-                      <tr>
-                          <td style="background-color: #1e3a8a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 300; letter-spacing: 1px;">STICHTING ASHA</h1>
-                              <p style="color: #e2e8f0; margin: 5px 0 0 0; font-size: 14px; letter-spacing: 0.5px;">UTRECHT</p>
-                          </td>
-                      </tr>
-                      
-                      <!-- Content -->
-                      <tr>
-                          <td style="padding: 40px 30px;">
-                              ${content}
-                          </td>
-                      </tr>
-                      
-                      <!-- Footer -->
-                      <tr>
-                          <td style="background-color: #1e3a8a; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;">
-                              <p style="color: #e2e8f0; margin: 0; font-size: 12px;">© 2025 Stichting Asha. Alle rechten voorbehouden.</p>
-                          </td>
-                      </tr>
-                  </table>
-              </td>
-          </tr>
-      </table>
+  <body class="bg-gray-50 font-sans m-0 p-0">
+      <div class="min-h-screen py-4 px-2 sm:py-10 sm:px-6">
+          <div class="email-container max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+              
+              <!-- Content -->
+              <div class="email-content px-4 py-6 sm:px-8 sm:py-10">
+                  ${content}
+              </div>
+              
+              <!-- Footer -->
+              <div class="email-footer bg-blue-900 text-center px-4 py-6 sm:px-8 sm:py-10">
+                  <p class="text-blue-200 text-xs m-0">
+                      © 2025 Stichting Asha. Alle rechten voorbehouden.
+                  </p>
+              </div>
+          </div>
+      </div>
   </body>
   </html>
 `;
@@ -102,7 +150,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
       <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
         Met vriendelijke groet,<br>
-        <strong>Het Stichting Asha Team</strong>
+        <strong>Stichting Asha</strong>
       </p>
     </div>
   `;
@@ -171,7 +219,7 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
     <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
       <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
         Met vriendelijke groet,<br>
-        <strong>Het Stichting Asha Team</strong>
+        <strong>Stichting Asha</strong>
       </p>
     </div>
   `;
@@ -240,7 +288,7 @@ export async function sendVolunteerApplicationEmails(
     <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
       <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
         Met dank en vriendelijke groet,<br>
-        <strong>Het Vrijwilligersteam van Stichting Asha</strong>
+        <strong>Stichting Asha</strong>
       </p>
     </div>
   `;
@@ -391,7 +439,7 @@ export async function sendVolunteerStatusEmail(
       <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
         <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
           Met veel dank en vriendelijke groet,<br>
-          <strong>Het Vrijwilligersteam van Stichting Asha</strong>
+          <strong>Stichting Asha</strong>
         </p>
       </div>
     `;
@@ -447,7 +495,7 @@ export async function sendVolunteerStatusEmail(
       <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
         <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
           Met respect en vriendelijke groet,<br>
-          <strong>Het Vrijwilligersteam van Stichting Asha</strong>
+          <strong>Stichting Asha</strong>
         </p>
       </div>
     `;
