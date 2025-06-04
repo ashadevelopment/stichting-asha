@@ -38,7 +38,17 @@ export async function PUT(request: NextRequest) {
   await dbConnect()
 
   const body = await request.json()
-  // … validate body …
+  
+  // Validation for time range format
+  if (body.startTime && body.endTime) {
+    // Ensure both times are provided if one is
+    if (!body.startTime || !body.endTime) {
+      return NextResponse.json(
+        { error: "Zowel start- als eindtijd zijn verplicht" }, 
+        { status: 400 }
+      )
+    }
+  }
 
   const updatedEvent = await Event.findByIdAndUpdate(id, { $set: body }, { new: true })
   if (!updatedEvent) {

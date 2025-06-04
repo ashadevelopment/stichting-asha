@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { CalendarPlus, Edit, Trash2, Calendar, Clock, MapPin } from 'lucide-react'
+import { CalendarPlus, Edit, Trash2, Calendar, Clock, MapPin, RotateCcw } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { format, parseISO } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -12,9 +12,13 @@ interface Event {
   title: string
   description: string
   date: string
-  time: string
+  startTime: string
+  endTime: string
   location: string
   author: string
+  repeatType?: 'standard' | 'daily' | 'weekly' | 'monthly'
+  repeatCount?: number
+  isRepeatedEvent?: boolean
 }
 
 export default function AgendaPage() {
@@ -31,8 +35,11 @@ export default function AgendaPage() {
     title: '',
     description: '',
     date: '',
-    time: '',
-    location: ''
+    startTime: '',
+    endTime: '',
+    location: '',
+    repeatType: 'standard' as 'standard' | 'daily' | 'weekly' | 'monthly',
+    repeatCount: 1
   })
 
   // Bevestigingsdialoog state
@@ -41,6 +48,14 @@ export default function AgendaPage() {
 
   // Beschikbare tijdsopties op 15-minuten intervallen
   const timeOptions = generateTimeOptions()
+
+  // Repeat type options
+  const repeatOptions = [
+    { value: 'standard', label: 'Standaard' },
+    { value: 'daily', label: 'Dagelijks' },
+    { value: 'weekly', label: 'Wekelijks' },
+    { value: 'monthly', label: 'Maandelijks' }
+  ]
 
   // Functie om tijdsopties te genereren met 15-minuten intervallen
   function generateTimeOptions() {
@@ -91,8 +106,11 @@ export default function AgendaPage() {
       title: '',
       description: '',
       date: '',
-      time: '',
-      location: ''
+      startTime: '',
+      endTime: '',
+      location: '',
+      repeatType: 'standard',
+      repeatCount: 1
     })
     setCurrentEvent(null)
     setFormMode('create')
@@ -104,8 +122,11 @@ export default function AgendaPage() {
       title: event.title,
       description: event.description,
       date: event.date,
-      time: event.time,
-      location: event.location
+      startTime: event.startTime,
+      endTime: event.endTime,
+      location: event.location,
+      repeatType: event.repeatType || 'standard',
+      repeatCount: event.repeatCount || 1
     })
     setFormMode('edit')
     setShowForm(true)
@@ -172,8 +193,14 @@ export default function AgendaPage() {
     e.preventDefault()
     
     // Validatie
-    if (!form.title || !form.description || !form.date || !form.time || !form.location) {
+    if (!form.title || !form.description || !form.date || !form.startTime || !form.endTime || !form.location) {
       setError('Alle velden zijn verplicht')
+      return
+    }
+
+    // Valideer dat eindtijd na starttijd is
+    if (form.startTime >= form.endTime) {
+      setError('Eindtijd moet na de starttijd zijn')
       return
     }
     
@@ -192,9 +219,10 @@ export default function AgendaPage() {
           throw new Error('Fout bij aanmaken van evenement')
         }
         
-        const newEvent = await res.json()
-        setEvents([...events, newEvent])
-        setSuccessMessage('Evenement is succesvol toegevoegd')
+        const newEvents = await res.json()
+        // Add all created events (including repeated ones) to the state
+        setEvents([...events, ...(Array.isArray(newEvents) ? newEvents : [newEvents])])
+        setSuccessMessage(`Evenement${Array.isArray(newEvents) && newEvents.length > 1 ? 'en zijn' : ' is'} succesvol toegevoegd`)
         setTimeout(() => setSuccessMessage(''), 3000)
       } else {
         // Bestaand evenement updaten
@@ -299,7 +327,7 @@ export default function AgendaPage() {
               />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Datum</label>
                 <input
@@ -313,15 +341,33 @@ export default function AgendaPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Tijd</label>
+                <label className="block text-sm font-medium mb-1">Starttijd</label>
                 <select
-                  name="time"
-                  value={form.time}
+                  name="startTime"
+                  value={form.startTime}
                   onChange={handleInputChange}
                   className="w-full border border-gray-300 rounded-md p-2 text-black"
                   required
                 >
-                  <option value="">Selecteer tijd</option>
+                  <option value="">Selecteer starttijd</option>
+                  {timeOptions.map(time => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Eindtijd</label>
+                <select
+                  name="endTime"
+                  value={form.endTime}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md p-2 text-black"
+                  required
+                >
+                  <option value="">Selecteer eindtijd</option>
                   {timeOptions.map(time => (
                     <option key={time} value={time}>
                       {time}
@@ -341,6 +387,42 @@ export default function AgendaPage() {
                   required
                 />
               </div>
+            </div>
+            
+            {/* Herhaling opties */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Herhaling</label>
+                <select
+                  name="repeatType"
+                  value={form.repeatType}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md p-2 text-black"
+                >
+                  {repeatOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {form.repeatType !== 'standard' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Aantal herhalingen
+                  </label>
+                  <input
+                    type="number"
+                    name="repeatCount"
+                    value={form.repeatCount}
+                    onChange={handleInputChange}
+                    min="1"
+                    max="365"
+                    className="w-full border border-gray-300 rounded-md p-2 text-black"
+                  />
+                </div>
+              )}
             </div>
             
             <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
@@ -378,7 +460,12 @@ export default function AgendaPage() {
             {events.map((event) => (
               <div key={event._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                  <h4 className="text-lg font-semibold capitalize">{event.title}</h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-lg font-semibold capitalize">{event.title}</h4>
+                    {event.isRepeatedEvent && (
+                      <RotateCcw size={16} className="text-blue-500" />
+                    )}
+                  </div>
                   
                   <div className="flex gap-2 mt-1 sm:mt-0">
                     <button
@@ -411,7 +498,7 @@ export default function AgendaPage() {
                   
                   <div className="flex items-center gap-2">
                     <Clock size={16} className="text-gray-400" />
-                    <span>{event.time} uur</span>
+                    <span>{event.startTime} - {event.endTime}</span>
                   </div>
                   
                   <div className="flex items-center gap-2">
