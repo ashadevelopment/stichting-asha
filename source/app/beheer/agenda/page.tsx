@@ -16,7 +16,7 @@ interface Event {
   endTime: string
   location: string
   author: string
-  repeatType?: 'standard' | 'daily' | 'weekly' | 'monthly'
+  repeatType?: 'single' | 'standard' | 'daily' | 'weekly' | 'monthly'  // Updated
   repeatCount?: number
   isRepeatedEvent?: boolean
 }
@@ -38,7 +38,7 @@ export default function AgendaPage() {
     startTime: '',
     endTime: '',
     location: '',
-    repeatType: 'standard' as 'standard' | 'daily' | 'weekly' | 'monthly',
+    repeatType: 'single' as 'single' | 'standard' | 'daily' | 'weekly' | 'monthly',  // Changed default
     repeatCount: 1
   })
 
@@ -51,10 +51,11 @@ export default function AgendaPage() {
 
   // Repeat type options
   const repeatOptions = [
-    { value: 'standard', label: 'Standaard' },
-    { value: 'daily', label: 'Dagelijks' },
-    { value: 'weekly', label: 'Wekelijks' },
-    { value: 'monthly', label: 'Maandelijks' }
+    { value: 'single', label: 'Eenmalig' },           // Single event
+    { value: 'standard', label: 'Wekelijks (standaard)' }, // Weekly (every week for 1 year)
+    { value: 'daily', label: 'Dagelijks' },          // Daily with custom count
+    { value: 'weekly', label: 'Wekelijks (aangepast)' },   // Weekly with custom count
+    { value: 'monthly', label: 'Maandelijks' }       // Monthly
   ]
 
   // Functie om tijdsopties te genereren met 15-minuten intervallen
@@ -109,7 +110,7 @@ export default function AgendaPage() {
       startTime: '',
       endTime: '',
       location: '',
-      repeatType: 'standard',
+      repeatType: 'single',  // Changed default
       repeatCount: 1
     })
     setCurrentEvent(null)
@@ -407,7 +408,7 @@ export default function AgendaPage() {
                 </select>
               </div>
               
-              {form.repeatType !== 'standard' && (
+              {form.repeatType !== 'single' && form.repeatType !== 'standard' && (
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Aantal herhalingen

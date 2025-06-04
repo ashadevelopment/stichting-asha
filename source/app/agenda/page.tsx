@@ -21,7 +21,8 @@ interface Event {
   date: string;
   title: string;
   description: string;
-  time: string;
+  startTime: string;
+  endTime: string;
   location: string;
   author: string;
 }
@@ -96,7 +97,11 @@ export default function Agenda() {
   };
 
   const sortEventsByTime = (events: Event[]) => {
-    return [...events].sort((a, b) => a.time.localeCompare(b.time));
+    return [...events].sort((a, b) => {
+      const timeA = a.startTime || '00:00';
+      const timeB = b.startTime || '00:00';
+      return timeA.localeCompare(timeB);
+    });
   };
 
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
@@ -159,7 +164,7 @@ export default function Agenda() {
                                 >
                                   <div className="font-bold text-[#1E2A78] text-sm capitalize">{event.title}</div>
                                   <div className="text-xs text-gray-500 capitalize">{event.description}</div>
-                                  <div className="text-yellow-500 font-semibold text-sm mt-1 capitalize">{event.time}</div>
+                                  <div className="text-yellow-500 font-semibold text-sm mt-1 capitalize">{event.startTime}</div>
                                 </div>
                               ))}
                             </div>
@@ -246,7 +251,7 @@ export default function Agenda() {
                               <div key={event._id} className="bg-gray-50 rounded-md p-3 shadow-sm">
                                 <div className="flex justify-between items-start">
                                   <h4 className="font-medium text-[#1E2A78] capitalize">{event.title}</h4>
-                                  <span className="text-yellow-600 font-medium whitespace-nowrap ml-2 capitalize">{event.time}</span>
+                                  <span className="text-yellow-600 font-medium whitespace-nowrap ml-2 capitalize">{event.startTime} - {event.endTime}</span>
                                 </div>
                                 <p className="text-gray-700 text-sm mt-1 capitalize">{event.description}</p>
                                 <p className="text-gray-500 text-xs mt-1 capitalize">

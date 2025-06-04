@@ -23,6 +23,28 @@ function generateRepeatingEvents(eventData: any) {
   const baseDate = new Date(eventData.date)
   
   switch (eventData.repeatType) {
+    case 'single':  // Changed from 'standard' to 'single'
+      // Single event - no repetition
+      events.push({
+        ...eventData,
+        isRepeatedEvent: false,
+        originalEventId: null
+      })
+      break
+      
+    case 'standard':  // Standard now means weekly repetition
+      for (let i = 0; i < 52; i++) {  // 52 weeks = 1 year
+        const newDate = new Date(baseDate)
+        newDate.setDate(baseDate.getDate() + (i * 7))
+        events.push({
+          ...eventData,
+          date: newDate.toISOString().split('T')[0],
+          isRepeatedEvent: i > 0,
+          originalEventId: i > 0 ? undefined : null
+        })
+      }
+      break
+      
     case 'daily':
       for (let i = 0; i < (eventData.repeatCount || 30); i++) {
         const newDate = new Date(baseDate)
@@ -61,14 +83,6 @@ function generateRepeatingEvents(eventData: any) {
         })
       }
       break
-      
-    default:
-      // Standard - single event
-      events.push({
-        ...eventData,
-        isRepeatedEvent: false,
-        originalEventId: null
-      })
   }
   
   return events
@@ -110,7 +124,7 @@ export async function POST(req: Request) {
     const eventData = {
       ...body,
       author: session.user.name || "Anoniem",
-      repeatType: body.repeatType || 'standard'
+      repeatType: body.repeatType || 'single'  // Changed default from 'standard' to 'single'
     }
     
     // Generate events based on repeat type
