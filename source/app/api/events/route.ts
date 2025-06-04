@@ -17,13 +17,12 @@ export async function GET() {
   }
 }
 
-// Helper function to generate repeating events
 function generateRepeatingEvents(eventData: any) {
   const events = []
-  const baseDate = new Date(eventData.date)
+  const baseDate = new Date(eventData.date + 'T00:00:00.000Z')
   
   switch (eventData.repeatType) {
-    case 'single':  // Changed from 'standard' to 'single'
+    case 'single':
       // Single event - no repetition
       events.push({
         ...eventData,
@@ -32,54 +31,78 @@ function generateRepeatingEvents(eventData: any) {
       })
       break
       
-    case 'standard':  // Standard now means weekly repetition
-      for (let i = 0; i < 52; i++) {  // 52 weeks = 1 year
-        const newDate = new Date(baseDate)
-        newDate.setDate(baseDate.getDate() + (i * 7))
+    case 'standard':  // Weekly repetition with specific day selection
+      const targetDayOfWeek = eventData.selectedDayOfWeek || 1 // Default to Monday
+      
+      for (let weekOffset = 0; weekOffset < 52; weekOffset++) {
+        // Start from the first occurrence of the selected day
+        const startOfWeek = new Date(baseDate)
+        startOfWeek.setUTCDate(baseDate.getUTCDate() - baseDate.getUTCDay() + (weekOffset * 7))
+        
+        // Set to the selected day of the week
+        const eventDate = new Date(startOfWeek)
+        eventDate.setUTCDate(startOfWeek.getUTCDate() + targetDayOfWeek)
+        
+        // If this is the first event (weekOffset = 0), make sure it's not in the past
+        if (weekOffset === 0) {
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          if (eventDate < today) {
+            continue // Skip this occurrence if it's in the past
+          }
+        }
+        
         events.push({
           ...eventData,
-          date: newDate.toISOString().split('T')[0],
-          isRepeatedEvent: i > 0,
-          originalEventId: i > 0 ? undefined : null
+          date: eventDate.toISOString().split('T')[0],
+          isRepeatedEvent: weekOffset > 0,
+          originalEventId: weekOffset > 0 ? undefined : null
         })
       }
       break
       
     case 'daily':
-      for (let i = 0; i < (eventData.repeatCount || 30); i++) {
+      for (let dayOffset = 0; dayOffset < (eventData.repeatCount || 30); dayOffset++) {
         const newDate = new Date(baseDate)
-        newDate.setDate(baseDate.getDate() + i)
+        newDate.setUTCDate(baseDate.getUTCDate() + dayOffset)
         events.push({
           ...eventData,
           date: newDate.toISOString().split('T')[0],
-          isRepeatedEvent: i > 0,
-          originalEventId: i > 0 ? undefined : null
+          isRepeatedEvent: dayOffset > 0,
+          originalEventId: dayOffset > 0 ? undefined : null
         })
       }
       break
       
     case 'weekly':
-      for (let i = 0; i < (eventData.repeatCount || 12); i++) {
+      for (let weekOffset = 0; weekOffset < (eventData.repeatCount || 12); weekOffset++) {
         const newDate = new Date(baseDate)
-        newDate.setDate(baseDate.getDate() + (i * 7))
+        newDate.setUTCDate(baseDate.getUTCDate() + (weekOffset * 7))
+        
         events.push({
           ...eventData,
           date: newDate.toISOString().split('T')[0],
-          isRepeatedEvent: i > 0,
-          originalEventId: i > 0 ? undefined : null
+          isRepeatedEvent: weekOffset > 0,
+          originalEventId: weekOffset > 0 ? undefined : null
         })
       }
       break
       
     case 'monthly':
-      for (let i = 0; i < (eventData.repeatCount || 12); i++) {
+      for (let monthOffset = 0; monthOffset < (eventData.repeatCount || 12); monthOffset++) {
         const newDate = new Date(baseDate)
-        newDate.setMonth(baseDate.getMonth() + i)
+        newDate.setUTCMonth(baseDate.getUTCMonth() + monthOffset)
+        
+        // Handle cases where the day doesn't exist in the target month
+        if (newDate.getUTCDate() !== baseDate.getUTCDate()) {
+          newDate.setUTCDate(0) // Set to last day of previous month
+        }
+        
         events.push({
           ...eventData,
           date: newDate.toISOString().split('T')[0],
-          isRepeatedEvent: i > 0,
-          originalEventId: i > 0 ? undefined : null
+          isRepeatedEvent: monthOffset > 0,
+          originalEventId: monthOffset > 0 ? undefined : null
         })
       }
       break

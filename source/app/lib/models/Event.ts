@@ -30,7 +30,16 @@ const EventSchema = new Schema(
     author: { 
       type: String, 
       required: true 
-    }
+    },
+      repeatType: { 
+      type: String, 
+      enum: ['single', 'standard', 'daily', 'weekly', 'monthly'], 
+      default: 'single' 
+    },
+    repeatCount: { type: Number, default: 1 },
+    isRepeatedEvent: { type: Boolean, default: false },
+    originalEventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+    selectedDayOfWeek: { type: Number, min: 0, max: 6 }
   },
   { timestamps: true }
 )

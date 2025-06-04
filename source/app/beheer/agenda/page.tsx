@@ -16,9 +16,10 @@ interface Event {
   endTime: string
   location: string
   author: string
-  repeatType?: 'single' | 'standard' | 'daily' | 'weekly' | 'monthly'  // Updated
+  repeatType?: 'single' | 'standard' | 'daily' | 'weekly' | 'monthly'
   repeatCount?: number
   isRepeatedEvent?: boolean
+  selectedDayOfWeek?: number
 }
 
 export default function AgendaPage() {
@@ -38,8 +39,9 @@ export default function AgendaPage() {
     startTime: '',
     endTime: '',
     location: '',
-    repeatType: 'single' as 'single' | 'standard' | 'daily' | 'weekly' | 'monthly',  // Changed default
-    repeatCount: 1
+    repeatType: 'single' as 'single' | 'standard' | 'daily' | 'weekly' | 'monthly',
+    repeatCount: 1,
+    selectedDayOfWeek: 1 // Default to Monday (1 = Monday, 0 = Sunday in JavaScript)
   })
 
   // Bevestigingsdialoog state
@@ -56,6 +58,16 @@ export default function AgendaPage() {
     { value: 'daily', label: 'Dagelijks' },          // Daily with custom count
     { value: 'weekly', label: 'Wekelijks (aangepast)' },   // Weekly with custom count
     { value: 'monthly', label: 'Maandelijks' }       // Monthly
+  ]
+
+  const dayOptions = [
+    { value: 1, label: 'Maandag' },
+    { value: 2, label: 'Dinsdag' },
+    { value: 3, label: 'Woensdag' },
+    { value: 4, label: 'Donderdag' },
+    { value: 5, label: 'Vrijdag' },
+    { value: 6, label: 'Zaterdag' },
+    { value: 0, label: 'Zondag' }
   ]
 
   // Functie om tijdsopties te genereren met 15-minuten intervallen
@@ -96,10 +108,24 @@ export default function AgendaPage() {
     fetchEvents()
   }, [])
 
+  useEffect(() => {
+    if (form.date && form.repeatType === 'standard') {
+      const selectedDate = new Date(form.date + 'T00:00:00.000Z')
+      const dayOfWeek = selectedDate.getUTCDay()
+      setForm(prev => ({ ...prev, selectedDayOfWeek: dayOfWeek }))
+    }
+  }, [form.date, form.repeatType])
+
   // Form handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setForm(prev => ({ ...prev, [name]: value }))
+    
+    // Convert selectedDayOfWeek to number
+    if (name === 'selectedDayOfWeek' || name === 'repeatCount') {
+      setForm(prev => ({ ...prev, [name]: parseInt(value) }))
+    } else {
+      setForm(prev => ({ ...prev, [name]: value }))
+    }
   }
 
   const resetForm = () => {
@@ -110,8 +136,9 @@ export default function AgendaPage() {
       startTime: '',
       endTime: '',
       location: '',
-      repeatType: 'single',  // Changed default
-      repeatCount: 1
+      repeatType: 'single',
+      repeatCount: 1,
+      selectedDayOfWeek: 1
     })
     setCurrentEvent(null)
     setFormMode('create')
@@ -127,7 +154,8 @@ export default function AgendaPage() {
       endTime: event.endTime,
       location: event.location,
       repeatType: event.repeatType || 'standard',
-      repeatCount: event.repeatCount || 1
+      repeatCount: event.repeatCount || 1,
+      selectedDayOfWeek: event.selectedDayOfWeek || 1
     })
     setFormMode('edit')
     setShowForm(true)
@@ -407,6 +435,26 @@ export default function AgendaPage() {
                   ))}
                 </select>
               </div>
+              
+              {form.repeatType === 'standard' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Dag van de week
+                  </label>
+                  <select
+                    name="selectedDayOfWeek"
+                    value={form.selectedDayOfWeek}
+                    onChange={handleInputChange}
+                    className="w-full border border-gray-300 rounded-md p-2 text-black"
+                  >
+                    {dayOptions.map(day => (
+                      <option key={day.value} value={day.value}>
+                        {day.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               
               {form.repeatType !== 'single' && form.repeatType !== 'standard' && (
                 <div>
