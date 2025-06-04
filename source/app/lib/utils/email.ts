@@ -15,53 +15,120 @@ export const createTransporter = async () => {
   });
 };
 
+// Professional email template base
+const getEmailTemplate = (content: string) => `
+  <!DOCTYPE html>
+  <html lang="nl">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Stichting Asha</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f5f5f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <tr>
+              <td style="padding: 40px 20px;">
+                  <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                      <!-- Header -->
+                      <tr>
+                          <td style="background-color: #1e3a8a; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                              <img src="/logo.png" alt="Logo">
+                              <h1 style="color: #ffffff; margin: 20px 0 0 0; font-size: 28px; font-weight: 300; letter-spacing: 1px;">STICHTING ASHA</h1>
+                              <p style="color: #e2e8f0; margin: 5px 0 0 0; font-size: 14px; letter-spacing: 0.5px;">UTRECHT</p>
+                          </td>
+                      </tr>
+                      
+                      <!-- Content -->
+                      <tr>
+                          <td style="padding: 40px 30px;">
+                              ${content}
+                          </td>
+                      </tr>
+                      
+                      <!-- Footer -->
+                      <tr>
+                          <td style="background-color: #1e3a8a; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;">
+                              <h3 style="color: #ffffff; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Volg Ons</h3>
+                              <div style="margin-bottom: 20px;">
+                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">X</span>
+                                  </a>
+                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">IG</span>
+                                  </a>
+                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">F</span>
+                                  </a>
+                                  <a href="#" style="display: inline-block; margin: 0 10px; text-decoration: none;">
+                                      <span style="background-color: #ffffff; color: #1e3a8a; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">•••</span>
+                                  </a>
+                              </div>
+                              <p style="color: #e2e8f0; margin: 0; font-size: 12px;">© 2025 Stichting Asha. Alle rechten voorbehouden.</p>
+                          </td>
+                      </tr>
+                  </table>
+              </td>
+          </tr>
+      </table>
+  </body>
+  </html>
+`;
+
 // Send password reset email
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   const transporter = await createTransporter();
 
+  const content = `
+    <h2 style="color: #1e3a8a; margin: 0 0 25px 0; font-size: 24px; font-weight: 600;">Wachtwoord Resetten</h2>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+      Geachte heer/mevrouw,
+    </p>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Wij hebben een verzoek ontvangen om het wachtwoord van uw account te resetten. 
+      Om uw wachtwoord veilig te wijzigen, klikt u op onderstaande knop:
+    </p>
+    
+    <div style="text-align: center; margin: 35px 0;">
+      <a href="${resetUrl}" 
+         style="background-color: #1e3a8a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);">
+        Wachtwoord Resetten
+      </a>
+    </div>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 4px;">
+      <p style="color: #92400e; margin: 0; font-size: 14px; font-weight: 600;">
+        ⚠️ Belangrijk: Deze link is slechts 1 uur geldig om veiligheidsredenen.
+      </p>
+    </div>
+    
+    <p style="color: #6b7280; line-height: 1.6; margin-bottom: 15px; font-size: 14px;">
+      Werkt de knop niet? Kopieer en plak deze link in uw browser:
+    </p>
+    
+    <p style="color: #1e3a8a; word-break: break-all; background-color: #f8fafc; padding: 10px; border-radius: 4px; font-size: 14px; margin-bottom: 25px;">
+      ${resetUrl}
+    </p>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Hebt u geen wachtwoord reset aangevraagd? Dan kunt u deze e-mail veilig negeren. 
+      Uw account blijft beveiligd en er worden geen wijzigingen aangebracht.
+    </p>
+    
+    <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
+      <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
+        Met vriendelijke groet,<br>
+        <strong>Het Stichting Asha Team</strong>
+      </p>
+    </div>
+  `;
+
   const mailOptions = {
     from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Uw wachtwoord resetten',
-    text: `
-      Geachte heer/mevrouw,
-
-      U heeft een verzoek ingediend om uw wachtwoord te resetten.
-
-      Klik op de onderstaande link om uw wachtwoord te resetten:
-      ${resetUrl}
-
-      Deze link is 1 uur geldig.
-
-      Als u dit verzoek niet heeft ingediend, kunt u deze e-mail negeren.
-
-      Met vriendelijke groet,
-      Stichting Asha
-    `,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Wachtwoord Resetten</h2>
-        <p>Geachte heer/mevrouw,</p>
-        <p>U heeft een verzoek ingediend om uw wachtwoord te resetten.</p>
-        <p>Klik op de onderstaande knop om uw wachtwoord te resetten:</p>
-        <p>
-          <a 
-            href="${resetUrl}" 
-            style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"
-          >
-            Wachtwoord Resetten
-          </a>
-        </p>
-        <p>Of kopieer en plak deze link in uw browser:</p>
-        <p><a href="${resetUrl}">${resetUrl}</a></p>
-        <p><strong>Deze link is 1 uur geldig.</strong></p>
-        <p>Als u dit verzoek niet heeft ingediend, kunt u deze e-mail negeren.</p>
-        <p>
-          Met vriendelijke groet,<br />
-          Stichting Asha
-        </p>
-      </div>
-    `,
+    subject: 'Wachtwoord Reset Verzoek - Stichting Asha',
+    html: getEmailTemplate(content),
   };
 
   try {
@@ -80,43 +147,57 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
 export async function sendVerificationEmail(email: string, verificationUrl: string) {
   const transporter = await createTransporter();
 
+  const content = `
+    <h2 style="color: #1e3a8a; margin: 0 0 25px 0; font-size: 24px; font-weight: 600;">Account Verificatie</h2>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+      Geachte heer/mevrouw,
+    </p>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Hartelijk dank voor uw registratie bij Stichting Asha. Om uw account te activeren 
+      en toegang te krijgen tot alle functionaliteiten, dient u uw e-mailadres te verifiëren.
+    </p>
+    
+    <div style="text-align: center; margin: 35px 0;">
+      <a href="${verificationUrl}" 
+         style="background-color: #059669; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);">
+        E-mailadres Verifiëren
+      </a>
+    </div>
+    
+    <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin: 25px 0; border-radius: 4px;">
+      <p style="color: #1e40af; margin: 0; font-size: 14px; font-weight: 600;">
+        ℹ️ Deze verificatielink is 24 uur geldig vanaf het moment van verzending.
+      </p>
+    </div>
+    
+    <p style="color: #6b7280; line-height: 1.6; margin-bottom: 15px; font-size: 14px;">
+      Werkt de knop niet? Kopieer en plak deze link in uw browser:
+    </p>
+    
+    <p style="color: #1e3a8a; word-break: break-all; background-color: #f8fafc; padding: 10px; border-radius: 4px; font-size: 14px; margin-bottom: 25px;">
+      ${verificationUrl}
+    </p>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Hebt u zich niet geregistreerd bij Stichting Asha? Dan kunt u deze e-mail negeren. 
+      Er wordt geen account aangemaakt zonder verificatie.
+    </p>
+    
+    <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
+      <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
+        Met vriendelijke groet,<br>
+        <strong>Het Stichting Asha Team</strong>
+      </p>
+    </div>
+  `;
+
   const mailOptions = {
     from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Verifieer uw e-mailadres',
-    text: `
-      Geachte heer/mevrouw,
-
-      Bedankt voor uw registratie. Verifieer uw e-mailadres door op de onderstaande link te klikken:
-      ${verificationUrl}
-
-      Deze link is 24 uur geldig.
-
-      Met vriendelijke groet,
-      Stichting Asha
-    `,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>E-mail Verificatie</h2>
-        <p>Geachte heer/mevrouw,</p>
-        <p>Bedankt voor uw registratie. Verifieer uw e-mailadres door op de onderstaande knop te klikken:</p>
-        <p>
-          <a 
-            href="${verificationUrl}" 
-            style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"
-          >
-            E-mailadres Verifiëren
-          </a>
-        </p>
-        <p>Of kopieer en plak deze link in uw browser:</p>
-        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-        <p><strong>Deze link is 24 uur geldig.</strong></p>
-        <p>
-          Met vriendelijke groet,<br />
-          Stichting Asha
-        </p>
-      </div>
-    `,
+    subject: 'Verifieer uw account - Stichting Asha',
+    html: getEmailTemplate(content),
   };
 
   try {
@@ -139,90 +220,118 @@ export async function sendVolunteerApplicationEmails(
   const transporter = await createTransporter();
   
   // Email to the volunteer
+  const volunteerContent = `
+    <h2 style="color: #1e3a8a; margin: 0 0 25px 0; font-size: 24px; font-weight: 600;">Bevestiging Vrijwilligersaanmelding</h2>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+      Beste ${volunteerName},
+    </p>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Hartelijk dank voor uw interesse om vrijwilliger te worden bij Stichting Asha. 
+      Wij waarderen uw bereidheid om een bijdrage te leveren aan onze missie.
+    </p>
+    
+    <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 25px 0; border-radius: 4px;">
+      <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Uw aanmelding is ontvangen</h3>
+      <p style="color: #047857; margin: 0; font-size: 14px; line-height: 1.6;">
+        Wij hebben uw aanmelding in goede orde ontvangen en zullen deze zorgvuldig beoordelen. 
+        Ons team neemt binnen 5 werkdagen contact met u op over de vervolgstappen.
+      </p>
+    </div>
+    
+    <h3 style="color: #374151; margin: 30px 0 15px 0; font-size: 18px; font-weight: 600;">Wat kunt u verwachten?</h3>
+    
+    <ul style="color: #374151; line-height: 1.8; margin-bottom: 25px; font-size: 16px; padding-left: 20px;">
+      <li>Beoordeling van uw aanmelding door ons vrijwilligersteam</li>
+      <li>Persoonlijk gesprek (indien van toepassing)</li>
+      <li>Informatie over beschikbare vrijwilligersposities</li>
+      <li>Introductie en training wanneer u wordt toegelaten</li>
+    </ul>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Heeft u vragen over uw aanmelding of over het vrijwilligerswerk bij Stichting Asha? 
+      Aarzel niet om contact met ons op te nemen.
+    </p>
+    
+    <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
+      <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
+        Met dank en vriendelijke groet,<br>
+        <strong>Het Vrijwilligersteam van Stichting Asha</strong>
+      </p>
+    </div>
+  `;
+
+  // Email to the admin
+  const adminContent = `
+    <h2 style="color: #1e3a8a; margin: 0 0 25px 0; font-size: 24px; font-weight: 600;">Nieuwe Vrijwilligersaanmelding</h2>
+    
+    <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+      Er is een nieuwe aanmelding voor vrijwilligerswerk binnengekomen die uw aandacht vereist.
+    </p>
+    
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 25px; border-radius: 6px; margin: 25px 0;">
+      <h3 style="color: #374151; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Aanmelding Details</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; font-weight: 600; color: #374151; width: 120px;">Naam:</td>
+          <td style="padding: 8px 0; color: #374151;">${volunteerName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; font-weight: 600; color: #374151;">E-mailadres:</td>
+          <td style="padding: 8px 0; color: #374151;">${volunteerEmail}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; font-weight: 600; color: #374151;">Datum:</td>
+          <td style="padding: 8px 0; color: #374151;">${new Date().toLocaleDateString('nl-NL', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div style="text-align: center; margin: 35px 0;">
+      <a href="${process.env.NEXT_PUBLIC_BASE_URL}/beheer/vrijwilligers" 
+         style="background-color: #1e3a8a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);">
+        Bekijk Volledige Aanmelding
+      </a>
+    </div>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 4px;">
+      <p style="color: #92400e; margin: 0; font-size: 14px; font-weight: 600;">
+        📋 Vergeet niet om binnen 5 werkdagen te reageren op deze aanmelding.
+      </p>
+    </div>
+    
+    <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
+      <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
+        Met vriendelijke groet,<br>
+        <strong>Stichting Asha Systeem</strong>
+      </p>
+    </div>
+  `;
+
   const volunteerMailOptions = {
     from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
     to: volunteerEmail,
-    subject: 'Bevestiging aanmelding als vrijwilliger',
-    text: `
-      Beste ${volunteerName},
-
-      Hartelijk dank voor je aanmelding als vrijwilliger bij Stichting Asha!
-
-      We hebben je aanmelding in goede orde ontvangen en deze wordt momenteel door ons team beoordeeld.
-      Je hoort zo spoedig mogelijk van ons over de status van je aanmelding.
-
-      Mocht je vragen hebben, aarzel dan niet om contact met ons op te nemen.
-
-      Met vriendelijke groet,
-      Team Stichting Asha
-    `,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Bedankt voor je aanmelding!</h2>
-        <p>Beste ${volunteerName},</p>
-        <p>Hartelijk dank voor je aanmelding als vrijwilliger bij Stichting Asha!</p>
-        <p>We hebben je aanmelding in goede orde ontvangen en deze wordt momenteel door ons team beoordeeld. 
-           Je hoort zo spoedig mogelijk van ons over de status van je aanmelding.</p>
-        <p>Mocht je vragen hebben, aarzel dan niet om contact met ons op te nemen.</p>
-        <p>
-          Met vriendelijke groet,<br />
-          Team Stichting Asha
-        </p>
-      </div>
-    `,
+    subject: 'Bevestiging vrijwilligersaanmelding - Stichting Asha',
+    html: getEmailTemplate(volunteerContent),
   };
 
-  // Email to the admin
   const adminMailOptions = {
     from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
     to: process.env.GMAIL_USER!,
-    subject: 'Nieuwe vrijwilliger aanmelding',
-    text: `
-      Geachte heer/mevrouw,
-
-      Er is een nieuwe aanmelding als vrijwilliger binnengekomen.
-
-      Naam: ${volunteerName}
-      Email: ${volunteerEmail}
-
-      Log in op het beheerderspaneel om de volledige aanmelding te bekijken en te beoordelen.
-
-      Met vriendelijke groet,
-      Stichting Asha Systeem
-    `,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Nieuwe Vrijwilliger Aanmelding</h2>
-        <p>Geachte heer/mevrouw,</p>
-        <p>Er is een nieuwe aanmelding als vrijwilliger binnengekomen.</p>
-        <p>
-          <strong>Naam:</strong> ${volunteerName}<br />
-          <strong>Email:</strong> ${volunteerEmail}
-        </p>
-        <p>Log in op het beheerderspaneel om de volledige aanmelding te bekijken en te beoordelen.</p>
-        <p>
-          <a 
-            href="${process.env.NEXT_PUBLIC_BASE_URL}/beheer/vrijwilligers" 
-            style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;"
-          >
-            Naar Vrijwilligers Beheer
-          </a>
-        </p>
-        <p>
-          Met vriendelijke groet,<br />
-          Stichting Asha Systeem
-        </p>
-      </div>
-    `,
+    subject: 'Nieuwe vrijwilligersaanmelding - Actie vereist',
+    html: getEmailTemplate(adminContent),
   };
 
   try {
-    // Send email to volunteer
     await transporter.sendMail(volunteerMailOptions);
-    
-    // Send notification to admin
     await transporter.sendMail(adminMailOptions);
-    
     return true;
   } catch (error) {
     console.error('Error sending volunteer application emails:', error);
@@ -237,111 +346,135 @@ export async function sendVolunteerStatusEmail(
   status: 'approved' | 'rejected',
   tempPassword?: string
 ) {
-  const transporter = await createTransporter(); // Your existing transporter setup
+  const transporter = await createTransporter();
 
   let subject: string;
-  let htmlContent: string;
+  let content: string;
 
   if (status === 'approved') {
-    subject = 'Uw vrijwilligersaanmelding is goedgekeurd! 🎉';
+    subject = 'Welkom als vrijwilliger bij Stichting Asha! 🎉';
     
-    htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #10b981; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Gefeliciteerd! 🎉</h1>
+    content = `
+      <div style="text-align: center; margin-bottom: 30px;">
+        <div style="background-color: #10b981; color: white; padding: 20px; border-radius: 8px; display: inline-block;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600;">🎉 Gefeliciteerd!</h1>
         </div>
-        
-        <div style="padding: 30px; background-color: #f9fafb;">
-          <h2 style="color: #374151;">Beste ${name},</h2>
-          
-          <p style="color: #6b7280; line-height: 1.6;">
-            Geweldig nieuws! Uw aanmelding als vrijwilliger is goedgekeurd. 
-            We zijn verheugd u te verwelkomen in ons team van vrijwilligers.
-          </p>
+      </div>
+      
+      <h2 style="color: #1e3a8a; margin: 0 0 25px 0; font-size: 24px; font-weight: 600;">U bent toegelaten als vrijwilliger</h2>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+        Beste ${name},
+      </p>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+        Wij hebben het genoegen u te informeren dat uw aanmelding als vrijwilliger is goedgekeurd. 
+        Van harte welkom in ons toegewijde team van vrijwilligers!
+      </p>
 
-          ${tempPassword ? `
-          <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #1e40af; margin-top: 0;">Uw account gegevens</h3>
-            <p style="color: #374151; margin-bottom: 10px;">
-              Er is automatisch een gebruikersaccount voor u aangemaakt:
-            </p>
-            <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; font-family: monospace;">
-              <strong>Email:</strong> ${email}<br>
-              <strong>Tijdelijk wachtwoord:</strong> ${tempPassword}
-            </div>
-            <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
-              <strong>Belangrijk:</strong> Log in met deze gegevens en wijzig uw wachtwoord zo snel mogelijk.
-            </p>
-          </div>
-          ` : ''}
-
-          <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #065f46; margin-top: 0;">Volgende stappen</h3>
-            <ul style="color: #374151; line-height: 1.6;">
-              <li>U ontvangt binnenkort meer informatie over uw rol als vrijwilliger</li>
-              <li>Houd uw e-mail in de gaten voor verdere instructies</li>
-              ${tempPassword ? '<li>Log in op uw account om uw profiel aan te vullen</li>' : ''}
-              <li>Bij vragen kunt u contact met ons opnemen</li>
-            </ul>
-          </div>
-
-          <p style="color: #6b7280; line-height: 1.6;">
-            Bedankt voor uw interesse en welkom bij ons team!
-          </p>
-
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 14px;">
-              Met vriendelijke groet,<br>
-              Het Vrijwilligers Team
-            </p>
-          </div>
+      ${tempPassword ? `
+      <div style="background-color: #dbeafe; border: 1px solid #3b82f6; padding: 25px; margin: 25px 0; border-radius: 6px;">
+        <h3 style="color: #1e40af; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">🔐 Uw Account Gegevens</h3>
+        <p style="color: #374151; margin-bottom: 15px; font-size: 16px;">
+          Er is automatisch een persoonlijk account voor u aangemaakt:
+        </p>
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 4px; font-family: 'Courier New', monospace; border: 1px solid #e2e8f0;">
+          <div style="margin-bottom: 10px;"><strong>E-mailadres:</strong> ${email}</div>
+          <div><strong>Tijdelijk wachtwoord:</strong> <span style="background-color: #fef3c7; padding: 2px 6px; border-radius: 3px;">${tempPassword}</span></div>
         </div>
+        <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin-top: 15px; border-radius: 4px;">
+          <p style="color: #b91c1c; margin: 0; font-size: 14px; font-weight: 600;">
+            ⚠️ Belangrijk: Wijzig uw wachtwoord direct na de eerste inlog voor uw veiligheid.
+          </p>
+        </div>
+      </div>
+      ` : ''}
+
+      <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 25px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="color: #065f46; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">📋 Volgende Stappen</h3>
+        <ul style="color: #047857; line-height: 1.8; margin: 0; font-size: 16px; padding-left: 20px;">
+          <li>U ontvangt binnenkort gedetailleerde informatie over uw vrijwilligersrol</li>
+          <li>Ons team zal contact met u opnemen voor de introductie en eventuele training</li>
+          ${tempPassword ? '<li>Log in op uw account om uw profiel compleet te maken</li>' : ''}
+          <li>Bij vragen of onduidelijkheden kunt u altijd contact met ons opnemen</li>
+        </ul>
+      </div>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+        Wij kijken ernaar uit om samen met u een positieve impact te maken in onze gemeenschap. 
+        Bedankt voor uw toewijding en welkom bij de Stichting Asha familie!
+      </p>
+      
+      <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
+        <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
+          Met veel dank en vriendelijke groet,<br>
+          <strong>Het Vrijwilligersteam van Stichting Asha</strong>
+        </p>
       </div>
     `;
   } else {
-    subject = 'Update over uw vrijwilligersaanmelding';
+    subject = 'Update betreffende uw vrijwilligersaanmelding';
     
-    htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Vrijwilligersaanmelding</h1>
-        </div>
-        
-        <div style="padding: 30px; background-color: #f9fafb;">
-          <h2 style="color: #374151;">Beste ${name},</h2>
-          
-          <p style="color: #6b7280; line-height: 1.6;">
-            Bedankt voor uw interesse om vrijwilliger te worden. 
-            Na zorgvuldige overweging kunnen we u op dit moment helaas niet toelaten als vrijwilliger.
-          </p>
+    content = `
+      <h2 style="color: #1e3a8a; margin: 0 0 25px 0; font-size: 24px; font-weight: 600;">Betreffende uw vrijwilligersaanmelding</h2>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 20px; font-size: 16px;">
+        Beste ${name},
+      </p>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+        Hartelijk dank voor uw interesse om vrijwilliger te worden bij Stichting Asha en 
+        de tijd die u heeft geïnvesteerd in uw aanmelding.
+      </p>
 
-          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0;">
-            <p style="color: #374151; margin: 0;">
-              Dit betekent niet dat u in de toekomst geen kansen heeft. 
-              We moedigen u aan om in de toekomst opnieuw te solliciteren.
-            </p>
-          </div>
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+        Na zorgvuldige overweging van alle aanmeldingen en onze huidige behoeften, moeten wij u helaas 
+        meedelen dat wij op dit moment geen geschikte vrijwilligerspositie voor u hebben.
+      </p>
 
-          <p style="color: #6b7280; line-height: 1.6;">
-            Bedankt voor uw begrip en uw interesse in onze organisatie.
-          </p>
-
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 14px;">
-              Met vriendelijke groet,<br>
-              Het Vrijwilligers Team
-            </p>
-          </div>
-        </div>
+      <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 25px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="color: #b91c1c; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Toekomstige Mogelijkheden</h3>
+        <p style="color: #7f1d1d; margin: 0; font-size: 16px; line-height: 1.6;">
+          Deze beslissing betekent niet dat u in de toekomst geen kansen heeft bij onze organisatie. 
+          Wij moedigen u van harte aan om in de toekomst opnieuw te solliciteren wanneer er nieuwe 
+          mogelijkheden ontstaan die beter aansluiten bij uw profiel en onze behoeften.
+        </p>
+      </div>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+        Wij waarderen uw betrokkenheid bij onze missie en hopen dat u op andere manieren 
+        verbonden blijft met het werk van Stichting Asha.
+      </p>
+      
+      <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 25px; margin: 25px 0; border-radius: 4px;">
+        <h3 style="color: #0c4a6e; margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">💡 Andere Manieren om Betrokken te Blijven</h3>
+        <ul style="color: #0369a1; line-height: 1.8; margin: 0; font-size: 16px; padding-left: 20px;">
+          <li>Volg ons op sociale media voor updates over onze activiteiten</li>
+          <li>Overweeg een donatie om ons werk te ondersteunen</li>
+          <li>Deel onze missie met vrienden en familie</li>
+          <li>Meld u aan voor onze nieuwsbrief</li>
+        </ul>
+      </div>
+      
+      <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 16px;">
+        Nogmaals bedankt voor uw interesse en begrip voor deze beslissing. 
+        Wij wensen u veel succes met uw toekomstige vrijwilligerswerk.
+      </p>
+      
+      <div style="border-top: 1px solid #e5e7eb; padding-top: 25px; margin-top: 35px;">
+        <p style="color: #374151; line-height: 1.6; margin: 0; font-size: 16px;">
+          Met respect en vriendelijke groet,<br>
+          <strong>Het Vrijwilligersteam van Stichting Asha</strong>
+        </p>
       </div>
     `;
   }
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM,
+    from: `"Stichting Asha" <${process.env.GMAIL_USER}>`,
     to: email,
     subject,
-    html: htmlContent
+    html: getEmailTemplate(content)
   };
 
   try {
