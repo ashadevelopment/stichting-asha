@@ -116,8 +116,11 @@ const groupEvents = (events: Event[]): GroupedEvent[] => {
         events: [event]
       };
     } else {
-      // Group recurring events by title, type, time, and location
-      const groupKey = `${event.title}-${event.type}-${event.startTime}-${event.endTime}-${event.zaal}-${event.author}`;
+      // For recurring events, extract the base ID
+      const baseId = event._id?.includes('_') ? event._id.split('_')[0] : event._id;
+      
+      // Group recurring events by their base ID and properties
+      const groupKey = baseId || `${event.title}-${event.type}-${event.startTime}-${event.endTime}-${event.zaal}-${event.author}`;
       
       if (!grouped[groupKey]) {
         grouped[groupKey] = {
@@ -229,8 +232,28 @@ export default function BeheerAgendaPage() {
         date: new Date(`${formData.date}T00:00:00`).toISOString()
       };
       
-      const url = editingEvent ? `/api/events/${editingEvent.events?.[0]._id}` : '/api/events';
+      let url: string;
       const method = editingEvent ? 'PUT' : 'POST';
+      
+      if (editingEvent) {
+        if (editingEvent.type === 'eenmalig') {
+          // For single events, use the direct ID
+          const eventId = (editingEvent as any)._id || editingEvent.id;
+          url = `/api/events/${eventId}`;
+        } else {
+          // For recurring events, find the base event ID
+          const firstEvent = editingEvent.events?.[0];
+          if (firstEvent?._id) {
+            // Extract base ID from generated IDs like "baseId_2025-12-27"
+            const baseId = firstEvent._id.includes('_') ? firstEvent._id.split('_')[0] : firstEvent._id;
+            url = `/api/events/${baseId}`;
+          } else {
+            throw new Error('Kan het evenement ID niet vinden');
+          }
+        }
+      } else {
+        url = '/api/events';
+      }
       
       const response = await fetch(url, {
         method,
@@ -244,10 +267,13 @@ export default function BeheerAgendaPage() {
         fetchEvents();
         closeModal();
       } else {
-        console.error('Error saving event');
+        const errorData = await response.json();
+        console.error('Error saving event:', errorData);
+        alert('Er is een fout opgetreden bij het opslaan van het evenement.');
       }
     } catch (error) {
       console.error('Error saving event:', error);
+      alert('Er is een fout opgetreden bij het opslaan van het evenement.');
     }
   };
 
@@ -259,15 +285,35 @@ export default function BeheerAgendaPage() {
     
     if (confirm(confirmMessage)) {
       try {
-        // Delete all events in the group
-        const deletePromises = groupedEvent.events?.map(event => 
-          fetch(`/api/events/${event._id}`, { method: 'DELETE' })
-        ) || [];
+        if (groupedEvent.type === 'eenmalig') {
+          // For single events, delete normally
+          const eventId = (groupedEvent as any)._id || groupedEvent.id;
+          await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
+        } else {
+          // For recurring events, find and delete the base event
+          // The base event ID is the original MongoDB ID without the date suffix
+          const baseEventIds = new Set<string>();
+          
+          groupedEvent.events?.forEach(event => {
+            if (event._id) {
+              // Extract base ID from generated IDs like "baseId_2025-12-27"
+              const baseId = event._id.includes('_') ? event._id.split('_')[0] : event._id;
+              baseEventIds.add(baseId);
+            }
+          });
+          
+          // Delete all unique base events
+          const deletePromises = Array.from(baseEventIds).map(baseId => 
+            fetch(`/api/events/${baseId}`, { method: 'DELETE' })
+          );
+          
+          await Promise.all(deletePromises);
+        }
         
-        await Promise.all(deletePromises);
         fetchEvents();
       } catch (error) {
         console.error('Error deleting events:', error);
+        alert('Er is een fout opgetreden bij het verwijderen van het evenement.');
       }
     }
   };

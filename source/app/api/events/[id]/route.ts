@@ -4,12 +4,15 @@ import Event from '../../../lib/models/Event';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     await dbConnect();
     
-    const event = await Event.findById(params.id);
+    // Handle both Next.js 14 and 15+ params format
+    const { id } = await Promise.resolve(params);
+    
+    const event = await Event.findById(id);
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
@@ -23,14 +26,17 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     await dbConnect();
     
+    // Handle both Next.js 14 and 15+ params format
+    const { id } = await Promise.resolve(params);
+    
     const body = await request.json();
     const updatedEvent = await Event.findByIdAndUpdate(
-      params.id,
+      id,
       body,
       { new: true, runValidators: true }
     );
@@ -48,12 +54,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     await dbConnect();
     
-    const deletedEvent = await Event.findByIdAndDelete(params.id);
+    // Handle both Next.js 14 and 15+ params format
+    const { id } = await Promise.resolve(params);
+    
+    const deletedEvent = await Event.findByIdAndDelete(id);
     if (!deletedEvent) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
