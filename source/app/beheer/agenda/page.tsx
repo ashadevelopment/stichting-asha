@@ -34,6 +34,61 @@ const ZALEN = [
 
 const WEEKDAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
 
+// Utility functions for Netherlands timezone handling
+const formatTimeForInput = (timeString: string): string => {
+  if (!timeString) return '';
+  
+  // If it's already in HH:MM format, return as is
+  if (timeString.match(/^\d{2}:\d{2}$/)) {
+    return timeString;
+  }
+  
+  // If it's a full datetime, extract time and convert to Netherlands timezone
+  try {
+    const date = new Date(timeString);
+    return date.toLocaleTimeString('nl-NL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Europe/Amsterdam'
+    });
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString;
+  }
+};
+
+const formatDateForInput = (dateString: string): string => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    // Convert to Netherlands timezone and format as YYYY-MM-DD
+    return date.toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' });
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
+};
+
+const createNetherlandsDateTime = (dateString: string, timeString: string): string => {
+  if (!dateString || !timeString) return '';
+  
+  try {
+    // Create date in Netherlands timezone
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date(`${dateString}T${hours}:${minutes}:00`);
+    
+    // Convert to Netherlands timezone
+    const netherlandsDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' }));
+    
+    return netherlandsDate.toISOString();
+  } catch (error) {
+    console.error('Error creating Netherlands datetime:', error);
+    return '';
+  }
+};
+
 export default function BeheerAgendaPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,7 +116,16 @@ export default function BeheerAgendaPage() {
     try {
       const response = await fetch('/api/events');
       const data = await response.json();
-      setEvents(data);
+      
+      // Format times for display in Netherlands timezone
+      const formattedEvents = data.map((event: Event) => ({
+        ...event,
+        startTime: formatTimeForInput(event.startTime),
+        endTime: formatTimeForInput(event.endTime),
+        date: formatDateForInput(event.date)
+      }));
+      
+      setEvents(formattedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
     }
@@ -71,6 +135,16 @@ export default function BeheerAgendaPage() {
     e.preventDefault();
     
     try {
+      // Prepare data with proper timezone handling
+      const eventData = {
+        ...formData,
+        // Convert times to proper datetime strings with Netherlands timezone
+        startTime: createNetherlandsDateTime(formData.date, formData.startTime),
+        endTime: createNetherlandsDateTime(formData.date, formData.endTime),
+        // Ensure date is in proper format
+        date: new Date(`${formData.date}T00:00:00`).toISOString()
+      };
+      
       const url = editingEvent ? `/api/events/${editingEvent._id}` : '/api/events';
       const method = editingEvent ? 'PUT' : 'POST';
       
@@ -79,7 +153,7 @@ export default function BeheerAgendaPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(eventData),
       });
 
       if (response.ok) {
@@ -114,7 +188,12 @@ export default function BeheerAgendaPage() {
   const openModal = (event?: Event) => {
     if (event) {
       setEditingEvent(event);
-      setFormData(event);
+      setFormData({
+        ...event,
+        startTime: formatTimeForInput(event.startTime),
+        endTime: formatTimeForInput(event.endTime),
+        date: formatDateForInput(event.date)
+      });
     } else {
       setEditingEvent(null);
       setFormData({
@@ -193,7 +272,7 @@ export default function BeheerAgendaPage() {
                     <div className="text-sm text-gray-500">{event.description}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {new Date(event.date).toLocaleDateString('nl-NL')}
+                    {new Date(event.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {event.startTime} - {event.endTime}
@@ -308,7 +387,7 @@ export default function BeheerAgendaPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Starttijd *
+                      Starttijd
                     </label>
                     <input
                       type="time"
@@ -322,7 +401,7 @@ export default function BeheerAgendaPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Eindtijd *
+                      Eindtijd
                     </label>
                     <input
                       type="time"

@@ -107,8 +107,34 @@ export default function AgendaPage() {
     });
   };
 
+  const goToToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  // Get events for the current week
+  const getCurrentWeekEvents = () => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    startOfWeek.setDate(diff);
+    
+    const weekEvents: { [key: string]: Event[] } = {};
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const dayName = WEEKDAYS[i];
+      
+      weekEvents[dayName] = events.filter(event => event.date === dateString);
+    }
+    
+    return weekEvents;
+  };
+
   const days = getDaysInMonth();
-  const todayEvents = getEventsForDate(new Date());
+  const currentWeekEvents = getCurrentWeekEvents();
 
   return (
     <div className="min-h-screen bg-[#F2F2F2] p-6">
@@ -121,37 +147,41 @@ export default function AgendaPage() {
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
               <h2 className="text-lg font-semibold text-blue-900 mb-4">Week Agenda</h2>
               <div className="space-y-2">
-                {WEEKDAYS.map((day) => (
-                  <button
-                    key={day}
-                    onClick={() => setSelectedWeekday(selectedWeekday === day ? '' : day)}
-                    className={`w-full text-left py-2 px-3 rounded transition-colors ${
-                      selectedWeekday === day
-                        ? 'bg-blue-100 text-blue-900'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
+                {WEEKDAYS.map((day) => {
+                  const dayEvents = currentWeekEvents[day] || [];
+                  const hasEvents = dayEvents.length > 0;
+                  
+                  return (
+                    <div key={day} className="w-full">
+                      <button
+                        onClick={() => setSelectedWeekday(selectedWeekday === day ? '' : day)}
+                        className={`w-full text-left py-2 px-3 rounded transition-colors ${
+                          selectedWeekday === day
+                            ? 'bg-blue-100 text-blue-900'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                      
+                      {hasEvents && (
+                        <div className="mt-1 ml-3 space-y-1">
+                          {dayEvents.map((event) => (
+                            <div key={event._id} className="text-xs">
+                              <div className="font-medium text-blue-900">{event.title}</div>
+                              <div className="text-gray-600">{event.description}</div>
+                              <div className="text-yellow-600 font-medium">
+                                {event.startTime} - {event.endTime}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Today's Events */}
-            {todayEvents.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Zaterdag</h3>
-                {todayEvents.map((event) => (
-                  <div key={event._id} className="mb-3 last:mb-0">
-                    <div className="text-sm font-medium">{event.title}</div>
-                    <div className="text-xs text-gray-600">{event.description}</div>
-                    <div className="text-xs text-yellow-600 font-medium">
-                      {event.startTime} - {event.endTime}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
           
           {/* Main Calendar */}
@@ -177,7 +207,10 @@ export default function AgendaPage() {
                   <ChevronRight className="w-5 h-5" />
                 </button>
                 
-                <button className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors">
+                <button 
+                  onClick={goToToday}
+                  className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors"
+                >
                   Heden
                 </button>
               </div>
@@ -235,10 +268,6 @@ export default function AgendaPage() {
                             </div>
                           )}
                         </div>
-                      )}
-                      
-                      {hasEvents && dayInfo.day === 5 && (
-                        <div className="w-2 h-2 bg-red-500 rounded-full mt-1"></div>
                       )}
                     </div>
                   );
