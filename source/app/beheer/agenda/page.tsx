@@ -1,578 +1,452 @@
-"use client"
+// app/beheer/agenda/page.tsx
+'use client';
 
-import { useState, useEffect } from 'react'
-import { CalendarPlus, Edit, Trash2, Calendar, Clock, MapPin, RotateCcw } from 'lucide-react'
-import { useSession } from 'next-auth/react'
-import { format, parseISO } from 'date-fns'
-import { nl } from 'date-fns/locale'
-import ConfirmationDialog from '../../../components/ConfirmationDialog'
+import { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, X } from 'lucide-react';
 
 interface Event {
-  _id: string
-  title: string
-  description: string
-  date: string
-  startTime: string
-  endTime: string
-  location: string
-  author: string
-  repeatType?: 'single' | 'standard' | 'daily' | 'weekly' | 'monthly'
-  repeatCount?: number
-  isRepeatedEvent?: boolean
-  selectedDayOfWeek?: number
+  _id?: string;
+  title: string;
+  description: string;
+  type: 'eenmalig' | 'standaard' | 'dagelijks' | 'wekelijks';
+  startTime: string;
+  endTime: string;
+  author: string;
+  location: string;
+  zaal: string;
+  date: string;
+  recurringDays?: number[];
+  recurringWeeks?: number[];
+  recurringDayOfWeek?: number;
 }
 
-export default function AgendaPage() {
-  const { data: session } = useSession()
-  const [events, setEvents] = useState<Event[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
-  
-  // Form state
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
-  const [showForm, setShowForm] = useState(false)
-  const [currentEvent, setCurrentEvent] = useState<Event | null>(null)
-  const [form, setForm] = useState({
+const EVENT_TYPES = [
+  { value: 'eenmalig', label: 'Eenmalig' },
+  { value: 'standaard', label: 'Standaard' },
+  { value: 'dagelijks', label: 'Dagelijks' },
+  { value: 'wekelijks', label: 'Wekelijks' }
+];
+
+const ZALEN = [
+  'Zaal 1', 'Zaal 2', 'Zaal 3', 'Zaal 4', 'Zaal 5',
+  'Zaal 6', 'Zaal 7', 'Zaal 8', 'Zaal 9', 'Zaal 10'
+];
+
+const WEEKDAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+
+export default function BeheerAgendaPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [formData, setFormData] = useState<Event>({
     title: '',
     description: '',
-    date: '',
+    type: 'eenmalig',
     startTime: '',
     endTime: '',
+    author: '',
     location: '',
-    repeatType: 'single' as 'single' | 'standard' | 'daily' | 'weekly' | 'monthly',
-    repeatCount: 1,
-    selectedDayOfWeek: 1 // Default to Monday (1 = Monday, 0 = Sunday in JavaScript)
-  })
+    zaal: 'Zaal 1',
+    date: '',
+    recurringDays: [],
+    recurringWeeks: [],
+    recurringDayOfWeek: undefined
+  });
 
-  // Bevestigingsdialoog state
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [eventToDelete, setEventToDelete] = useState<string | null>(null)
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
-  // Beschikbare tijdsopties op 15-minuten intervallen
-  const timeOptions = generateTimeOptions()
-
-  // Repeat type options
-  const repeatOptions = [
-    { value: 'single', label: 'Eenmalig' },           // Single event
-    { value: 'standard', label: 'Wekelijks (standaard)' }, // Weekly (every week for 1 year)
-    { value: 'daily', label: 'Dagelijks' },          // Daily with custom count
-    { value: 'weekly', label: 'Wekelijks (aangepast)' },   // Weekly with custom count
-    { value: 'monthly', label: 'Maandelijks' }       // Monthly
-  ]
-
-  const dayOptions = [
-    { value: 1, label: 'Maandag' },
-    { value: 2, label: 'Dinsdag' },
-    { value: 3, label: 'Woensdag' },
-    { value: 4, label: 'Donderdag' },
-    { value: 5, label: 'Vrijdag' },
-    { value: 6, label: 'Zaterdag' },
-    { value: 0, label: 'Zondag' }
-  ]
-
-  // Functie om tijdsopties te genereren met 15-minuten intervallen
-  function generateTimeOptions() {
-    const options = []
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const formattedHour = hour.toString().padStart(2, '0')
-        const formattedMinute = minute.toString().padStart(2, '0')
-        options.push(`${formattedHour}:${formattedMinute}`)
-      }
-    }
-    return options
-  }
-
-  // Evenementen ophalen
   const fetchEvents = async () => {
     try {
-      setIsLoading(true)
-      const res = await fetch('/api/events')
-      
-      if (!res.ok) {
-        throw new Error('Fout bij ophalen van evenementen')
-      }
-      
-      const data = await res.json()
-      setEvents(data)
-    } catch (err: any) {
-      setError(err.message || 'Er is een fout opgetreden')
-      console.error('Fetch error:', err)
-    } finally {
-      setIsLoading(false)
+      const response = await fetch('/api/events');
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error('Error fetching events:', error);
     }
-  }
-
-  // Bij component mount de evenementen ophalen
-  useEffect(() => {
-    fetchEvents()
-  }, [])
-
-  useEffect(() => {
-    if (form.date && form.repeatType === 'standard') {
-      const selectedDate = new Date(form.date + 'T00:00:00.000Z')
-      const dayOfWeek = selectedDate.getUTCDay()
-      setForm(prev => ({ ...prev, selectedDayOfWeek: dayOfWeek }))
-    }
-  }, [form.date, form.repeatType])
-
-  // Form handlers
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    
-    // Convert selectedDayOfWeek to number
-    if (name === 'selectedDayOfWeek' || name === 'repeatCount') {
-      setForm(prev => ({ ...prev, [name]: parseInt(value) }))
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }))
-    }
-  }
-
-  const resetForm = () => {
-    setForm({
-      title: '',
-      description: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      location: '',
-      repeatType: 'single',
-      repeatCount: 1,
-      selectedDayOfWeek: 1
-    })
-    setCurrentEvent(null)
-    setFormMode('create')
-  }
-
-  const handleEditClick = (event: Event) => {
-    setCurrentEvent(event)
-    setForm({
-      title: event.title,
-      description: event.description,
-      date: event.date,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      location: event.location,
-      repeatType: event.repeatType || 'standard',
-      repeatCount: event.repeatCount || 1,
-      selectedDayOfWeek: event.selectedDayOfWeek || 1
-    })
-    setFormMode('edit')
-    setShowForm(true)
-    
-    // Scroll naar boven voor mobiele gebruikers
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const handleAddNewClick = () => {
-    resetForm()
-    setFormMode('create')
-    setShowForm(true)
-    
-    // Scroll naar boven voor mobiele gebruikers
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  // Initieer verwijderen - open de bevestigingsdialoog
-  const handleDeleteClick = (id: string) => {
-    setEventToDelete(id)
-    setIsDialogOpen(true)
-  }
-
-  // Bevestig verwijderen
-  const confirmDelete = async () => {
-    if (!eventToDelete) return
-    
-    try {
-      const res = await fetch(`/api/events/${eventToDelete}`, {
-        method: 'DELETE'
-      })
-      
-      if (!res.ok) {
-        throw new Error('Fout bij verwijderen van evenement')
-      }
-      
-      // Verwijder het evenement uit de lokale state
-      setEvents(events.filter(event => event._id !== eventToDelete))
-      
-      // Toon een tijdelijke succesmelding
-      setError('') // Wis eerst eventuele fouten
-      setSuccessMessage('Evenement is succesvol verwijderd')
-      setTimeout(() => setSuccessMessage(''), 3000) // Verberg na 3 seconden
-    } catch (err: any) {
-      setError(err.message || 'Er is een fout opgetreden')
-      console.error('Delete error:', err)
-    } finally {
-      // Sluit de dialoog en reset de state
-      setIsDialogOpen(false)
-      setEventToDelete(null)
-    }
-  }
-
-  // Annuleer verwijderen
-  const cancelDelete = () => {
-    setIsDialogOpen(false)
-    setEventToDelete(null)
-  }
-
-  // Succes melding state
-  const [successMessage, setSuccessMessage] = useState('')
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    // Validatie
-    if (!form.title || !form.description || !form.date || !form.startTime || !form.endTime || !form.location) {
-      setError('Alle velden zijn verplicht')
-      return
-    }
-
-    // Valideer dat eindtijd na starttijd is
-    if (form.startTime >= form.endTime) {
-      setError('Eindtijd moet na de starttijd zijn')
-      return
-    }
+    e.preventDefault();
     
     try {
-      if (formMode === 'create') {
-        // Nieuw evenement aanmaken
-        const res = await fetch('/api/events', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(form)
-        })
-        
-        if (!res.ok) {
-          throw new Error('Fout bij aanmaken van evenement')
-        }
-        
-        const newEvents = await res.json()
-        // Add all created events (including repeated ones) to the state
-        setEvents([...events, ...(Array.isArray(newEvents) ? newEvents : [newEvents])])
-        setSuccessMessage(`Evenement${Array.isArray(newEvents) && newEvents.length > 1 ? 'en zijn' : ' is'} succesvol toegevoegd`)
-        setTimeout(() => setSuccessMessage(''), 3000)
-      } else {
-        // Bestaand evenement updaten
-        const res = await fetch(`/api/events/${currentEvent?._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(form)
-        })
-        
-        if (!res.ok) {
-          throw new Error('Fout bij bijwerken van evenement')
-        }
-        
-        const updatedEvent = await res.json()
-        setEvents(events.map(event => 
-          event._id === currentEvent?._id ? updatedEvent : event
-        ))
-        setSuccessMessage('Evenement is succesvol bijgewerkt')
-        setTimeout(() => setSuccessMessage(''), 3000)
-      }
+      const url = editingEvent ? `/api/events/${editingEvent._id}` : '/api/events';
+      const method = editingEvent ? 'PUT' : 'POST';
       
-      // Reset form en sluit het formulier
-      resetForm()
-      setShowForm(false)
-      setError('')
-    } catch (err: any) {
-      setError(err.message || 'Er is een fout opgetreden')
-      console.error('Submit error:', err)
-    }
-  }
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-  // Render check voor beheerders
-  if (session?.user?.role !== 'beheerder' && session?.user?.role !== 'vrijwilliger') {
-    return (
-      <div className="text-gray-800 p-4">
-        <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-          <CalendarPlus size={24} /> Agenda
-        </h2>
-        <p className="text-red-500">Je hebt geen toegang tot deze pagina. Alleen beheerders kunnen evenementen beheren.</p>
-      </div>
-    )
-  }
+      if (response.ok) {
+        fetchEvents();
+        closeModal();
+      } else {
+        console.error('Error saving event');
+      }
+    } catch (error) {
+      console.error('Error saving event:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Weet je zeker dat je dit evenement wilt verwijderen?')) {
+      try {
+        const response = await fetch(`/api/events/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          fetchEvents();
+        } else {
+          console.error('Error deleting event');
+        }
+      } catch (error) {
+        console.error('Error deleting event:', error);
+      }
+    }
+  };
+
+  const openModal = (event?: Event) => {
+    if (event) {
+      setEditingEvent(event);
+      setFormData(event);
+    } else {
+      setEditingEvent(null);
+      setFormData({
+        title: '',
+        description: '',
+        type: 'eenmalig',
+        startTime: '',
+        endTime: '',
+        author: '',
+        location: '',
+        zaal: 'Zaal 1',
+        date: '',
+        recurringDays: [],
+        recurringWeeks: [],
+        recurringDayOfWeek: undefined
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingEvent(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleRecurringDaysChange = (dayIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      recurringDays: prev.recurringDays?.includes(dayIndex)
+        ? prev.recurringDays.filter(d => d !== dayIndex)
+        : [...(prev.recurringDays || []), dayIndex]
+    }));
+  };
 
   return (
-    <div className="text-gray-800 p-4">
-      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-        <CalendarPlus size={24} className="sm:w-[24px] sm:h-[24px]" /> Agenda
-      </h2>
-      
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
-          {error}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Agenda Beheer</h1>
+          <button
+            onClick={() => openModal()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nieuw Evenement
+          </button>
         </div>
-      )}
-      
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md mb-4 transition-opacity duration-300">
-          {successMessage}
+
+        {/* Events Table */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titel</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tijd</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zaal</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organisator</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acties</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {events.map((event) => (
+                <tr key={event._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{event.title}</div>
+                    <div className="text-sm text-gray-500">{event.description}</div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {new Date(event.date).toLocaleDateString('nl-NL')}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {event.startTime} - {event.endTime}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900 capitalize">
+                    {EVENT_TYPES.find(t => t.value === event.type)?.label}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{event.zaal}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{event.author}</td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openModal(event)}
+                        className="text-blue-600 hover:text-blue-900 transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(event._id!)}
+                        className="text-red-600 hover:text-red-900 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
-      
-      {/* Knop voor toevoegen of verbergen/tonen formulier */}
-      <button
-        onClick={() => showForm ? setShowForm(false) : handleAddNewClick()}
-        className="mb-6 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-md flex items-center gap-2 text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start"
-      >
-        <CalendarPlus size={16} className="sm:w-[18px] sm:h-[18px]" />
-        {showForm ? 'Verberg formulier' : 'Nieuw evenement toevoegen'}
-      </button>
-      
-      {/* Formulier */}
-      {showForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 mb-6 shadow-sm">
-          <h3 className="text-lg sm:text-xl font-bold mb-4">
-            {formMode === 'create' ? 'Nieuw evenement toevoegen' : 'Evenement bewerken'}
-          </h3>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Titel</label>
-              <input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-md p-2 text-black capitalize"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Beschrijving</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full border border-gray-300 rounded-md p-2 text-black capitalize"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Datum</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-black"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Starttijd</label>
-                <select
-                  name="startTime"
-                  value={form.startTime}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-black"
-                  required
+
+        {/* Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingEvent ? 'Evenement Bewerken' : 'Nieuw Evenement'}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600"
                 >
-                  <option value="">Selecteer starttijd</option>
-                  {timeOptions.map(time => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Eindtijd</label>
-                <select
-                  name="endTime"
-                  value={form.endTime}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-black"
-                  required
-                >
-                  <option value="">Selecteer eindtijd</option>
-                  {timeOptions.map(time => (
-                    <option key={time} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="sm:col-span-2 lg:col-span-1">
-                <label className="block text-sm font-medium mb-1">Locatie</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={form.location}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-black capitalize"
-                  required
-                />
-              </div>
-            </div>
-            
-            {/* Herhaling opties */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Herhaling</label>
-                <select
-                  name="repeatType"
-                  value={form.repeatType}
-                  onChange={handleInputChange}
-                  className="w-full border border-gray-300 rounded-md p-2 text-black"
-                >
-                  {repeatOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              {form.repeatType === 'standard' && (
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Dag van de week
-                  </label>
-                  <select
-                    name="selectedDayOfWeek"
-                    value={form.selectedDayOfWeek}
-                    onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-md p-2 text-black"
-                  >
-                    {dayOptions.map(day => (
-                      <option key={day.value} value={day.value}>
-                        {day.label}
-                      </option>
-                    ))}
-                  </select>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Titel *
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type *
+                    </label>
+                    <select
+                      name="type"
+                      value={formData.type}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {EVENT_TYPES.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              )}
-              
-              {form.repeatType !== 'single' && form.repeatType !== 'standard' && (
+
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Aantal herhalingen
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Beschrijving *
                   </label>
-                  <input
-                    type="number"
-                    name="repeatCount"
-                    value={form.repeatCount}
+                  <textarea
+                    name="description"
+                    value={formData.description}
                     onChange={handleInputChange}
-                    min="1"
-                    max="365"
-                    className="w-full border border-gray-300 rounded-md p-2 text-black"
+                    required
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-              )}
-            </div>
-            
-            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-              <button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-              >
-                {formMode === 'create' ? 'Toevoegen' : 'Bijwerken'}
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-md"
-              >
-                Annuleren
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-      
-      {/* Lijst van evenementen */}
-      <div className="space-y-4">
-        <h3 className="text-lg sm:text-xl font-semibold mb-2">Evenementen</h3>
-        
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : events.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Geen evenementen gevonden.</p>
-        ) : (
-          <div className="space-y-4">
-            {events.map((event) => (
-              <div key={event._id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-lg font-semibold capitalize">{event.title}</h4>
-                    {event.isRepeatedEvent && (
-                      <RotateCcw size={16} className="text-blue-500" />
-                    )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Datum *
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={formData.date}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
-                  
-                  <div className="flex gap-2 mt-1 sm:mt-0">
-                    <button
-                      onClick={() => handleEditClick(event)}
-                      className="text-blue-600 hover:text-blue-800 p-1"
-                      title="Bewerk evenement"
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Starttijd *
+                    </label>
+                    <input
+                      type="time"
+                      name="startTime"
+                      value={formData.startTime}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Eindtijd *
+                    </label>
+                    <input
+                      type="time"
+                      name="endTime"
+                      value={formData.endTime}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Organisator *
+                    </label>
+                    <input
+                      type="text"
+                      name="author"
+                      value={formData.author}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Zaal *
+                    </label>
+                    <select
+                      name="zaal"
+                      value={formData.zaal}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <Edit size={18} />
-                    </button>
-                    
-                    <button
-                      onClick={() => handleDeleteClick(event._id)}
-                      className="text-red-600 hover:text-red-800 p-1"
-                      title="Verwijder evenement"
+                      {ZALEN.map(zaal => (
+                        <option key={zaal} value={zaal}>
+                          {zaal}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Locatie *
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Recurring Options */}
+                {formData.type === 'dagelijks' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Selecteer dagen:
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {WEEKDAYS.map((day, index) => (
+                        <label key={day} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.recurringDays?.includes(index) || false}
+                            onChange={() => handleRecurringDaysChange(index)}
+                            className="mr-2"
+                          />
+                          {day}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {formData.type === 'standaard' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Dag van de week:
+                    </label>
+                    <select
+                      name="recurringDayOfWeek"
+                      value={formData.recurringDayOfWeek || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <Trash2 size={18} />
-                    </button>
+                      <option value="">Selecteer dag</option>
+                      {WEEKDAYS.map((day, index) => (
+                        <option key={day} value={index}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    {editingEvent ? 'Bijwerken' : 'Opslaan'}
+                  </button>
                 </div>
-                
-                <p className="text-gray-700 mt-2 capitalize">{event.description}</p>
-                
-                <div className="mt-3 text-sm text-gray-600 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-gray-400" />
-                    <span>
-                      {format(parseISO(event.date), 'd MMMM yyyy', { locale: nl })}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Clock size={16} className="text-gray-400" />
-                    <span>{event.startTime} - {event.endTime}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <MapPin size={16} className="text-gray-400" />
-                    <span className="capitalize">{event.location}</span>
-                  </div>
-                </div>
-                
-                <div className="mt-3 text-xs text-gray-500">
-                  Toegevoegd door: {event.author}
-                </div>
-              </div>
-            ))}
+              </form>
+            </div>
           </div>
         )}
       </div>
-      
-      {/* Bevestigingsdialoog voor verwijderen */}
-      <ConfirmationDialog 
-        isOpen={isDialogOpen}
-        title="Evenement verwijderen"
-        message="Weet u zeker dat u dit evenement wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
-        onConfirm={confirmDelete}
-        onCancel={cancelDelete}
-      />
     </div>
-  )
+  );
 }

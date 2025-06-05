@@ -1,279 +1,278 @@
-"use client";
+// app/agenda/page.tsx
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameMonth,
-  isToday,
-  startOfWeek,
-  endOfWeek,
-  addDays,
-  isSameDay
-} from "date-fns";
-import { nl } from "date-fns/locale";
-import Footer from '../../components/Footer';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Event {
   _id: string;
-  date: string;
   title: string;
   description: string;
+  type: string;
   startTime: string;
   endTime: string;
-  location: string;
   author: string;
+  location: string;
+  zaal: string;
+  date: string;
 }
 
-export default function Agenda() {
+const WEEKDAYS = ['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'];
+const MONTHS = [
+  'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+  'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'
+];
+
+export default function AgendaPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedWeekday, setSelectedWeekday] = useState<string>('');
 
-  const timeOptions = generateTimeOptions();
-
-  function generateTimeOptions() {
-    const options = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const formattedHour = hour.toString().padStart(2, '0');
-        const formattedMinute = minute.toString().padStart(2, '0');
-        options.push(`${formattedHour}:${formattedMinute}`);
-      }
-    }
-    return options;
-  }
-
-  const start = startOfMonth(currentDate);
-  const end = endOfMonth(currentDate);
-  const days = eachDayOfInterval({ start, end });
-
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setIsLoading(true);
-        const res = await fetch('/api/events');
-
-        if (!res.ok) {
-          throw new Error('Er is een fout opgetreden bij het ophalen van de evenementen');
-        }
-
-        const data = await res.json();
-        setEvents(data);
-      } catch (err) {
-        console.error('Fout bij ophalen evenementen:', err);
-        setError('Er is een fout opgetreden bij het ophalen van de evenementen');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchEvents();
-  }, []);
+  }, [currentMonth, currentYear]);
 
-  const previousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch(`/api/events?month=${currentMonth + 1}&year=${currentYear}`);
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    }
   };
 
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-  };
+  const getDaysInMonth = () => {
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Monday = 0
 
-  const goToCurrentDate = () => {
-    setCurrentDate(new Date());
-    setSelectedDate(new Date());
+    const days = [];
+    
+    // Previous month days
+    const prevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+      days.push({
+        day: prevMonth - i,
+        isCurrentMonth: false,
+        date: new Date(currentYear, currentMonth - 1, prevMonth - i)
+      });
+    }
+    
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push({
+        day,
+        isCurrentMonth: true,
+        date: new Date(currentYear, currentMonth, day)
+      });
+    }
+    
+    // Next month days to fill the grid
+    const remainingDays = 42 - days.length;
+    for (let day = 1; day <= remainingDays; day++) {
+      days.push({
+        day,
+        isCurrentMonth: false,
+        date: new Date(currentYear, currentMonth + 1, day)
+      });
+    }
+    
+    return days;
   };
 
   const getEventsForDate = (date: Date) => {
-    return events.filter((event) => event.date === format(date, "yyyy-MM-dd"));
+    const dateString = date.toISOString().split('T')[0];
+    return events.filter(event => event.date === dateString);
   };
 
-  const sortEventsByTime = (events: Event[]) => {
-    return [...events].sort((a, b) => {
-      const timeA = a.startTime || '00:00';
-      const timeB = b.startTime || '00:00';
-      return timeA.localeCompare(timeB);
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
     });
   };
 
-  const detailsRef = useRef<HTMLDetailsElement | null>(null);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768 && detailsRef.current && !detailsRef.current.open) {
-        detailsRef.current.open = true;
-      }
-    };
-
-    // Initial check
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const days = getDaysInMonth();
+  const todayEvents = getEventsForDate(new Date());
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F2F2F2]">
-      <div className="w-full flex-1 px-4 pt-28 md:pt-20 pb-12">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl md:text-3xl font-bold text-[#1E2A78] text-center mb-20">Agenda</h1>
-          <div className="flex flex-col md:flex-row md:items-start gap-4 max-w-7xl w-full">
-            {/* Weekly Agenda: Collapsible on mobile, sidebar on desktop */}
-            <div className="w-full md:w-[320px] bg-white rounded-lg shadow-lg p-4 md:sticky md:top-6 self-start">
-              <details ref={detailsRef} className="md:open" open>
-                <summary className="md:hidden cursor-pointer text-lg font-semibold text-[#1E2A78] mb-2">Agenda van deze Week</summary>
+    <div className="min-h-screen bg-[#F2F2F2] p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-center text-[#1E2A78] mb-8 mt-18">Agenda</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+              <h2 className="text-lg font-semibold text-blue-900 mb-4">Week Agenda</h2>
+              <div className="space-y-2">
+                {WEEKDAYS.map((day) => (
+                  <button
+                    key={day}
+                    onClick={() => setSelectedWeekday(selectedWeekday === day ? '' : day)}
+                    className={`w-full text-left py-2 px-3 rounded transition-colors ${
+                      selectedWeekday === day
+                        ? 'bg-blue-100 text-blue-900'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-                <div className="space-y-4 capitalize">
-                  <h3 className="text-lg font-bold text-[#1E2A78] hidden md:block">Agenda van deze Week</h3>
+            {/* Today's Events */}
+            {todayEvents.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">Zaterdag</h3>
+                {todayEvents.map((event) => (
+                  <div key={event._id} className="mb-3 last:mb-0">
+                    <div className="text-sm font-medium">{event.title}</div>
+                    <div className="text-xs text-gray-600">{event.description}</div>
+                    <div className="text-xs text-yellow-600 font-medium">
+                      {event.startTime} - {event.endTime}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Main Calendar */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              {/* Calendar Header */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={() => navigateMonth('prev')}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
+                <h2 className="text-2xl font-bold text-blue-900">
+                  {MONTHS[currentMonth]} {currentYear}
+                </h2>
+                
+                <button
+                  onClick={() => navigateMonth('next')}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                
+                <button className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors">
+                  Heden
+                </button>
+              </div>
 
-                  {isLoading ? (
-                    <div className="text-center py-2 text-gray-500 text-sm">Laden...</div>
-                  ) : (
-                    weekDays.map((day) => {
-                      const dayEvents = getEventsForDate(day);
-                      const sortedEvents = sortEventsByTime(dayEvents);
-                      const isTodayDate = isToday(day);
-                      const hasEvents = dayEvents.length > 0;
+              {/* Weekday Headers */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {WEEKDAYS.map((day) => (
+                  <div key={day} className="text-center font-medium text-gray-700 py-2">
+                    {day}
+                  </div>
+                ))}
+              </div>
 
-                      return (
-                        <div key={day.toString()} className="text-sm mt-8">
-                          <div
-                            className={`font-medium mb-1 cursor-pointer transition-colors ${
-                              hasEvents ? "text-yellow-600" : "text-gray-400"
-                            } ${isTodayDate ? "text-yellow-500" : ""}`}
-                            onClick={() => setSelectedDate(day)}
-                          >
-                            {format(day, "EEEE – d MMMM", { locale: nl })}
-                          </div>
-
-                          {hasEvents && (
-                            <div className="space-y-1.5 mt-7">
-                              {sortedEvents.map((event) => (
-                                <div
-                                  key={event._id}
-                                  className="bg-white rounded-md p-2 shadow-md hover:bg-yellow-50 cursor-pointer capitalize"
-                                  onClick={() => setSelectedDate(day)}
-                                >
-                                  <div className="font-bold text-[#1E2A78] text-sm capitalize">{event.title}</div>
-                                  <div className="text-xs text-gray-500 capitalize">{event.description}</div>
-                                  <div className="text-yellow-500 font-semibold text-sm mt-1 capitalize">{event.startTime}</div>
-                                </div>
-                              ))}
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-1">
+                {days.map((dayInfo, index) => {
+                  const dayEvents = getEventsForDate(dayInfo.date);
+                  const hasEvents = dayEvents.length > 0;
+                  const isCurrentDay = isToday(dayInfo.date);
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`min-h-[100px] p-2 transition-colors ${
+                        !dayInfo.isCurrentMonth
+                          ? 'text-gray-400 bg-gray-50'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`text-sm font-medium mb-1 ${
+                        isCurrentDay
+                          ? 'bg-yellow-400 text-black w-6 h-6 rounded-full flex items-center justify-center'
+                          : ''
+                      }`}>
+                        {dayInfo.day}
+                      </div>
+                      
+                      {hasEvents && (
+                        <div className="space-y-1">
+                          {dayEvents.slice(0, 2).map((event) => (
+                            <div
+                              key={event._id}
+                              onClick={() => setSelectedEvent(event)}
+                              className="text-xs p-1 bg-blue-100 text-blue-900 rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                            >
+                              <div className="font-medium truncate">{event.title}</div>
+                              <div className="text-yellow-600">
+                                {event.startTime} - {event.endTime}
+                              </div>
+                            </div>
+                          ))}
+                          {dayEvents.length > 2 && (
+                            <div className="text-xs text-gray-600">
+                              +{dayEvents.length - 2} meer
                             </div>
                           )}
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              </details>
-            </div>
-
-            {/* Calendar */}
-            <div className="flex-1 md:w-[240px] bg-white rounded-lg shadow-lg p-6 flex flex-col h-auto">
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md mb-3 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <div className="flex justify-between items-center mb-2">
-                <button onClick={previousMonth} className="text-yellow-500 hover:text-yellow-600 font-medium text-sm">
-                  ← Vorige
-                </button>
-                <div className="text-lg font-medium text-[#1E2A78]">
-                  {format(currentDate, "MMMM yyyy", { locale: nl })}
-                </div>
-                <button onClick={nextMonth} className="text-yellow-500 hover:text-yellow-600 font-medium text-sm">
-                  Volgende →
-                </button>
-              </div>
-
-              <div className="flex justify-center mb-4">
-                <button
-                  onClick={goToCurrentDate}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded-md px-3 py-1"
-                >
-                  Naar Heden
-                </button>
-              </div>
-
-              {isLoading ? (
-                <div className="text-center py-4 text-gray-500 text-sm">Evenementen laden...</div>
-              ) : (
-                <>
-                  <div className="overflow-y-auto">
-                    <div className="grid grid-cols-7 gap-2 mb-5 p-1">
-                      {["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"].map((day) => (
-                        <div key={day} className="font-medium text-center text-[#1E2A78] text-xs py-1">
-                          {day}
-                        </div>
-                      ))}
-                      {days.map((day) => {
-                        const hasEvent = getEventsForDate(day).length > 0;
-
-                        return (
-                          <div
-                            key={day.toString()}
-                            className={`p-2 text-center cursor-pointer rounded-md hover:bg-yellow-100 transition-colors
-                              ${!isSameMonth(day, currentDate) ? "text-gray-400" : "text-[#1E2A78]"} 
-                              ${isToday(day) ? "bg-yellow-400 text-white" : ""} 
-                              ${selectedDate && isSameDay(day, selectedDate) ? "ring-2 ring-yellow-300" : ""}`}
-                            onClick={() => setSelectedDate(day)}
-                          >
-                            <span className="text-sm">{format(day, "d")}</span>
-                            {hasEvent && (
-                              <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mx-auto mt-1"></div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      )}
+                      
+                      {hasEvents && dayInfo.day === 5 && (
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-1"></div>
+                      )}
                     </div>
-
-                    {selectedDate && (
-                      <div className="mt-2 border-t pt-2">
-                        <h3 className="text-md font-semibold mb-3 text-[#1E2A78]">
-                          Activiteiten op {format(selectedDate, "d MMMM yyyy", { locale: nl })}
-                        </h3>
-
-                        {getEventsForDate(selectedDate).length > 0 ? (
-                          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                            {sortEventsByTime(getEventsForDate(selectedDate)).map((event) => (
-                              <div key={event._id} className="bg-gray-50 rounded-md p-3 shadow-sm">
-                                <div className="flex justify-between items-start">
-                                  <h4 className="font-medium text-[#1E2A78] capitalize">{event.title}</h4>
-                                  <span className="text-yellow-600 font-medium whitespace-nowrap ml-2 capitalize">{event.startTime} - {event.endTime}</span>
-                                </div>
-                                <p className="text-gray-700 text-sm mt-1 capitalize">{event.description}</p>
-                                <p className="text-gray-500 text-xs mt-1 capitalize">
-                                  Locatie: {event.location}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-gray-500 text-sm">Geen activiteiten gepland voor deze dag.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Event Details Modal */}
+        {selectedEvent && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-lg font-bold text-blue-900">{selectedEvent.title}</h3>
+                <button
+                  onClick={() => setSelectedEvent(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <p><strong>Beschrijving:</strong> {selectedEvent.description}</p>
+                <p><strong>Tijd:</strong> {selectedEvent.startTime} - {selectedEvent.endTime}</p>
+                <p><strong>Organisator:</strong> {selectedEvent.author}</p>
+                <p><strong>Locatie:</strong> {selectedEvent.location}</p>
+                <p><strong>Zaal:</strong> {selectedEvent.zaal}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      
-      <Footer />
     </div>
   );
 }
