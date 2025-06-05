@@ -66,30 +66,37 @@ function generateRecurringEvents(baseEvent: any, year: number, month?: number) {
     case 'wekelijks':
       // Generate events for specific number of weeks starting from current week
       if (baseEvent.recurringWeeks && baseEvent.recurringDayOfWeek !== undefined) {
-        const currentWeek = getCurrentWeek();
         const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+        const currentDayOfWeek = now.getDay();
+        const targetDayOfWeek = baseEvent.recurringDayOfWeek;
+        
+        // Calculate the first occurrence
+        let firstEventDate = new Date(now);
+        let daysToFirst = targetDayOfWeek - currentDayOfWeek;
+        
+        // If the target day has already passed this week, move to next week
+        if (daysToFirst <= 0) {
+          daysToFirst += 7;
+        }
+        
+        firstEventDate.setDate(now.getDate() + daysToFirst);
         
         // Generate events for the specified number of weeks
         for (let i = 0; i < baseEvent.recurringWeeks; i++) {
-          const weekStart = new Date(startOfWeek);
-          weekStart.setDate(startOfWeek.getDate() + (i * 7));
+          const eventDate = new Date(firstEventDate);
+          eventDate.setDate(firstEventDate.getDate() + (i * 7));
           
-          const eventDate = new Date(weekStart);
-          eventDate.setDate(weekStart.getDate() + baseEvent.recurringDayOfWeek);
-          
-          // Only add if the date is within the requested range and not in the past
-          if (eventDate >= startDate && eventDate <= endDate && eventDate >= now) {
+          // Only add if the date is within the requested range
+          if (eventDate >= startDate && eventDate <= endDate) {
             events.push({
               ...baseEvent,
               date: eventDate.toISOString().split('T')[0],
-              _id: `${baseEvent._id}_${eventDate.toISOString().split('T')[0]}`
+              _id: `${baseEvent._id}_week${i}_${eventDate.toISOString().split('T')[0]}`
             });
           }
         }
       }
-      break;
+    break;
 
     case 'eenmalig':
       // One-time events are returned as-is

@@ -348,10 +348,19 @@ export default function BeheerAgendaPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value === '' ? undefined : (name === 'recurringDayOfWeek' || name === 'recurringWeeks' ? parseInt(value) : value)
-    }));
+    
+    // Handle numeric fields specially
+    if (name === 'recurringDayOfWeek' || name === 'recurringWeeks') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? undefined : parseInt(value)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleRecurringDaysChange = (dayIndex: number) => {
@@ -378,10 +387,12 @@ export default function BeheerAgendaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Agenda Beheer</h1>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
+            <Calendar size={24} className="sm:w-[24px] sm:h-[24px]" /> Agenda
+          </h2>
           <button
             onClick={() => openModal()}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
