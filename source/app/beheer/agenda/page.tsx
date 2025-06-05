@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Calendar, Clock, Users, MapPin } from 'lucide-react';
 
 interface Event {
   _id?: string;
@@ -18,6 +18,26 @@ interface Event {
   recurringDays?: number[];
   recurringWeeks?: number[];
   recurringDayOfWeek?: number;
+  recurringId?: string; // Add this to group recurring events
+}
+
+interface GroupedEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: 'eenmalig' | 'standaard' | 'dagelijks' | 'wekelijks';
+  startTime: string;
+  endTime: string;
+  author: string;
+  location: string;
+  zaal: string;
+  date: string;
+  recurringDays?: number[];
+  recurringWeeks?: number[];
+  recurringDayOfWeek?: number;
+  recurringId?: string;
+  eventCount?: number; // Number of occurrences
+  events?: Event[]; // Original events for this group
 }
 
 const EVENT_TYPES = [
@@ -38,12 +58,10 @@ const WEEKDAYS = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrij
 const formatTimeForInput = (timeString: string): string => {
   if (!timeString) return '';
   
-  // If it's already in HH:MM format, return as is
   if (timeString.match(/^\d{2}:\d{2}$/)) {
     return timeString;
   }
   
-  // If it's a full datetime, extract time and convert to Netherlands timezone
   try {
     const date = new Date(timeString);
     return date.toLocaleTimeString('nl-NL', {
@@ -63,7 +81,6 @@ const formatDateForInput = (dateString: string): string => {
   
   try {
     const date = new Date(dateString);
-    // Convert to Netherlands timezone and format as YYYY-MM-DD
     return date.toLocaleDateString('sv-SE', { timeZone: 'Europe/Amsterdam' });
   } catch (error) {
     console.error('Error formatting date:', error);
@@ -75,13 +92,9 @@ const createNetherlandsDateTime = (dateString: string, timeString: string): stri
   if (!dateString || !timeString) return '';
   
   try {
-    // Create date in Netherlands timezone
     const [hours, minutes] = timeString.split(':');
     const date = new Date(`${dateString}T${hours}:${minutes}:00`);
-    
-    // Convert to Netherlands timezone
     const netherlandsDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' }));
-    
     return netherlandsDate.toISOString();
   } catch (error) {
     console.error('Error creating Netherlands datetime:', error);
@@ -89,10 +102,67 @@ const createNetherlandsDateTime = (dateString: string, timeString: string): stri
   }
 };
 
+// Function to group recurring events
+const groupEvents = (events: Event[]): GroupedEvent[] => {
+  const grouped: { [key: string]: GroupedEvent } = {};
+  
+  events.forEach(event => {
+    if (event.type === 'eenmalig') {
+      // Single events remain individual
+      grouped[event._id || ''] = {
+        id: event._id || '',
+        ...event,
+        eventCount: 1,
+        events: [event]
+      };
+    } else {
+      // Group recurring events by title, type, time, and location
+      const groupKey = `${event.title}-${event.type}-${event.startTime}-${event.endTime}-${event.zaal}-${event.author}`;
+      
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          id: groupKey,
+          ...event,
+          eventCount: 1,
+          events: [event]
+        };
+      } else {
+        grouped[groupKey].eventCount = (grouped[groupKey].eventCount || 0) + 1;
+        grouped[groupKey].events?.push(event);
+      }
+    }
+  });
+  
+  return Object.values(grouped);
+};
+
+// Function to get recurring pattern description
+const getRecurringDescription = (event: GroupedEvent): string => {
+  switch (event.type) {
+    case 'standaard':
+      if (event.recurringDayOfWeek !== undefined) {
+        return `Elke ${WEEKDAYS[event.recurringDayOfWeek].toLowerCase()}`;
+      }
+      return 'Standaard herhaling';
+    case 'dagelijks':
+      if (event.recurringDays && event.recurringDays.length > 0) {
+        const days = event.recurringDays.map(d => WEEKDAYS[d]).join(', ');
+        return `Dagelijks: ${days}`;
+      }
+      return 'Dagelijks';
+    case 'wekelijks':
+      return 'Wekelijks';
+    default:
+      return '';
+  }
+};
+
 export default function BeheerAgendaPage() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [groupedEvents, setGroupedEvents] = useState<GroupedEvent[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [editingEvent, setEditingEvent] = useState<GroupedEvent | null>(null);
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState<Event>({
     title: '',
     description: '',
@@ -112,12 +182,16 @@ export default function BeheerAgendaPage() {
     fetchEvents();
   }, []);
 
+  useEffect(() => {
+    const grouped = groupEvents(events);
+    setGroupedEvents(grouped);
+  }, [events]);
+
   const fetchEvents = async () => {
     try {
       const response = await fetch('/api/events');
       const data = await response.json();
       
-      // Format times for display in Netherlands timezone
       const formattedEvents = data.map((event: Event) => ({
         ...event,
         startTime: formatTimeForInput(event.startTime),
@@ -131,21 +205,31 @@ export default function BeheerAgendaPage() {
     }
   };
 
+  const generateTimeOptions = () => {
+    const options = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        options.push(timeString);
+      }
+    }
+    return options;
+  };
+
+  const TIME_OPTIONS = generateTimeOptions();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Prepare data with proper timezone handling
       const eventData = {
         ...formData,
-        // Convert times to proper datetime strings with Netherlands timezone
         startTime: createNetherlandsDateTime(formData.date, formData.startTime),
         endTime: createNetherlandsDateTime(formData.date, formData.endTime),
-        // Ensure date is in proper format
         date: new Date(`${formData.date}T00:00:00`).toISOString()
       };
       
-      const url = editingEvent ? `/api/events/${editingEvent._id}` : '/api/events';
+      const url = editingEvent ? `/api/events/${editingEvent.events?.[0]._id}` : '/api/events';
       const method = editingEvent ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -167,32 +251,46 @@ export default function BeheerAgendaPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Weet je zeker dat je dit evenement wilt verwijderen?')) {
+  const handleDeleteGroup = async (groupedEvent: GroupedEvent) => {
+    const eventCount = groupedEvent.eventCount || 1;
+    const confirmMessage = eventCount > 1 
+      ? `Weet je zeker dat je alle ${eventCount} evenementen van "${groupedEvent.title}" wilt verwijderen?`
+      : `Weet je zeker dat je dit evenement wilt verwijderen?`;
+    
+    if (confirm(confirmMessage)) {
       try {
-        const response = await fetch(`/api/events/${id}`, {
-          method: 'DELETE',
-        });
-
-        if (response.ok) {
-          fetchEvents();
-        } else {
-          console.error('Error deleting event');
-        }
+        // Delete all events in the group
+        const deletePromises = groupedEvent.events?.map(event => 
+          fetch(`/api/events/${event._id}`, { method: 'DELETE' })
+        ) || [];
+        
+        await Promise.all(deletePromises);
+        fetchEvents();
       } catch (error) {
-        console.error('Error deleting event:', error);
+        console.error('Error deleting events:', error);
       }
     }
   };
 
-  const openModal = (event?: Event) => {
+  const toggleExpanded = (eventId: string) => {
+    const newExpanded = new Set(expandedEvents);
+    if (newExpanded.has(eventId)) {
+      newExpanded.delete(eventId);
+    } else {
+      newExpanded.add(eventId);
+    }
+    setExpandedEvents(newExpanded);
+  };
+
+  const openModal = (event?: GroupedEvent) => {
     if (event) {
       setEditingEvent(event);
+      const firstEvent = event.events?.[0] || event;
       setFormData({
-        ...event,
-        startTime: formatTimeForInput(event.startTime),
-        endTime: formatTimeForInput(event.endTime),
-        date: formatDateForInput(event.date)
+        ...firstEvent,
+        startTime: formatTimeForInput(firstEvent.startTime),
+        endTime: formatTimeForInput(firstEvent.endTime),
+        date: formatDateForInput(firstEvent.date)
       });
     } else {
       setEditingEvent(null);
@@ -236,9 +334,18 @@ export default function BeheerAgendaPage() {
     }));
   };
 
+  const handleRecurringWeeksChange = (weekIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      recurringWeeks: prev.recurringWeeks?.includes(weekIndex)
+        ? prev.recurringWeeks.filter(w => w !== weekIndex)
+        : [...(prev.recurringWeeks || []), weekIndex]
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Agenda Beheer</h1>
           <button
@@ -250,60 +357,103 @@ export default function BeheerAgendaPage() {
           </button>
         </div>
 
-        {/* Events Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titel</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tijd</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zaal</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organisator</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acties</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {events.map((event) => (
-                <tr key={event._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{event.title}</div>
-                    <div className="text-sm text-gray-500">{event.description}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {new Date(event.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {event.startTime} - {event.endTime}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 capitalize">
-                    {EVENT_TYPES.find(t => t.value === event.type)?.label}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{event.zaal}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{event.author}</td>
-                  <td className="px-6 py-4 text-sm font-medium">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openModal(event)}
-                        className="text-blue-600 hover:text-blue-900 transition-colors"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(event._id!)}
-                        className="text-red-600 hover:text-red-900 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+        {/* Events Grid */}
+        <div className="grid gap-4">
+          {groupedEvents.map((groupedEvent) => (
+            <div key={groupedEvent.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">{groupedEvent.title}</h3>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        groupedEvent.type === 'eenmalig' 
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {EVENT_TYPES.find(t => t.value === groupedEvent.type)?.label}
+                      </span>
+                      {groupedEvent.eventCount && groupedEvent.eventCount > 1 && (
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                          {groupedEvent.eventCount} evenementen
+                        </span>
+                      )}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    
+                    <p className="text-gray-600 mb-3">{groupedEvent.description}</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span>
+                          {groupedEvent.type === 'eenmalig' 
+                            ? new Date(groupedEvent.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })
+                            : getRecurringDescription(groupedEvent)
+                          }
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span>{groupedEvent.startTime} - {groupedEvent.endTime}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-400" />
+                        <span>{groupedEvent.zaal}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-gray-400" />
+                        <span>{groupedEvent.author}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    {groupedEvent.eventCount && groupedEvent.eventCount > 1 && (
+                      <button
+                        onClick={() => toggleExpanded(groupedEvent.id)}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {expandedEvents.has(groupedEvent.id) ? 'Inklappen' : 'Uitklappen'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => openModal(groupedEvent)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteGroup(groupedEvent)}
+                      className="text-red-600 hover:text-red-800 transition-colors p-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Expanded individual events */}
+                {expandedEvents.has(groupedEvent.id) && groupedEvent.events && groupedEvent.events.length > 1 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Individuele evenementen:</h4>
+                    <div className="space-y-2">
+                      {groupedEvent.events.map((event, index) => (
+                        <div key={event._id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
+                          <span className="text-sm">
+                            {new Date(event.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })} - 
+                            {event.startTime} tot {event.endTime}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -322,6 +472,7 @@ export default function BeheerAgendaPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Titel *
@@ -336,6 +487,7 @@ export default function BeheerAgendaPage() {
                     />
                   </div>
 
+                  {/* Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Type *
@@ -356,6 +508,7 @@ export default function BeheerAgendaPage() {
                   </div>
                 </div>
 
+                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Beschrijving *
@@ -371,49 +524,67 @@ export default function BeheerAgendaPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Datum *
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+                  {/* Date (for eenmalig only) */}
+                  {formData.type === 'eenmalig' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Datum *
+                        </label>
+                        <input
+                          type="date"
+                          name="date"
+                          value={formData.date}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </>
+                  )}
 
+                  {/* Start Time */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Starttijd
+                      Starttijd *
                     </label>
-                    <input
-                      type="time"
+                    <select
                       name="startTime"
                       value={formData.startTime}
                       onChange={handleInputChange}
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      {TIME_OPTIONS.map(time => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
+                  {/* End Time */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Eindtijd
+                      Eindtijd *
                     </label>
-                    <input
-                      type="time"
+                    <select
                       name="endTime"
                       value={formData.endTime}
                       onChange={handleInputChange}
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    >
+                      {TIME_OPTIONS.map(time => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
+                {/* Organizer & Zaal */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -449,6 +620,7 @@ export default function BeheerAgendaPage() {
                   </div>
                 </div>
 
+                {/* Location */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Locatie *
@@ -506,6 +678,28 @@ export default function BeheerAgendaPage() {
                   </div>
                 )}
 
+                {formData.type === 'wekelijks' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Selecteer weken (1-52):
+                    </label>
+                    <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto">
+                      {Array.from({ length: 52 }, (_, i) => i + 1).map(week => (
+                        <label key={week} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={formData.recurringWeeks?.includes(week) || false}
+                            onChange={() => handleRecurringWeeksChange(week)}
+                            className="mr-1"
+                          />
+                          {week}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
                 <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
@@ -525,6 +719,8 @@ export default function BeheerAgendaPage() {
             </div>
           </div>
         )}
+
+        
       </div>
     </div>
   );

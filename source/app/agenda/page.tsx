@@ -49,17 +49,22 @@ export default function AgendaPage() {
   const getDaysInMonth = () => {
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Monday = 0
+    // Fix: Properly adjust for Monday = 0 system
+    const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
 
     const days = [];
     
     // Previous month days
-    const prevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const prevMonthDate = new Date(currentYear, currentMonth, 0);
+    const prevMonth = prevMonthDate.getDate();
+    const prevMonthYear = prevMonthDate.getFullYear();
+    const prevMonthMonth = prevMonthDate.getMonth();
+    
     for (let i = adjustedFirstDay - 1; i >= 0; i--) {
       days.push({
         day: prevMonth - i,
         isCurrentMonth: false,
-        date: new Date(currentYear, currentMonth - 1, prevMonth - i)
+        date: new Date(prevMonthYear, prevMonthMonth, prevMonth - i)
       });
     }
     
@@ -86,7 +91,12 @@ export default function AgendaPage() {
   };
 
   const getEventsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    // Fix: Create date string in local timezone to match event dates
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
     return events.filter(event => event.date === dateString);
   };
 
@@ -124,7 +134,11 @@ export default function AgendaPage() {
     for (let i = 0; i < 7; i++) {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
-      const dateString = date.toISOString().split('T')[0];
+      // Fix: Use same date string format as getEventsForDate
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${dayNum}`;
       const dayName = WEEKDAYS[i];
       
       weekEvents[dayName] = events.filter(event => event.date === dateString);
@@ -186,7 +200,7 @@ export default function AgendaPage() {
           
           {/* Main Calendar */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-md p-6 mx-auto max-w-4xl">
               {/* Calendar Header */}
               <div className="flex items-center justify-between mb-6">
                 <button
@@ -200,19 +214,21 @@ export default function AgendaPage() {
                   {MONTHS[currentMonth]} {currentYear}
                 </h2>
                 
-                <button
-                  onClick={() => navigateMonth('next')}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-                
-                <button 
-                  onClick={goToToday}
-                  className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors"
-                >
-                  Heden
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigateMonth('next')}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                  
+                  <button 
+                    onClick={goToToday}
+                    className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors"
+                  >
+                    Heden
+                  </button>
+                </div>
               </div>
 
               {/* Weekday Headers */}
@@ -234,7 +250,7 @@ export default function AgendaPage() {
                   return (
                     <div
                       key={index}
-                      className={`min-h-[100px] p-2 transition-colors ${
+                      className={`min-h-[100px] p-2 transition-colors border border-gray-100 ${
                         !dayInfo.isCurrentMonth
                           ? 'text-gray-400 bg-gray-50'
                           : 'hover:bg-gray-50'
