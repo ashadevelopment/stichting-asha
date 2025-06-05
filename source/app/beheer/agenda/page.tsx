@@ -1,4 +1,3 @@
-// app/beheer/agenda/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,9 +15,9 @@ interface Event {
   zaal: string;
   date: string;
   recurringDays?: number[];
-  recurringWeeks?: number[];
+  recurringWeeks?: number; // Changed from number[] to number
   recurringDayOfWeek?: number;
-  recurringId?: string; // Add this to group recurring events
+  recurringId?: string;
 }
 
 interface GroupedEvent {
@@ -33,11 +32,11 @@ interface GroupedEvent {
   zaal: string;
   date: string;
   recurringDays?: number[];
-  recurringWeeks?: number[];
+  recurringWeeks?: number; // Changed from number[] to number
   recurringDayOfWeek?: number;
   recurringId?: string;
-  eventCount?: number; // Number of occurrences
-  events?: Event[]; // Original events for this group
+  eventCount?: number;
+  events?: Event[];
 }
 
 const EVENT_TYPES = [
@@ -88,13 +87,17 @@ const formatDateForInput = (dateString: string): string => {
   }
 };
 
+// Function to get current day of week (0 = Sunday, 1 = Monday, etc.)
+const getCurrentDayOfWeek = (): number => {
+  return new Date().getDay();
+};
+
 // Function to group recurring events
 const groupEvents = (events: Event[]): GroupedEvent[] => {
   const grouped: { [key: string]: GroupedEvent } = {};
   
   events.forEach(event => {
     if (event.type === 'eenmalig') {
-      // Single events remain individual
       grouped[event._id || ''] = {
         id: event._id || '',
         ...event,
@@ -102,10 +105,7 @@ const groupEvents = (events: Event[]): GroupedEvent[] => {
         events: [event]
       };
     } else {
-      // For recurring events, extract the base ID
       const baseId = event._id?.includes('_') ? event._id.split('_')[0] : event._id;
-      
-      // Group recurring events by their base ID and properties
       const groupKey = baseId || `${event.title}-${event.type}-${event.startTime}-${event.endTime}-${event.zaal}-${event.author}`;
       
       if (!grouped[groupKey]) {
@@ -136,10 +136,13 @@ const getRecurringDescription = (event: GroupedEvent): string => {
     case 'dagelijks':
       if (event.recurringDays && event.recurringDays.length > 0) {
         const days = event.recurringDays.map(d => WEEKDAYS[d]).join(', ');
-        return `Dagelijks: ${days}`;
+        return `Deze week: ${days}`;
       }
       return 'Dagelijks';
     case 'wekelijks':
+      if (event.recurringDayOfWeek !== undefined && event.recurringWeeks) {
+        return `${event.recurringWeeks} weken op ${WEEKDAYS[event.recurringDayOfWeek].toLowerCase()}`;
+      }
       return 'Wekelijks';
     default:
       return '';
@@ -163,7 +166,7 @@ export default function BeheerAgendaPage() {
     zaal: 'Zaal 1',
     date: '',
     recurringDays: [],
-    recurringWeeks: [],
+    recurringWeeks: undefined, // Changed from [] to undefined
     recurringDayOfWeek: undefined
   });
 
@@ -211,16 +214,13 @@ export default function BeheerAgendaPage() {
     e.preventDefault();
     
     try {
-      // Create event data with proper time formatting
       const eventData = {
         ...formData,
-        // Keep times as simple HH:MM strings
         startTime: formData.startTime,
         endTime: formData.endTime,
-        // Format date properly for single events
         date: formData.type === 'eenmalig' 
           ? new Date(`${formData.date}T00:00:00`).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0] // Use today's date as base for recurring events
+          : new Date().toISOString().split('T')[0]
       };
       
       let url: string;
@@ -228,14 +228,11 @@ export default function BeheerAgendaPage() {
       
       if (editingEvent) {
         if (editingEvent.type === 'eenmalig') {
-          // For single events, use the direct ID
           const eventId = (editingEvent as any)._id || editingEvent.id;
           url = `/api/events/${eventId}`;
         } else {
-          // For recurring events, find the base event ID
           const firstEvent = editingEvent.events?.[0];
           if (firstEvent?._id) {
-            // Extract base ID from generated IDs like "baseId_2025-12-27"
             const baseId = firstEvent._id.includes('_') ? firstEvent._id.split('_')[0] : firstEvent._id;
             url = `/api/events/${baseId}`;
           } else {
@@ -277,23 +274,18 @@ export default function BeheerAgendaPage() {
     if (confirm(confirmMessage)) {
       try {
         if (groupedEvent.type === 'eenmalig') {
-          // For single events, delete normally
           const eventId = (groupedEvent as any)._id || groupedEvent.id;
           await fetch(`/api/events/${eventId}`, { method: 'DELETE' });
         } else {
-          // For recurring events, find and delete the base event
-          // The base event ID is the original MongoDB ID without the date suffix
           const baseEventIds = new Set<string>();
           
           groupedEvent.events?.forEach(event => {
             if (event._id) {
-              // Extract base ID from generated IDs like "baseId_2025-12-27"
               const baseId = event._id.includes('_') ? event._id.split('_')[0] : event._id;
               baseEventIds.add(baseId);
             }
           });
           
-          // Delete all unique base events
           const deletePromises = Array.from(baseEventIds).map(baseId => 
             fetch(`/api/events/${baseId}`, { method: 'DELETE' })
           );
@@ -342,7 +334,7 @@ export default function BeheerAgendaPage() {
         zaal: 'Zaal 1',
         date: '',
         recurringDays: [],
-        recurringWeeks: [],
+        recurringWeeks: undefined,
         recurringDayOfWeek: undefined
       });
     }
@@ -358,7 +350,7 @@ export default function BeheerAgendaPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value === '' ? undefined : (name === 'recurringDayOfWeek' || name === 'recurringWeeks' ? parseInt(value) : value)
     }));
   };
 
@@ -371,13 +363,18 @@ export default function BeheerAgendaPage() {
     }));
   };
 
-  const handleRecurringWeeksChange = (weekIndex: number) => {
+  // New function to handle weekly recurring weeks selection
+  const handleWeeklyWeeksChange = (weekCount: number) => {
     setFormData(prev => ({
       ...prev,
-      recurringWeeks: prev.recurringWeeks?.includes(weekIndex)
-        ? prev.recurringWeeks.filter(w => w !== weekIndex)
-        : [...(prev.recurringWeeks || []), weekIndex]
+      recurringWeeks: weekCount
     }));
+  };
+
+  // Function to check if a day is in the past
+  const isDayInPast = (dayIndex: number): boolean => {
+    const currentDay = getCurrentDayOfWeek();
+    return dayIndex < currentDay;
   };
 
   return (
@@ -491,6 +488,7 @@ export default function BeheerAgendaPage() {
             </div>
           ))}
         </div>
+
         {/* Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -563,21 +561,19 @@ export default function BeheerAgendaPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Date (for eenmalig only) */}
                   {formData.type === 'eenmalig' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Datum *
-                        </label>
-                        <input
-                          type="date"
-                          name="date"
-                          value={formData.date}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    </>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Datum *
+                      </label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   )}
 
                   {/* Start Time */}
@@ -592,6 +588,7 @@ export default function BeheerAgendaPage() {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">Selecteer tijd</option>
                       {TIME_OPTIONS.map(time => (
                         <option key={time} value={time}>
                           {time}
@@ -612,6 +609,7 @@ export default function BeheerAgendaPage() {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">Selecteer tijd</option>
                       {TIME_OPTIONS.map(time => (
                         <option key={time} value={time}>
                           {time}
@@ -676,21 +674,31 @@ export default function BeheerAgendaPage() {
                 {formData.type === 'dagelijks' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Selecteer dagen:
+                      Selecteer dagen voor deze week:
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {WEEKDAYS.map((day, index) => (
-                        <label key={day} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.recurringDays?.includes(index) || false}
-                            onChange={() => handleRecurringDaysChange(index)}
-                            className="mr-2"
-                          />
-                          {day}
-                        </label>
-                      ))}
+                      {WEEKDAYS.map((day, index) => {
+                        const isDisabled = isDayInPast(index);
+                        return (
+                          <label 
+                            key={day} 
+                            className={`flex items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.recurringDays?.includes(index) || false}
+                              onChange={() => !isDisabled && handleRecurringDaysChange(index)}
+                              disabled={isDisabled}
+                              className="mr-2"
+                            />
+                            {day}
+                          </label>
+                        );
+                      })}
                     </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Dagen in het verleden zijn uitgeschakeld
+                    </p>
                   </div>
                 )}
 
@@ -716,32 +724,62 @@ export default function BeheerAgendaPage() {
                 )}
 
                 {formData.type === 'wekelijks' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Selecteer weken (1-52):
-                    </label>
-                    <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto">
-                      {Array.from({ length: 52 }, (_, i) => i + 1).map(week => (
-                        <label key={week} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={formData.recurringWeeks?.includes(week) || false}
-                            onChange={() => handleRecurringWeeksChange(week)}
-                            className="mr-1"
-                          />
-                          {week}
-                        </label>
-                      ))}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Dag van de week *
+                      </label>
+                      <select
+                        name="recurringDayOfWeek"
+                        value={formData.recurringDayOfWeek || ''}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Selecteer dag</option>
+                        {WEEKDAYS.map((day, index) => (
+                          <option key={day} value={index}>
+                            {day}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Aantal weken *
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(weekNum => (
+                          <label 
+                            key={weekNum} 
+                            className="flex items-center cursor-pointer bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md border"
+                          >
+                            <input
+                              type="radio"
+                              name="recurringWeeks"
+                              value={weekNum}
+                              checked={formData.recurringWeeks === weekNum}
+                              onChange={() => handleWeeklyWeeksChange(weekNum)}
+                              className="mr-2"
+                            />
+                            <span className="text-sm">{weekNum} week{weekNum > 1 ? 'en' : ''}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Selecteer hoeveel opeenvolgende weken het evenement moet plaatsvinden
+                      </p>
                     </div>
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-3 pt-4">
+                {/* Form Actions */}
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                   >
                     Annuleren
                   </button>
@@ -749,7 +787,7 @@ export default function BeheerAgendaPage() {
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                   >
-                    {editingEvent ? 'Bijwerken' : 'Opslaan'}
+                    {editingEvent ? 'Bijwerken' : 'Aanmaken'}
                   </button>
                 </div>
               </form>
@@ -757,7 +795,14 @@ export default function BeheerAgendaPage() {
           </div>
         )}
 
-        
+        {/* Empty State */}
+        {groupedEvents.length === 0 && (
+          <div className="text-center py-12">
+            <Calendar className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Geen evenementen</h3>
+            <p className="mt-1 text-sm text-gray-500">Begin met het toevoegen van je eerste evenement.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,16 @@
+// Fixed route.ts for /api/events
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../lib/mongodb';
 import Event from '../../lib/models/Event';
+
+// Helper function to get current week number
+function getCurrentWeek(): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const diff = now.getTime() - start.getTime();
+  const oneWeek = 1000 * 60 * 60 * 24 * 7;
+  return Math.ceil(diff / oneWeek);
+}
 
 // Helper function to generate recurring events
 function generateRecurringEvents(baseEvent: any, year: number, month?: number) {
@@ -10,19 +20,26 @@ function generateRecurringEvents(baseEvent: any, year: number, month?: number) {
 
   switch (baseEvent.type) {
     case 'dagelijks':
-      // Generate events for selected days of the week
+      // Generate events for selected days of the CURRENT week only
       if (baseEvent.recurringDays?.length) {
-        const current = new Date(startDate);
-        while (current <= endDate) {
-          if (baseEvent.recurringDays.includes(current.getDay())) {
+        const currentWeek = getCurrentWeek();
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+        
+        baseEvent.recurringDays.forEach((dayOfWeek: number) => {
+          const eventDate = new Date(startOfWeek);
+          eventDate.setDate(startOfWeek.getDate() + dayOfWeek);
+          
+          // Only add if the date is within the requested range and not in the past
+          if (eventDate >= startDate && eventDate <= endDate && eventDate >= now) {
             events.push({
               ...baseEvent,
-              date: current.toISOString().split('T')[0],
-              _id: `${baseEvent._id}_${current.toISOString().split('T')[0]}`
+              date: eventDate.toISOString().split('T')[0],
+              _id: `${baseEvent._id}_${eventDate.toISOString().split('T')[0]}`
             });
           }
-          current.setDate(current.getDate() + 1);
-        }
+        });
       }
       break;
 
@@ -47,25 +64,30 @@ function generateRecurringEvents(baseEvent: any, year: number, month?: number) {
       break;
 
     case 'wekelijks':
-      // Generate events for specific weeks of the year
-      if (baseEvent.recurringWeeks?.length && baseEvent.recurringDayOfWeek !== undefined) {
-        baseEvent.recurringWeeks.forEach((weekNum: number) => {
-          const weekStart = new Date(year, 0, 1 + (weekNum - 1) * 7);
-          const current = new Date(weekStart);
+      // Generate events for specific number of weeks starting from current week
+      if (baseEvent.recurringWeeks && baseEvent.recurringDayOfWeek !== undefined) {
+        const currentWeek = getCurrentWeek();
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+        
+        // Generate events for the specified number of weeks
+        for (let i = 0; i < baseEvent.recurringWeeks; i++) {
+          const weekStart = new Date(startOfWeek);
+          weekStart.setDate(startOfWeek.getDate() + (i * 7));
           
-          // Find the target day in that week
-          while (current.getDay() !== baseEvent.recurringDayOfWeek && current.getTime() < weekStart.getTime() + 7 * 24 * 60 * 60 * 1000) {
-            current.setDate(current.getDate() + 1);
-          }
+          const eventDate = new Date(weekStart);
+          eventDate.setDate(weekStart.getDate() + baseEvent.recurringDayOfWeek);
           
-          if (current >= startDate && current <= endDate) {
+          // Only add if the date is within the requested range and not in the past
+          if (eventDate >= startDate && eventDate <= endDate && eventDate >= now) {
             events.push({
               ...baseEvent,
-              date: current.toISOString().split('T')[0],
-              _id: `${baseEvent._id}_${current.toISOString().split('T')[0]}`
+              date: eventDate.toISOString().split('T')[0],
+              _id: `${baseEvent._id}_${eventDate.toISOString().split('T')[0]}`
             });
           }
-        });
+        }
       }
       break;
 
@@ -149,6 +171,11 @@ export async function POST(request: NextRequest) {
     // For recurring events, we don't need a specific date
     if (body.type !== 'eenmalig') {
       body.date = new Date().toISOString().split('T')[0]; // Use current date as base
+    }
+    
+    // Convert recurringWeeks from number to array for wekelijks type
+    if (body.type === 'wekelijks' && typeof body.recurringWeeks === 'number') {
+      body.recurringWeeks = body.recurringWeeks; // Keep as number for our new logic
     }
     
     const newEvent = new Event(body);
