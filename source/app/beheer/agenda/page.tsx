@@ -88,20 +88,6 @@ const formatDateForInput = (dateString: string): string => {
   }
 };
 
-const createNetherlandsDateTime = (dateString: string, timeString: string): string => {
-  if (!dateString || !timeString) return '';
-  
-  try {
-    const [hours, minutes] = timeString.split(':');
-    const date = new Date(`${dateString}T${hours}:${minutes}:00`);
-    const netherlandsDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' }));
-    return netherlandsDate.toISOString();
-  } catch (error) {
-    console.error('Error creating Netherlands datetime:', error);
-    return '';
-  }
-};
-
 // Function to group recurring events
 const groupEvents = (events: Event[]): GroupedEvent[] => {
   const grouped: { [key: string]: GroupedEvent } = {};
@@ -225,11 +211,16 @@ export default function BeheerAgendaPage() {
     e.preventDefault();
     
     try {
+      // Create event data with proper time formatting
       const eventData = {
         ...formData,
-        startTime: createNetherlandsDateTime(formData.date, formData.startTime),
-        endTime: createNetherlandsDateTime(formData.date, formData.endTime),
-        date: new Date(`${formData.date}T00:00:00`).toISOString()
+        // Keep times as simple HH:MM strings
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        // Format date properly for single events
+        date: formData.type === 'eenmalig' 
+          ? new Date(`${formData.date}T00:00:00`).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0] // Use today's date as base for recurring events
       };
       
       let url: string;
