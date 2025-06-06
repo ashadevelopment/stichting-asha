@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Calendar, Clock, Users, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Calendar, Clock, Users, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Event {
   _id?: string;
@@ -15,7 +15,7 @@ interface Event {
   zaal: string;
   date: string;
   recurringDays?: number[];
-  recurringWeeks?: number; // Changed from number[] to number
+  recurringWeeks?: number;
   recurringDayOfWeek?: number;
   recurringId?: string;
 }
@@ -32,7 +32,7 @@ interface GroupedEvent {
   zaal: string;
   date: string;
   recurringDays?: number[];
-  recurringWeeks?: number; // Changed from number[] to number
+  recurringWeeks?: number;
   recurringDayOfWeek?: number;
   recurringId?: string;
   eventCount?: number;
@@ -166,7 +166,7 @@ export default function BeheerAgendaPage() {
     zaal: 'Zaal 1',
     date: '',
     recurringDays: [],
-    recurringWeeks: undefined, // Changed from [] to undefined
+    recurringWeeks: undefined,
     recurringDayOfWeek: undefined
   });
 
@@ -387,15 +387,15 @@ export default function BeheerAgendaPage() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-3 sm:p-4 lg:p-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 flex items-center gap-2">
-            <Calendar size={24} className="sm:w-[24px] sm:h-[24px]" /> Agenda
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2">
+            <Calendar size={20} className="sm:w-6 sm:h-6" /> Agenda
           </h2>
           <button
             onClick={() => openModal()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            className="w-full sm:w-auto bg-blue-600 text-white px-4 py-3 sm:py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
           >
             <Plus className="w-4 h-4" />
             Nieuw Evenement
@@ -403,34 +403,36 @@ export default function BeheerAgendaPage() {
         </div>
 
         {/* Events Grid */}
-        <div className="grid gap-4">
+        <div className="space-y-4">
           {groupedEvents.map((groupedEvent) => (
             <div key={groupedEvent.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{groupedEvent.title}</h3>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        groupedEvent.type === 'eenmalig' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {EVENT_TYPES.find(t => t.value === groupedEvent.type)?.label}
-                      </span>
-                      {groupedEvent.eventCount && groupedEvent.eventCount > 1 && (
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                          {groupedEvent.eventCount} evenementen
+              <div className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{groupedEvent.title}</h3>
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                          groupedEvent.type === 'eenmalig' 
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {EVENT_TYPES.find(t => t.value === groupedEvent.type)?.label}
                         </span>
-                      )}
+                        {groupedEvent.eventCount && groupedEvent.eventCount > 1 && (
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 whitespace-nowrap">
+                            {groupedEvent.eventCount} evenementen
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
-                    <p className="text-gray-600 mb-3">{groupedEvent.description}</p>
+                    <p className="text-gray-600 mb-4 text-sm sm:text-base line-clamp-2">{groupedEvent.description}</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span>
+                        <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">
                           {groupedEvent.type === 'eenmalig' 
                             ? new Date(groupedEvent.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })
                             : getRecurringDescription(groupedEvent)
@@ -439,40 +441,42 @@ export default function BeheerAgendaPage() {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span>{groupedEvent.startTime} - {groupedEvent.endTime}</span>
+                        <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{groupedEvent.startTime} - {groupedEvent.endTime}</span>
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400" />
-                        <span>{groupedEvent.zaal}</span>
+                        <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{groupedEvent.zaal}</span>
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span>{groupedEvent.author}</span>
+                        <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{groupedEvent.author}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex flex-row sm:flex-col lg:flex-row items-center justify-end gap-2 sm:ml-4">
                     {groupedEvent.eventCount && groupedEvent.eventCount > 1 && (
                       <button
                         onClick={() => toggleExpanded(groupedEvent.id)}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded whitespace-nowrap"
                       >
                         {expandedEvents.has(groupedEvent.id) ? 'Inklappen' : 'Uitklappen'}
                       </button>
                     )}
                     <button
                       onClick={() => openModal(groupedEvent)}
-                      className="text-blue-600 hover:text-blue-800 transition-colors p-2"
+                      className="text-blue-600 hover:text-blue-800 transition-colors p-2 hover:bg-blue-50 rounded"
+                      aria-label="Bewerken"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteGroup(groupedEvent)}
-                      className="text-red-600 hover:text-red-800 transition-colors p-2"
+                      className="text-red-600 hover:text-red-800 transition-colors p-2 hover:bg-red-50 rounded"
+                      aria-label="Verwijderen"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -482,12 +486,14 @@ export default function BeheerAgendaPage() {
                 {/* Expanded individual events */}
                 {expandedEvents.has(groupedEvent.id) && groupedEvent.events && groupedEvent.events.length > 1 && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Individuele evenementen:</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Individuele evenementen:</h4>
                     <div className="space-y-2">
                       {groupedEvent.events.map((event, index) => (
-                        <div key={event._id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
+                        <div key={event._id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 px-3 bg-gray-50 rounded gap-1">
                           <span className="text-sm">
-                            {new Date(event.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })} - 
+                            {new Date(event.date).toLocaleDateString('nl-NL', { timeZone: 'Europe/Amsterdam' })}
+                          </span>
+                          <span className="text-sm text-gray-600">
                             {event.startTime} tot {event.endTime}
                           </span>
                         </div>
@@ -502,250 +508,239 @@ export default function BeheerAgendaPage() {
 
         {/* Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-white rounded-lg w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Header - Fixed */}
+              <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                   {editingEvent ? 'Evenement Bewerken' : 'Nieuw Evenement'}
                 </h2>
                 <button
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded"
+                  aria-label="Sluiten"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Title */}
+              {/* Content - Scrollable */}
+              <div className="overflow-y-auto flex-1">
+                <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Title */}
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Titel <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      />
+                    </div>
+
+                    {/* Type */}
+                    <div className="sm:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="type"
+                        value={formData.type}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      >
+                        {EVENT_TYPES.map(type => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Description */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Titel *
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Beschrijving <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
+                    <textarea
+                      name="description"
+                      value={formData.description}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                      className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base resize-none"
                     />
                   </div>
 
-                  {/* Type */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Type *
-                    </label>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {EVENT_TYPES.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Date (for eenmalig only) */}
+                    {formData.type === 'eenmalig' && (
+                      <div className="sm:col-span-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Datum <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          name="date"
+                          value={formData.date}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                        />
+                      </div>
+                    )}
 
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Beschrijving *
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Date (for eenmalig only) */}
-                  {formData.type === 'eenmalig' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Datum *
+                    {/* Start Time */}
+                    <div className={formData.type === 'eenmalig' ? 'sm:col-span-1' : 'sm:col-span-1'}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Starttijd <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="date"
-                        name="date"
-                        value={formData.date}
+                      <select
+                        name="startTime"
+                        value={formData.startTime}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      >
+                        <option value="">Selecteer tijd</option>
+                        {TIME_OPTIONS.map(time => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* End Time */}
+                    <div className={formData.type === 'eenmalig' ? 'sm:col-span-1' : 'sm:col-span-1'}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Eindtijd <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="endTime"
+                        value={formData.endTime}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      >
+                        <option value="">Selecteer tijd</option>
+                        {TIME_OPTIONS.map(time => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Organizer & Zaal */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Organisator <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="author"
+                        value={formData.author}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Zaal <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="zaal"
+                        value={formData.zaal}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      >
+                        {ZALEN.map(zaal => (
+                          <option key={zaal} value={zaal}>
+                            {zaal}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Locatie <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    />
+                  </div>
+
+                  {/* Recurring Options */}
+                  {formData.type === 'dagelijks' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Selecteer dagen voor deze week:
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        {WEEKDAYS.map((day, index) => {
+                          const isDisabled = isDayInPast(index);
+                          return (
+                            <label 
+                              key={day} 
+                              className={`flex items-center p-3 border rounded-md text-sm ${
+                                isDisabled 
+                                  ? 'opacity-50 cursor-not-allowed bg-gray-50' 
+                                  : 'cursor-pointer hover:bg-gray-50'
+                              } ${
+                                formData.recurringDays?.includes(index) 
+                                  ? 'border-blue-500 bg-blue-50' 
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.recurringDays?.includes(index) || false}
+                                onChange={() => !isDisabled && handleRecurringDaysChange(index)}
+                                disabled={isDisabled}
+                                className="mr-2 text-blue-600"
+                              />
+                              <span className="truncate">{day}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Dagen in het verleden zijn uitgeschakeld
+                      </p>
                     </div>
                   )}
 
-                  {/* Start Time */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Starttijd *
-                    </label>
-                    <select
-                      name="startTime"
-                      value={formData.startTime}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecteer tijd</option>
-                      {TIME_OPTIONS.map(time => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* End Time */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Eindtijd *
-                    </label>
-                    <select
-                      name="endTime"
-                      value={formData.endTime}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecteer tijd</option>
-                      {TIME_OPTIONS.map(time => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Organizer & Zaal */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Organisator *
-                    </label>
-                    <input
-                      type="text"
-                      name="author"
-                      value={formData.author}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Zaal *
-                    </label>
-                    <select
-                      name="zaal"
-                      value={formData.zaal}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {ZALEN.map(zaal => (
-                        <option key={zaal} value={zaal}>
-                          {zaal}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Locatie *
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Recurring Options */}
-                {formData.type === 'dagelijks' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Selecteer dagen voor deze week:
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {WEEKDAYS.map((day, index) => {
-                        const isDisabled = isDayInPast(index);
-                        return (
-                          <label 
-                            key={day} 
-                            className={`flex items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={formData.recurringDays?.includes(index) || false}
-                              onChange={() => !isDisabled && handleRecurringDaysChange(index)}
-                              disabled={isDisabled}
-                              className="mr-2"
-                            />
-                            {day}
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Dagen in het verleden zijn uitgeschakeld
-                    </p>
-                  </div>
-                )}
-
-                {formData.type === 'standaard' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dag van de week:
-                    </label>
-                    <select
-                      name="recurringDayOfWeek"
-                      value={formData.recurringDayOfWeek || ''}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecteer dag</option>
-                      {WEEKDAYS.map((day, index) => (
-                        <option key={day} value={index}>
-                          {day}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {formData.type === 'wekelijks' && (
-                  <div className="space-y-4">
+                  {formData.type === 'standaard' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Dag van de week *
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dag van de week:
                       </label>
                       <select
                         name="recurringDayOfWeek"
                         value={formData.recurringDayOfWeek || ''}
                         onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                       >
                         <option value="">Selecteer dag</option>
                         {WEEKDAYS.map((day, index) => (
@@ -755,53 +750,82 @@ export default function BeheerAgendaPage() {
                         ))}
                       </select>
                     </div>
+                  )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Aantal weken *
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map(weekNum => (
-                          <label 
-                            key={weekNum} 
-                            className="flex items-center cursor-pointer bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-md border"
-                          >
-                            <input
-                              type="radio"
-                              name="recurringWeeks"
-                              value={weekNum}
-                              checked={formData.recurringWeeks === weekNum}
-                              onChange={() => handleWeeklyWeeksChange(weekNum)}
-                              className="mr-2"
-                            />
-                            <span className="text-sm">{weekNum} week{weekNum > 1 ? 'en' : ''}</span>
-                          </label>
-                        ))}
+                  {formData.type === 'wekelijks' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Dag van de week <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          name="recurringDayOfWeek"
+                          value={formData.recurringDayOfWeek || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                        >
+                          <option value="">Selecteer dag</option>
+                          {WEEKDAYS.map((day, index) => (
+                            <option key={day} value={index}>
+                              {day}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Selecteer hoeveel opeenvolgende weken het evenement moet plaatsvinden
-                      </p>
-                    </div>
-                  </div>
-                )}
 
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                  >
-                    Annuleren
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    {editingEvent ? 'Bijwerken' : 'Aanmaken'}
-                  </button>
-                </div>
-              </form>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Aantal weken <span className="text-red-500">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(weekNum => (
+                            <label 
+                              key={weekNum} 
+                              className={`flex items-center justify-center cursor-pointer p-3 rounded-md border text-sm transition-colors ${
+                                formData.recurringWeeks === weekNum
+                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                  : 'border-gray-300 bg-white hover:bg-gray-50'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="recurringWeeks"
+                                value={weekNum}
+                                checked={formData.recurringWeeks === weekNum}
+                                onChange={() => handleWeeklyWeeksChange(weekNum)}
+                                className="sr-only"
+                              />
+                              <span>{weekNum} week{weekNum > 1 ? 'en' : ''}</span>
+                            </label>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Selecteer hoeveel opeenvolgende weken het evenement moet plaatsvinden
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </form>
+              </div>
+
+              {/* Footer - Fixed */}
+              <div className="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Annuleren
+                </button>
+                <button
+                  type="submit"
+                  onClick={handleSubmit}
+                  className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                >
+                  {editingEvent ? 'Bijwerken' : 'Aanmaken'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -810,8 +834,14 @@ export default function BeheerAgendaPage() {
         {groupedEvents.length === 0 && (
           <div className="text-center py-12">
             <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Geen evenementen</h3>
-            <p className="mt-1 text-sm text-gray-500">Begin met het toevoegen van je eerste evenement.</p>
+            <h3 className="mt-4 text-lg font-medium text-gray-900">Geen evenementen</h3>
+            <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">Begin met het toevoegen van je eerste evenement om je agenda te vullen.</p>
+            <button
+              onClick={() => openModal()}
+              className="mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Eerste Evenement Toevoegen
+            </button>
           </div>
         )}
       </div>
