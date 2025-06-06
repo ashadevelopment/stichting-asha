@@ -306,13 +306,28 @@ export function Header({ className = "" }: HeaderProps) {
               {status === "loading" ? (
                 <span className="text-[#2E376F] block py-3 px-3">Loading...</span>
               ) : session ? (
-                <button 
-                  onClick={handleSignOut}
-                  className="flex items-center text-red-700 hover:text-red-800 py-3 px-3 w-full text-left rounded-lg hover:bg-red-50 transition-all duration-200"
-                >
-                  <span>Uitloggen</span> 
-                  <LogOut className="w-5 h-5 ml-2" />
-                </button>
+                <div className="space-y-1">
+                  {/* Show Dashboard link when logged in but not on dashboard pages */}
+                  {!isDashboardPage && (
+                    <Link 
+                      href="/beheer/dashboard" 
+                      className={`block py-3 px-3 rounded-lg transition-all duration-200 ${
+                        isActive('/beheer/dashboard') 
+                          ? 'bg-[#E4C67B] bg-opacity-20 text-[#2E376F] font-semibold' 
+                          : 'text-[#2E376F] hover:bg-gray-50'
+                      }`}
+                    >
+                      Dashboard
+                    </Link>
+                  )}
+                  <button 
+                    onClick={handleSignOut}
+                    className="flex items-center text-red-700 hover:text-red-800 py-3 px-3 w-full text-left rounded-lg hover:bg-red-50 transition-all duration-200"
+                  >
+                    <span>Uitloggen</span> 
+                    <LogOut className="w-5 h-5 ml-2" />
+                  </button>
+                </div>
               ) : (
                 <Link 
                   href="/login" 
