@@ -86,6 +86,10 @@ export function Header({ className = "" }: HeaderProps) {
     routePermissions[userRole].includes(link.href)
   ) : []
 
+  // Handle the Handleiding link separately to style it differently
+  const handleidingLink = { href: '/beheer/handleiding', label: 'Handleiding' }
+  const showHandleiding = session && routePermissions[userRole].includes(handleidingLink.href)
+
   // Public navigation links
   const publicLinks = [
     { href: '/', label: 'Home' },
@@ -121,14 +125,10 @@ export function Header({ className = "" }: HeaderProps) {
 
   return (
     <>
-      {/* Sticky header with fixed position */}
-      <style jsx global>{`
-        body {
-          margin-top: 4rem;
-        }
-      `}</style>
+      {/* Sticky header with fixed position - HIGHEST z-index */}
       <header 
-        className={`fixed top-0 left-0 right-0 w-full z-[9999] bg-white shadow-md ${className}`}
+        className={`fixed top-0 left-0 right-0 w-full z-[99999] bg-white shadow-md ${className}`}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999 }}
       >
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-row items-center justify-between">
           
@@ -162,26 +162,10 @@ export function Header({ className = "" }: HeaderProps) {
             </div>
           </button>
 
-          {/* Desktop Navigation - Only show public links, dashboard will be in sidebar */}
+          {/* Desktop Navigation - ONLY show public links (dashboard removed from desktop) */}
           <div className="hidden md:flex flex-1 justify-center">
             <nav className="flex flex-wrap justify-center gap-6 text-base font-medium">
-              {/* Show dashboard links in desktop header only if logged in AND on dashboard pages */}
-              {session && isDashboardPage && (
-                <>
-                  {authorizedDashboardLinks.map(({ href, label }) => (
-                    <Link 
-                      key={href}
-                      href={href} 
-                      className={`transition-colors duration-300 ${isActive(href) ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-                    >
-                      {label}
-                    </Link>
-                  ))}
-                  <div className="border-l border-gray-300 h-6 self-center"></div>
-                </>
-              )}
-              
-              {/* Always show public navigation */}
+              {/* Always show public navigation only */}
               {publicLinks.map(({ href, label }) => (
                 <Link 
                   key={href}
@@ -199,12 +183,20 @@ export function Header({ className = "" }: HeaderProps) {
             {status === "loading" ? (
               <span className="text-[#2E376F]">Loading...</span>
             ) : session ? (
-              <button 
-                onClick={handleSignOut}
-                className="text-red-700 hover:text-red-800 transition-colors duration-200"
-              >
-                Uitloggen <LogOut className="w-5 h-5 inline-block ml-1" />
-              </button>
+              <div className="flex items-center gap-4">
+                <Link 
+                  href="/beheer/dashboard" 
+                  className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                >
+                  Dashboard
+                </Link>
+                <button 
+                  onClick={handleSignOut}
+                  className="text-red-700 hover:text-red-800 transition-colors duration-200"
+                >
+                  Uitloggen <LogOut className="w-5 h-5 inline-block ml-1" />
+                </button>
+              </div>
             ) : (
               <Link 
                 href="/login" 
@@ -245,6 +237,26 @@ export function Header({ className = "" }: HeaderProps) {
                         {label}
                       </Link>
                     ))}
+                    
+                    {/* Handleiding link with special styling */}
+                    {showHandleiding && (
+                      <>
+                        <div className="my-3 border-t border-gray-200"></div>
+                        <Link 
+                          href={handleidingLink.href}
+                          className={`flex items-center gap-2 py-3 px-3 rounded-lg transition-all duration-200 ${
+                            isActive(handleidingLink.href) 
+                              ? 'bg-[#E4C67B] bg-opacity-20 text-[#2E376F] font-semibold' 
+                              : 'text-[#2E376F] hover:bg-gray-50'
+                          }`}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                          </svg>
+                          {handleidingLink.label}
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
                 
@@ -317,6 +329,21 @@ export function Header({ className = "" }: HeaderProps) {
           </div>
         </div>
       </header>
+
+      {/* Body offset to prevent content from being hidden behind fixed header */}
+      <style jsx global>{`
+        body {
+          padding-top: 5rem !important;
+          margin-top: 0 !important;
+        }
+        html {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+        }
+        * {
+          box-sizing: border-box;
+        }
+      `}</style>
     </>
   );
 }
