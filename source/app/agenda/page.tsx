@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Menu, X } from 'lucide-react';
+import 'animate.css';
 
 interface Event {
   _id: string;
@@ -32,6 +33,7 @@ export default function AgendaPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false); // Add this state
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -41,6 +43,9 @@ export default function AgendaPage() {
   }, [currentMonth, currentYear]);
 
   useEffect(() => {
+    // Set isClient to true once component mounts on client
+    setIsClient(true);
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -158,7 +163,7 @@ export default function AgendaPage() {
   const currentWeekEvents = getCurrentWeekEvents();
 
   const WeekSidebar = () => (
-    <div className="bg-white rounded-lg shadow-md p-4 mt-18">
+    <div className="bg-white rounded-lg shadow-md p-4 mt-18 animate__animated animate__fadeInLeft animate__slower">
       <h2 className="text-lg font-semibold text-blue-900 mb-4">Week Agenda</h2>
       <div className="space-y-2">
         {WEEKDAYS_FULL.map((day) => {
@@ -231,7 +236,7 @@ export default function AgendaPage() {
       </div>
 
       {/* View Mode Toggle - Small screens only */}
-      {!isMobile && window?.innerWidth && window.innerWidth < 1024 && (
+      {isClient && !isMobile && window.innerWidth < 1024 && (
         <div className="flex justify-center mb-4">
           <div className="bg-gray-100 rounded-lg p-1 flex">
             <button
