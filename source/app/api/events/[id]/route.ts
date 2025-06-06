@@ -4,13 +4,12 @@ import Event from '../../../lib/models/Event';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    // Handle both Next.js 14 and 15+ params format
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     
     const event = await Event.findById(id);
     if (!event) {
@@ -26,13 +25,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    // Handle both Next.js 14 and 15+ params format
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     
     const body = await request.json();
     const updatedEvent = await Event.findByIdAndUpdate(
@@ -54,13 +52,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
     
-    // Handle both Next.js 14 and 15+ params format
-    const { id } = await Promise.resolve(params);
+    const { id } = await params;
     
     const deletedEvent = await Event.findByIdAndDelete(id);
     if (!deletedEvent) {
