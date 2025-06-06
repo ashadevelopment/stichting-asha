@@ -10,10 +10,91 @@ type HeaderProps = {
   className?: string;
 };
 
+// Define user roles from the User model
+type UserRole = 'beheerder' | 'developer' | 'vrijwilliger' | 'stagiair' | 'user'
+
+// Define the structure for route permissions
+type RoutePermissions = {
+  [key in UserRole]: string[]
+}
+
 export function Header({ className = "" }: HeaderProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Get the role from session or fallback to 'user'
+  const userRole = (session?.user?.role as UserRole) || 'user';
+  
+  // Define which routes each role can access
+  const routePermissions: RoutePermissions = {
+    beheerder: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+      '/beheer/gebruikers',
+      '/beheer/notities',
+      '/beheer/projecten',
+      '/beheer/agenda',
+      '/beheer/contact',
+      '/beheer/vrijwilligers',
+      '/beheer/fotoboek',
+      '/beheer/nieuwsbrief',
+      '/beheer/handleiding',
+    ],
+    developer: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+      '/beheer/notities',
+      '/beheer/projecten',
+      '/beheer/agenda',
+      '/beheer/contact',
+      '/beheer/fotoboek',
+      '/beheer/nieuwsbrief',
+      '/beheer/handleiding',
+    ],
+    vrijwilliger: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+      '/beheer/agenda',
+    ],
+    stagiair: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+    ],
+    user: [
+      '/beheer/dashboard',
+      '/beheer/gegevens',
+    ],
+  }
+
+  // Dashboard navigation links
+  const allDashboardLinks = [
+    { href: '/beheer/dashboard', label: 'Dashboard' },
+    { href: '/beheer/gegevens', label: 'Persoonlijke gegevens' },
+    { href: '/beheer/gebruikers', label: 'Gebruikers' },
+    { href: '/beheer/notities', label: 'Notities' },
+    { href: '/beheer/projecten', label: 'Projecten' },
+    { href: '/beheer/agenda', label: 'Agenda' },
+    { href: '/beheer/contact', label: 'Contact' },
+    { href: '/beheer/vrijwilligers', label: 'Vrijwilligers' },
+    { href: '/beheer/fotoboek', label: 'Fotoboek' },
+    { href: '/beheer/nieuwsbrief', label: 'Nieuwsbrief' },
+  ]
+
+  // Filter dashboard links based on user role
+  const authorizedDashboardLinks = session ? allDashboardLinks.filter(link => 
+    routePermissions[userRole].includes(link.href)
+  ) : []
+
+  // Public navigation links
+  const publicLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/agenda', label: 'Agenda' },
+    { href: '/projecten', label: 'Projecten' },
+    { href: '/nieuwsbrief', label: 'Nieuwsbrief' },
+    { href: '/contact', label: 'Contact' },
+    { href: '/fotoboek', label: 'Fotoboek' },
+  ]
   
   // Close mobile menu when pathname changes
   useEffect(() => {
@@ -23,10 +104,10 @@ export function Header({ className = "" }: HeaderProps) {
   // Function to handle sign-out
   const handleSignOut = (e: React.MouseEvent) => {
     e.preventDefault();
-    signOut({ redirect: true, callbackUrl: '/' }); // Redirect to home page after sign-out
+    signOut({ redirect: true, callbackUrl: '/' });
   };
 
-  // Controleren of een link actief is
+  // Check if a link is active
   const isActive = (path: string) => {
     return pathname === path;
   };
@@ -35,17 +116,19 @@ export function Header({ className = "" }: HeaderProps) {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  // Check if we're on a dashboard page
+  const isDashboardPage = pathname?.startsWith('/beheer');
+
   return (
     <>
-      {/* Sticky header met position: fixed */}
+      {/* Sticky header with fixed position */}
       <style jsx global>{`
         body {
-          margin-top: 4rem; /* Adjust this value based on your header height */
+          margin-top: 4rem;
         }
       `}</style>
       <header 
         className={`fixed top-0 left-0 right-0 w-full z-[9999] bg-white shadow-md ${className}`}
-        style={{ position: 'fixed', top: 0, left: 0, right: 0 }}
       >
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-row items-center justify-between">
           
@@ -79,45 +162,35 @@ export function Header({ className = "" }: HeaderProps) {
             </div>
           </button>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Only show public links, dashboard will be in sidebar */}
           <div className="hidden md:flex flex-1 justify-center">
             <nav className="flex flex-wrap justify-center gap-6 text-base font-medium">
-              <Link 
-                href="/" 
-                className={`transition-colors duration-300 ${isActive('/') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/agenda" 
-                className={`transition-colors duration-300 ${isActive('/agenda') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-                Agenda
-              </Link>
-              <Link 
-                href="/projecten" 
-                className={`transition-colors duration-300 ${isActive('/projecten') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-                Projecten
-              </Link>
-              <Link 
-                href="/contact" 
-                className={`transition-colors duration-300 ${isActive('/contact') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-                Contact
-              </Link>
-              <Link 
-                href="/nieuwsbrief" 
-                className={`transition-colors duration-300 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-                Nieuwsbrief
-              </Link>
-              <Link 
-                href="/fotoboek" 
-                className={`transition-colors duration-300 ${isActive('/fotoboek') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-              >
-                Fotoboek
-              </Link>
+              {/* Show dashboard links in desktop header only if logged in AND on dashboard pages */}
+              {session && isDashboardPage && (
+                <>
+                  {authorizedDashboardLinks.map(({ href, label }) => (
+                    <Link 
+                      key={href}
+                      href={href} 
+                      className={`transition-colors duration-300 ${isActive(href) ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                  <div className="border-l border-gray-300 h-6 self-center"></div>
+                </>
+              )}
+              
+              {/* Always show public navigation */}
+              {publicLinks.map(({ href, label }) => (
+                <Link 
+                  key={href}
+                  href={href} 
+                  className={`transition-colors duration-300 ${isActive(href) ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
+                >
+                  {label}
+                </Link>
+              ))}
             </nav>
           </div>
 
@@ -126,20 +199,12 @@ export function Header({ className = "" }: HeaderProps) {
             {status === "loading" ? (
               <span className="text-[#2E376F]">Loading...</span>
             ) : session ? (
-              <>
-                <Link 
-                  href="/beheer/dashboard" 
-                  className={`transition-colors duration-300 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B]' : 'text-[#2E376F]'}`}
-                >
-                  Dashboard
-                </Link>
-                <button 
-                  onClick={handleSignOut}
-                  className="ml-4 text-red-700"
-                >
-                  Uitloggen <LogOut className="w-5 h-5 inline-block m-2" />
-                </button>
-              </>
+              <button 
+                onClick={handleSignOut}
+                className="text-red-700 hover:text-red-800 transition-colors duration-200"
+              >
+                Uitloggen <LogOut className="w-5 h-5 inline-block ml-1" />
+              </button>
             ) : (
               <Link 
                 href="/login" 
@@ -153,75 +218,103 @@ export function Header({ className = "" }: HeaderProps) {
 
         {/* Mobile Menu (Slide down when open) */}
         <div 
-          className={`md:hidden w-full bg-white overflow-hidden transition-all duration-300 ease-in-out mb-4 ${
-            isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+          className={`md:hidden w-full bg-white overflow-hidden transition-all duration-300 ease-in-out shadow-lg ${
+            isMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <nav className="flex flex-col px-4 pb-6 space-y-3">
-            <Link 
-              href="/" 
-              className={`transition-colors duration-300 py-2 ${isActive('/') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/agenda" 
-              className={`transition-colors duration-300 py-2 ${isActive('/agenda') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-            >
-              Agenda
-            </Link>
-            <Link 
-              href="/projecten" 
-              className={`transition-colors duration-300 py-2 ${isActive('/projecten') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-            >
-              Projecten
-            </Link>
-            <Link 
-              href="/contact" 
-              className={`transition-colors duration-300 py-2 ${isActive('/contact') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-            >
-              Contact
-            </Link>
-            <Link 
-              href="/nieuwsbrief" 
-              className={`transition-colors duration-300 py-2 ${isActive('/nieuwsbrief') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-            >
-              Nieuwsbrief
-            </Link>
-            <Link 
-              href="/fotoboek" 
-              className={`transition-colors duration-300 py-2 ${isActive('/fotoboek') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-            >
-              Fotoboek
-            </Link>
-
-            {/* Mobile Auth Controls */}
-            {status === "loading" ? (
-              <span className="text-[#2E376F] py-2 border-t border-gray-200 mt-2">Loading...</span>
-            ) : session ? (
+          <div className="px-4 pb-6 max-h-[70vh] overflow-y-auto">
+            {session && isDashboardPage ? (
+              // Show dashboard navigation when logged in and on dashboard pages (mobile)
               <>
-                <Link 
-                  href="/beheer/dashboard" 
-                  className={`transition-colors duration-300 py-2 border-t border-gray-200 mt-2 ${isActive('/beheer/dashboard') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-                >
-                  Dashboard
-                </Link>
-                <button 
-                  onClick={handleSignOut}
-                  className="flex items-center text-red-700 py-2 w-full"
-                >
-                  <span>Uitloggen</span> <LogOut className="w-5 h-5 ml-2" />
-                </button>
+                {/* Dashboard section */}
+                <div className="border-b border-gray-200 pb-4 mb-4">
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3 mt-3">
+                    Dashboard
+                  </h3>
+                  <div className="space-y-1">
+                    {authorizedDashboardLinks.map(({ href, label }) => (
+                      <Link 
+                        key={href}
+                        href={href} 
+                        className={`block py-3 px-3 rounded-lg transition-all duration-200 ${
+                          isActive(href) 
+                            ? 'bg-[#E4C67B] bg-opacity-20 text-[#2E376F] font-semibold' 
+                            : 'text-[#2E376F] hover:bg-gray-50'
+                        }`}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Public section */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">
+                    Publiek
+                  </h3>
+                  <div className="space-y-1">
+                    {publicLinks.map(({ href, label }) => (
+                      <Link 
+                        key={href}
+                        href={href} 
+                        className={`block py-3 px-3 rounded-lg transition-all duration-200 ${
+                          isActive(href) 
+                            ? 'bg-[#E4C67B] bg-opacity-20 text-[#2E376F] font-semibold' 
+                            : 'text-[#2E376F] hover:bg-gray-50'
+                        }`}
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </>
             ) : (
-              <Link 
-                href="/login" 
-                className={`transition-colors duration-300 block py-2 border-t border-gray-200 mt-2 ${isActive('/login') ? 'text-[#E4C67B] font-bold' : 'text-[#2E376F]'}`}
-              >
-                Inloggen
-              </Link>
+              // Show regular navigation when not on dashboard pages (mobile)
+              <div className="mt-3 space-y-1">
+                {publicLinks.map(({ href, label }) => (
+                  <Link 
+                    key={href}
+                    href={href} 
+                    className={`block py-3 px-3 rounded-lg transition-all duration-200 ${
+                      isActive(href) 
+                        ? 'bg-[#E4C67B] bg-opacity-20 text-[#2E376F] font-semibold' 
+                        : 'text-[#2E376F] hover:bg-gray-50'
+                    }`}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
             )}
-          </nav>
+
+            {/* Mobile Auth Controls */}
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              {status === "loading" ? (
+                <span className="text-[#2E376F] block py-3 px-3">Loading...</span>
+              ) : session ? (
+                <button 
+                  onClick={handleSignOut}
+                  className="flex items-center text-red-700 hover:text-red-800 py-3 px-3 w-full text-left rounded-lg hover:bg-red-50 transition-all duration-200"
+                >
+                  <span>Uitloggen</span> 
+                  <LogOut className="w-5 h-5 ml-2" />
+                </button>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className={`block py-3 px-3 rounded-lg transition-all duration-200 ${
+                    isActive('/login') 
+                      ? 'bg-[#E4C67B] bg-opacity-20 text-[#2E376F] font-semibold' 
+                      : 'text-[#2E376F] hover:bg-gray-50'
+                  }`}
+                >
+                  Inloggen
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
       </header>
     </>
