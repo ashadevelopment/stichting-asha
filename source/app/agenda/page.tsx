@@ -377,16 +377,21 @@ export default function AgendaPage() {
   return (
     <div className="min-h-screen bg-[#F2F2F2] p-3 sm:p-6 pt-20 sm:pt-24">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center text-[#1E2A78] flex-1 lg:text-left lg:flex-none">Agenda</h1>
-          
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="lg:hidden p-2 rounded-lg bg-white shadow-md"
-          >
-            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center justify-between">
+            {/* Empty div for spacing */}
+            <div className="lg:hidden"></div>
+            
+            <h1 className="text-3xl font-bold text-[#1E2A78] mx-auto">Agenda</h1>
+            
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 rounded-lg bg-white shadow-md"
+            >
+              {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
