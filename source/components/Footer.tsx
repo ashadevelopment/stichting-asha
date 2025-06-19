@@ -26,7 +26,7 @@ export default function Footer() {
             </h3>
             <p className={`text-gray-300 text-base leading-relaxed mb-6 ${poppins.className}`}>
               Stichting Asha is een maatschappelijk betrokken organisatie in Utrecht die zich 
-              sinds 1992 met veel toewijding inzet voor Hindostaanse ouderen.
+              sinds 1976 met veel toewijding inzet voor Hindostaanse ouderen.
             </p>
             
             {/* Contact Info */}

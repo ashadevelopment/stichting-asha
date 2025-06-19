@@ -617,18 +617,6 @@ export default function HandleidingPage() {
                     <li><strong>Geen toegang tot functies:</strong> Rechten zijn rolgebaseerd. Neem contact op met de Developers</li>
                   </ul>
                 </div>
-
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-5">Technische ondersteuning</h3>
-                  <div className="bg-blue-100 p-4 rounded-lg border border-blue-300">
-                    <p><strong>Email:</strong> ectn033@gmail.com</p>
-                    <p><strong>Telefoon:</strong>06 38 41 51 73</p>
-                  </div>
-                  <div className="bg-blue-100 p-4 rounded-lg border border-blue-300 mt-3">
-                    <p><strong>Email:</strong> support@example.com</p>
-                    <p><strong>Telefoon:</strong> 070-1234567</p>
-                  </div>
-                </div>
               </div>
               </section>
         );

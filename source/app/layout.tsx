@@ -18,6 +18,11 @@ const PoppinsFont = Poppins({
 export const metadata: Metadata = {
   title: "Stichting Asha",
   description: "Stichting Asha (Asha = Hoop in het hindi) is een vrijwilligersorganisatie van Surinaamse Hindostanen in de gemeente Utrecht. De organisatie is in 1976 opgericht en wil met haar activiteiten een positieve bijdrage leveren aan het gemeentelijke integratie- en participatiebeleid.",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

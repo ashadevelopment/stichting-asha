@@ -669,7 +669,7 @@ export default function Home() {
                 <div ref={geschiedenisRef} className="bg-white rounded-xl shadow-lg p-8 opacity-0 transform hover:shadow-xl transition-shadow duration-300">
                   <h3 className="text-xl font-bold text-[#1E2A78] mb-4">Onze Geschiedenis</h3>
                   <p className="text-gray-700 text-base leading-relaxed mb-4">
-                    Stichting Asha is een maatschappelijk betrokken organisatie in Utrecht die zich sinds 1992 inzet voor Hindostaanse ouderen. Wat ooit begon als een kleinschalige ontmoeting is uitgegroeid tot een bloeiend project waar wekelijks tientallen deelnemers samenkomen.
+                    Stichting Asha is een maatschappelijk betrokken organisatie in Utrecht die zich sinds 1976 inzet voor Hindostaanse ouderen. Wat ooit begon als een kleinschalige ontmoeting is uitgegroeid tot een bloeiend project waar wekelijks tientallen deelnemers samenkomen.
                   </p>
                   <p className="text-gray-700 text-base leading-relaxed">
                     Met meer dan 30 jaar ervaring vormen we een veilige en vertrouwde plek waar ouderen zich gezien, gehoord en gewaardeerd voelen in Buurtcentrum Oase.
