@@ -221,24 +221,44 @@ export default function NewsletterManagementPage() {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set())
 
-  const [formData, setFormData] = useState<NewsletterPost>({
-    title: '',
-    description: '',
-    content: '',
-    type: 'article',
-    link: '',
-    videoUrl: '',
-    author: 'Admin' // Will be updated when session loads
-  })
-  
-  useEffect(() => {
-    if (session?.user?.name) {
-      setFormData(prev => ({
-        ...prev,
-        author: session.user.name || 'Admin'
-      }))
-    }
-  }, [session])
+    const [formData, setFormData] = useState<NewsletterPost>({
+      title: '',
+      description: '',
+      content: '',
+      type: 'article',
+      link: '',
+      videoUrl: '',
+      author: 'Admin'
+    })
+
+    useEffect(() => {
+      const fetchUserDetails = async () => {
+        if (session?.user?.id) {
+          try {
+            const response = await fetch(`/api/users/details?userId=${session.user.id}`)
+            if (response.ok) {
+              const userData = await response.json()
+              const fullName = `${userData.firstName} ${userData.lastName}`.trim()
+              setFormData(prev => ({
+                ...prev,
+                author: fullName || session.user.name || 'Admin'
+              }))
+            }
+          } catch (error) {
+            console.error('Error fetching user details:', error)
+            // Fallback to session name or Admin
+            setFormData(prev => ({
+              ...prev,
+              author: session.user.name || 'Admin'
+            }))
+          }
+        }
+      }
+
+      fetchUserDetails()
+    }, [session?.user?.id])
+
+
 
   // Extract YouTube video ID from URL
   const extractYouTubeId = (url: string): string | null => {
