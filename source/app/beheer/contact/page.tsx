@@ -34,14 +34,14 @@ export default function ContactPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch all users - using the list API which has better formatting
-        const usersResponse = await fetch('/api/users/list');
+        // Fetch all users with complete data from the main users API
+        const usersResponse = await fetch('/api/users');
         if (!usersResponse.ok) throw new Error('Failed to fetch users');
         const usersData = await usersResponse.json();
         
-        // Filter to only include beheerder users
-        const beheerders = (usersData.users || []).filter((user: UserProfile) => 
-          user.role === 'beheerder'
+        // Filter to only include beheerder users and ensure unique IDs
+        const beheerders = (usersData || []).filter((user: UserProfile, index: number, array: UserProfile[]) => 
+          user.role === 'beheerder' && array.findIndex(u => u._id === user._id) === index
         );
         
         // Fetch current contact persons
@@ -49,22 +49,31 @@ export default function ContactPage() {
         if (!contactsResponse.ok) throw new Error('Failed to fetch contacts');
         const contactsData = await contactsResponse.json();
         
-        // Get detailed info for current contacts to display properly
+        // Get complete user data for current contacts from the beheerders list
         const contactsWithDetails = [];
+        const seenContactIds = new Set();
+        
         for (const contact of (contactsData.contactPersons || [])) {
-          const userDetails = await fetch(`/api/users/${contact._id}`).then(res => res.json()).catch(() => null);
-          if (userDetails) {
-            contactsWithDetails.push(userDetails);
+          // Skip if we've already processed this contact ID
+          if (seenContactIds.has(contact._id)) {
+            continue;
+          }
+          seenContactIds.add(contact._id);
+          
+          const completeUserData = beheerders.find((user: UserProfile) => user._id === contact._id);
+          if (completeUserData) {
+            contactsWithDetails.push(completeUserData);
           } else {
+            // Fallback to original contact data if not found in beheerders
             contactsWithDetails.push(contact);
           }
         }
         
         setUsers(beheerders);
-        setCurrentContacts(contactsData.contactPersons || []);
+        setCurrentContacts(contactsWithDetails);
         
         // Pre-select current contacts
-        setSelectedUsers((contactsData.contactPersons || []).map((user: UserProfile) => user._id));
+        setSelectedUsers(contactsWithDetails.map((user: UserProfile) => user._id));
       } catch (error) {
         console.error('Error fetching data:', error);
         setStatusMessage({
@@ -88,6 +97,16 @@ export default function ContactPage() {
       return `${user.firstName} ${user.lastName}`;
     }
     return user.name || "Geen naam";
+  };
+
+  // Helper function to get user's function
+  const getUserFunction = (user: UserProfile) => {
+    return user.function || 'Geen functie';
+  };
+
+  // Helper function to get user's phone number
+  const getUserPhoneNumber = (user: UserProfile) => {
+    return user.phoneNumber || 'Geen telefoonnummer';
   };
 
   // Handler for toggling user selection
@@ -184,8 +203,8 @@ export default function ContactPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {currentContacts.map((contact) => (
-              <div key={contact._id} className="bg-gray-50 p-4 rounded-lg flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            {currentContacts.map((contact, index) => (
+              <div key={`current-contact-${contact._id}-${index}`} className="bg-gray-50 p-4 rounded-lg flex flex-col sm:flex-row items-center sm:items-start gap-4">
                 <div className="flex-shrink-0">
                   <ProfilePictureManager
                     userId={contact._id}
@@ -198,10 +217,8 @@ export default function ContactPage() {
                 </div>
                 <div className="text-center sm:text-left">
                   <h4 className="text-lg font-semibold text-black">{getFullName(contact)}</h4>
-                  {contact.function && (
-                    <p className="text-gray-600">Functie: {contact.function}</p>
-                  )}
-                  <p className="text-gray-600">Telefoonnummer: {contact.phoneNumber || "Geen telefoonnummer"}</p>
+                  <p className="text-gray-600">Functie: {getUserFunction(contact)}</p>
+                  <p className="text-gray-600">Telefoonnummer: {getUserPhoneNumber(contact)}</p>
                   <p className="text-gray-600">
                     E-mail:{" "}
                     <a href={`mailto:${contact.email}`} className="text-blue-500">
@@ -233,9 +250,9 @@ export default function ContactPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
-              {users.map((user) => (
+              {users.map((user, index) => (
                 <div 
-                  key={user._id} 
+                  key={`user-selection-${user._id}-${index}`} 
                   className={`border rounded-lg p-4 flex flex-col sm:flex-row items-center sm:items-start gap-4 cursor-pointer transition-colors ${
                     selectedUsers.includes(user._id) 
                       ? 'border-blue-500 bg-blue-50' 
@@ -260,9 +277,9 @@ export default function ContactPage() {
                   </div>
                   <div className="text-center sm:text-left">
                     <h4 className="text-lg font-medium">{getFullName(user)}</h4>
-                    <p className="text-gray-600">{user.function || 'Geen functie'}</p>
+                    <p className="text-gray-600">{getUserFunction(user)}</p>
                     <p className="text-gray-600">{user.email}</p>
-                    <p className="text-gray-600">{user.phoneNumber || 'Geen telefoonnummer'}</p>
+                    <p className="text-gray-600">{getUserPhoneNumber(user)}</p>
                   </div>
                 </div>
               ))}

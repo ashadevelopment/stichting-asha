@@ -228,8 +228,17 @@ export default function NewsletterManagementPage() {
     type: 'article',
     link: '',
     videoUrl: '',
-    author: session?.user?.name || 'Admin'
+    author: 'Admin' // Will be updated when session loads
   })
+  
+  useEffect(() => {
+    if (session?.user?.name) {
+      setFormData(prev => ({
+        ...prev,
+        author: session.user.name || 'Admin'
+      }))
+    }
+  }, [session])
 
   // Extract YouTube video ID from URL
   const extractYouTubeId = (url: string): string | null => {
