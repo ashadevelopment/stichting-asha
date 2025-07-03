@@ -1,219 +1,185 @@
-import { NextRequest, NextResponse } from "next/server"
-import dbConnect from "../../lib/mongodb"
-import Media from "../../lib/models/Media" // Changed from Photo to Media
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../../lib/authOptions"
-import { recordActivity } from "../../lib/middleware/activityTracking"
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../lib/authOptions";
+import { getMediaModel } from "../../lib/models/Media";
+import dbConnect from "../../lib/mongodb";
+import ActivityModel from "../../lib/models/Activity";
 
-// File size limits in bytes
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
-
-// Allowed file types
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
-
-// Validation function for uploads
-function validateMediaUpload(file: File, mediaType: string) {
-  // Check if file exists
-  if (!file) {
-    return { valid: false, error: "Geen bestand geüpload" };
-  }
-
-  // Check file size
-  const maxSize = mediaType === 'video' ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
-  if (file.size > maxSize) {
-    const maxSizeMB = maxSize / (1024 * 1024);
-    return { 
-      valid: false, 
-      error: `Bestandsgrootte overschrijdt de limiet van ${maxSizeMB}MB` 
-    };
-  }
-
-  // Check file type
-  const allowedTypes = mediaType === 'video' ? ALLOWED_VIDEO_TYPES : ALLOWED_IMAGE_TYPES;
-  if (!allowedTypes.includes(file.type)) {
-    return { 
-      valid: false, 
-      error: `Bestandstype ${file.type} wordt niet ondersteund. Toegestane types: ${allowedTypes.join(', ')}` 
-    };
-  }
-
-  // Check dimensions for videos (would require additional processing)
-  // For now, we'll just return valid
-  return { valid: true };
-}
-
-// GET all media items
-export async function GET() {
-  try {
-    await dbConnect()
-    
-    // Find all media items, sorted by creation date
-    const mediaItems = await Media.find().sort({ createdAt: -1 })
-    
-    // Convert to plain objects and ensure base64 data
-    const plainMediaItems = mediaItems.map(item => {
-      const plainObj = item.toObject()
-      
-      // Ensure media data is present
-      if (!plainObj.media || !plainObj.media.data) {
-        plainObj.media = {
-          data: '',
-          contentType: plainObj.media?.type === 'video' ? 'video/mp4' : 'image/png', // Default fallback
-          type: plainObj.media?.type || 'image'
-        }
-      }
-      
-      return plainObj
-    })
-    
-    // Return media items or an empty array
-    return NextResponse.json(plainMediaItems)
-  } catch (err) {
-    console.error("Error fetching media items:", err)
-    return NextResponse.json(
-      { 
-        error: "Fout bij ophalen van media", 
-        details: err instanceof Error ? err.message : 'Unknown error' 
-      }, 
-      { status: 500 }
-    )
-  }
-}
-
-// POST new media item (admin only)
-export async function POST(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    // Check if user is authenticated and has appropriate role
-    if (!session || !session.user || 
-        (session.user.role !== 'beheerder' && session.user.role !== 'developer')) {
-      return NextResponse.json(
-        { error: "Geen toegang. Alleen beheerders kunnen media toevoegen." }, 
-        { status: 403 }
-      )
-    }
-    
-    // Parse the request body
-    const formData = await req.formData()
-    
-    // Extract media details
-    const title = formData.get('title') as string
-    const description = formData.get('description') as string | null
-    const file = formData.get('file') as File
-    const mediaType = formData.get('mediaType') as 'image' | 'video'
-
-    // Basic validation
-    if (!title) {
-      return NextResponse.json(
-        { error: "Titel is verplicht" }, 
-        { status: 400 }
-      )
+// Helper function to create thumbnail
+function createThumbnail(base64Data: string, contentType: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!base64Data || !contentType.startsWith('image/')) {
+      resolve('');
+      return;
     }
 
-    if (!file) {
-      return NextResponse.json(
-        { error: "Media bestand is verplicht" }, 
-        { status: 400 }
-      )
-    }
-
-    // Extended validation for file type and size
-    const validation = validateMediaUpload(file, mediaType);
-    if (!validation.valid) {
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      )
-    }
-
-    // Connect to database
-    await dbConnect()
-    
     try {
-      // Read file data
-      const bytes = await file.arrayBuffer()
+      // For now, just return a cropped version of the original
+      // In production, you might want to use a proper image processing library
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
       
-      // Check if file data is valid
-      if (!bytes || bytes.byteLength === 0) {
-        return NextResponse.json(
-          { error: "Ongeldig bestand of leeg bestand" },
-          { status: 400 }
-        )
-      }
+      img.onload = () => {
+        canvas.width = 200;
+        canvas.height = 200;
+        ctx?.drawImage(img, 0, 0, 200, 200);
+        resolve(canvas.toDataURL(contentType, 0.7));
+      };
       
-      const buffer = Buffer.from(bytes)
-      
-      // Check final buffer size for MongoDB limit (16MB)
-      const base64Size = Math.ceil(buffer.length * 4 / 3);
-      if (base64Size > 15 * 1024 * 1024) { // Leave some margin below 16MB
-        return NextResponse.json(
-          { error: "Bestand is te groot voor opslag na encoding (max 15MB na encoding)" },
-          { status: 400 }
-        )
-      }
-      
-      // Create media document
-      const mediaItem = await Media.create({
-        title,
-        description: description || '',
-        media: {
-          filename: file.name,
-          contentType: file.type,
-          data: buffer.toString('base64'),
-          type: mediaType || (file.type.startsWith('video') ? 'video' : 'image')
-        },
-        author: session.user.name || 'Anoniem'
-      })
-      
-      // Record activity
-      await recordActivity({
-        type: 'create',
-        entityType: 'media',
-        entityId: mediaItem._id.toString(),
-        entityName: mediaItem.title,
-        performedBy: session.user.id || 'Onbekend',
-        performedByName: session.user.name || 'Onbekend',
-        details: `${mediaItem.media.type === 'video' ? 'Video' : 'Foto'} geplaatst door ${session.user.name || 'Onbekend'}`
-      })
-      
-      // Convert to plain object and return
-      return NextResponse.json(mediaItem.toObject(), { status: 201 })
-    } catch (err) {
-      console.error("Error processing file:", err)
-      
-      // Check for specific MongoDB errors related to document size
-      if (err instanceof Error && err.message && 
-          (err.message.includes('document size') || err.message.includes('16777216'))) {
-        return NextResponse.json(
-          { error: "Bestand is te groot voor de database (maximum 16MB)" },
-          { status: 400 }
-        )
-      }
-      
-      throw err; // Re-throw for general error handling
+      img.onerror = () => resolve('');
+      img.src = `data:${contentType};base64,${base64Data}`;
+    } catch (error) {
+      resolve('');
     }
-  } catch (err) {
-    console.error("Error creating media item:", err)
+  });
+}
+
+// GET - Fetch media with pagination and size limits
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const type = searchParams.get('type'); // 'image' or 'video'
+    const includeData = searchParams.get('includeData') === 'true';
     
-    if (err instanceof Error) {
-      // Detailed error logging
-      console.error(`Error stack: ${err.stack}`);
-      
-      return NextResponse.json(
-        { 
-          error: "Fout bij toevoegen van media", 
-          details: err.message 
-        }, 
-        { status: 500 }
-      )
+    const MediaModel = await getMediaModel();
+    
+    // Build query
+    const query: any = {};
+    if (type) {
+      query['media.type'] = type;
     }
     
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+    
+    let mediaItems;
+    
+    if (includeData) {
+      // Only load full data when explicitly requested (e.g., for admin page)
+      mediaItems = await MediaModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+    } else {
+      // For display purposes, only load metadata and thumbnails
+      mediaItems = await MediaModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('title description media.type media.contentType author createdAt updatedAt thumbnail')
+        .lean();
+    }
+    
+    // Get total count for pagination
+    const totalItems = await MediaModel.countDocuments(query);
+    const totalPages = Math.ceil(totalItems / limit);
+    
+    return NextResponse.json({
+      items: mediaItems,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching media:', error);
     return NextResponse.json(
-      { error: "Onverwachte fout bij toevoegen van media" }, 
+      { error: 'Fout bij het ophalen van media', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
-    )
+    );
+  }
+}
+
+// POST - Add new media
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const formData = await request.formData();
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const file = formData.get('file') as File;
+    const mediaType = formData.get('mediaType') as string;
+
+    if (!title || !file) {
+      return NextResponse.json({ error: 'Title and file are required' }, { status: 400 });
+    }
+
+    // File size limits
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+    const maxSize = mediaType === 'video' ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+
+    if (file.size > maxSize) {
+      return NextResponse.json({ 
+        error: `File size exceeds ${maxSize / (1024 * 1024)}MB limit` 
+      }, { status: 400 });
+    }
+
+    // Convert file to base64
+    const bytes = await file.arrayBuffer();
+    const base64 = Buffer.from(bytes).toString('base64');
+
+    // Create thumbnail for images
+    let thumbnail = '';
+    if (mediaType === 'image') {
+      // For server-side thumbnail generation, you might want to use a library like 'sharp'
+      // For now, we'll store the full image and generate thumbnails client-side
+      thumbnail = base64; // In production, create a smaller version
+    }
+
+    const MediaModel = await getMediaModel();
+
+    const newMedia = new MediaModel({
+      title,
+      description,
+      media: {
+        filename: file.name,
+        contentType: file.type,
+        data: base64,
+        type: mediaType,
+        size: file.size
+      },
+      author: session.user?.name || 'Unknown',
+      thumbnail: thumbnail ? {
+        data: thumbnail,
+        contentType: file.type
+      } : undefined
+    });
+
+    await newMedia.save();
+
+    // Log activity
+    await dbConnect();
+    await ActivityModel.create({
+      type: 'create',
+      entityType: 'media',
+      entityId: newMedia._id,
+      entityName: title,
+      performedBy: session.user?.email || 'Unknown',
+      performedByName: session.user?.name || 'Unknown'
+    });
+
+    return NextResponse.json({ 
+      message: 'Media uploaded successfully',
+      id: newMedia._id 
+    });
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    return NextResponse.json(
+      { error: 'Error uploading media', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }
