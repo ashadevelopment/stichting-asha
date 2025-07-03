@@ -11,9 +11,25 @@ interface MediaItem {
   title: string
   description?: string
   media: {
-    data: string
+    data?: string
     contentType: string
     type: 'image' | 'video'
+  }
+  thumbnail?: {
+    data: string
+    contentType: string
+  }
+}
+
+interface ApiResponse {
+  items: MediaItem[]
+  pagination: {
+    currentPage: number
+    totalPages: number
+    totalItems: number
+    limit: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
   }
 }
 
@@ -61,7 +77,7 @@ export default function FotoboekPage() {
   const fetchMediaItems = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/media')
+      const res = await fetch('/api/media?includeData=true')
       
       // Check if the response is ok
       if (!res.ok) {
@@ -70,12 +86,10 @@ export default function FotoboekPage() {
       }
       
       // Try to parse JSON
-      const data = await res.json()
+      const data: ApiResponse = await res.json()
       
-      // Ensure data is an array
-      const mediaArray = Array.isArray(data) ? data : [];
-      
-      setMediaItems(mediaArray)
+      // Use the items from the response
+      setMediaItems(data.items || [])
     } catch (error) {
       console.error('Error fetching media:', error)
       setError(error instanceof Error ? error.message : 'Fout bij het ophalen van media')
@@ -269,7 +283,7 @@ export default function FotoboekPage() {
       return (
         <div className="relative pb-[75%] w-full mb-2 overflow-hidden rounded bg-black">
           <video 
-            src={`data:${item.media.contentType};base64,${item.media.data}`}
+            src={item.media.data ? `data:${item.media.contentType};base64,${item.media.data}` : ''}
             className="absolute top-0 left-0 w-full h-full object-contain"
             controls
           />
@@ -279,10 +293,14 @@ export default function FotoboekPage() {
         </div>
       )
     } else {
+      // Use thumbnail if available, otherwise use full media data
+      const imageData = item.thumbnail?.data || item.media.data;
+      const imageContentType = item.thumbnail?.contentType || item.media.contentType;
+      
       return (
         <div className="relative pb-[75%] w-full mb-2 overflow-hidden rounded">
           <img
-            src={`data:${item.media.contentType};base64,${item.media.data}`}
+            src={imageData ? `data:${imageContentType};base64,${imageData}` : ''}
             alt={item.title}
             className="absolute top-0 left-0 w-full h-full object-cover"
           />
