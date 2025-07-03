@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Tag, Calendar, FileText, Pin } from 'lucide-react';
+import { Tag, Calendar, FileText, Pin, Download } from 'lucide-react';
 
 interface Project {
   _id: string;
@@ -72,6 +72,20 @@ export default function Projecten() {
 
   const closeProjectModal = () => {
     setSelectedProject(null);
+  };
+
+  // Handle download click
+  const handleDownload = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation(); // Prevent card click from opening modal
+    
+    if (project.document && project.document.data) {
+      const link = document.createElement('a');
+      link.href = `data:${project.document.contentType};base64,${project.document.data}`;
+      link.download = project.document.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   // If loading, show loading state
@@ -146,6 +160,20 @@ export default function Projecten() {
                     </span>
                   </div>
                   <p className="text-gray-600 mt-2 line-clamp-3">{project.description}</p>
+                  
+                  {/* Download button on card */}
+                  {project.document && project.document.data && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={(e) => handleDownload(e, project)}
+                        className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-md text-sm transition-colors w-full justify-center"
+                        title={`Download ${project.document.filename}`}
+                      >
+                        <Download size={16} className="mr-2" />
+                        Download Document
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

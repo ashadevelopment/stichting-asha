@@ -26,20 +26,20 @@ export interface Project {
   title: string;
   description: string;
   longDescription?: string;
+  author: string;
+  projectDate: string;
+  tags?: string[];
   image?: {
     filename: string;
     contentType: string;
     data: string;
   };
-  document?: {
+  documents?: Array<{
     filename: string;
     contentType: string;
     data: string;
-  };
-  projectDate: string;
-  author: string;
-  tags?: string[];
-  pinned?: boolean; // Add this line
+  }>;
+  pinned?: boolean;
 }
 
 

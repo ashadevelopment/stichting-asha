@@ -3,6 +3,13 @@ import { NextResponse, NextRequest } from "next/server"
 import dbConnect from "../../../../lib/mongodb"
 import Project from "../../../../lib/models/Project"
 
+// Define the document type
+interface DocumentData {
+  filename: string;
+  contentType: string;
+  data: string;
+}
+
 // GET bestandsinhoud voor een specifiek project
 export async function GET(req: NextRequest) {
   try {
@@ -11,8 +18,8 @@ export async function GET(req: NextRequest) {
     const url = req.nextUrl
     const id = url.pathname.split("/")[4]
     
-
     const fileType = url.searchParams.get('type')
+    const documentIndex = url.searchParams.get('index') // For multiple documents
     
     if (!['image', 'document'].includes(fileType || '')) {
       return NextResponse.json({ error: "Ongeldig bestandstype" }, { status: 400 })
@@ -24,7 +31,32 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Project niet gevonden" }, { status: 404 })
     }
     
-    const file = fileType === 'image' ? project.image : project.document
+    let file;
+    
+    if (fileType === 'image') {
+      file = project.image
+    } else if (fileType === 'document') {
+      // Handle multiple documents
+      if (project.documents && project.documents.length > 0) {
+        if (documentIndex !== null) {
+          const index = parseInt(documentIndex, 10)
+          if (index >= 0 && index < project.documents.length) {
+            file = project.documents[index]
+          } else {
+            return NextResponse.json({ error: "Document index buiten bereik" }, { status: 400 })
+          }
+        } else {
+          // Return all documents if no index specified
+          return NextResponse.json({
+            documents: project.documents.map((doc: DocumentData) => ({
+              filename: doc.filename,
+              contentType: doc.contentType,
+              data: doc.data
+            }))
+          })
+        }
+      }
+    }
     
     if (!file || !file.data) {
       return NextResponse.json({ error: "Bestand niet gevonden" }, { status: 404 })
