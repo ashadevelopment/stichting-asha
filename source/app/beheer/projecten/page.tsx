@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload, Pin, PinOff, X } from 'lucide-react';
+import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -23,11 +23,8 @@ export default function ProjectenPage() {
   const [projectDate, setProjectDate] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
-  // Changed from single document to multiple documents
-  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
-  const [documentPreviews, setDocumentPreviews] = useState<string[]>([]);
-  
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentName, setDocumentName] = useState<string>('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -71,8 +68,8 @@ export default function ProjectenPage() {
     setProjectDate('');
     setImageFile(null);
     setImagePreview(null);
-    setDocumentFiles([]);
-    setDocumentPreviews([]);
+    setDocumentFile(null);
+    setDocumentName('');
     setIsEditing(false);
     setCurrentProject(null);
   };
@@ -91,31 +88,11 @@ export default function ProjectenPage() {
   };
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    // Check if adding these files would exceed the limit
-    if (documentFiles.length + files.length > 3) {
-      setError('Je kunt maximaal 3 documenten toevoegen per project');
-      setTimeout(() => setError(''), 3000);
-      return;
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocumentFile(file);
+      setDocumentName(file.name);
     }
-
-    // Add new files to existing ones
-    const newFiles = [...documentFiles, ...files];
-    const newPreviews = [...documentPreviews, ...files.map(file => file.name)];
-    
-    setDocumentFiles(newFiles);
-    setDocumentPreviews(newPreviews);
-    
-    // Reset the input
-    e.target.value = '';
-  };
-
-  const removeDocument = (index: number) => {
-    const newFiles = documentFiles.filter((_, i) => i !== index);
-    const newPreviews = documentPreviews.filter((_, i) => i !== index);
-    setDocumentFiles(newFiles);
-    setDocumentPreviews(newPreviews);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,31 +100,28 @@ export default function ProjectenPage() {
     setError('');
     setSuccessMessage('');
     
-    let imageData: FileData | undefined;
-    let documentsData: FileData[] = [];
+    let imageData: FileData | undefined
+    let documentData: FileData | undefined
 
     if (imageFile) {
-      const bytes = await imageFile.arrayBuffer();
+      const bytes = await imageFile.arrayBuffer()
       imageData = {
         filename: imageFile.name,
         contentType: imageFile.type,
         data: Buffer.from(bytes).toString('base64'),
-      };
-    }
-
-    // Process multiple documents
-    if (documentFiles.length > 0) {
-      for (const file of documentFiles) {
-        const bytes = await file.arrayBuffer();
-        documentsData.push({
-          filename: file.name,
-          contentType: file.type,
-          data: Buffer.from(bytes).toString('base64'),
-        });
       }
     }
 
-    // Build up your payload
+    if (documentFile) {
+      const bytes = await documentFile.arrayBuffer()
+      documentData = {
+        filename: documentFile.name,
+        contentType: documentFile.type,
+        data: Buffer.from(bytes).toString('base64'),
+      }
+    }
+
+    // Build up your payload, only spreading in the optional fields if they exist
     const projectData: Project = {
       title,
       description,
@@ -157,9 +131,10 @@ export default function ProjectenPage() {
         : new Date().toISOString(),
       author: session?.user?.name || 'Onbekend',
       tags: tags.split(',').map((t) => t.trim()),
+      // these two lines will only add the property if it's defined
       ...(imageData && { image: imageData }),
-      ...(documentsData.length > 0 && { documents: documentsData }),
-    };
+      ...(documentData && { document: documentData }),
+    }
 
     try {
       const url = isEditing && currentProject?._id 
@@ -192,13 +167,13 @@ export default function ProjectenPage() {
         setSuccessMessage('Project succesvol toegevoegd');
       }
       
-      // Show success message for 3 seconds
+      // Laat het succesbercht 3 seconden zien
       setTimeout(() => setSuccessMessage(''), 3000);
 
       // Reset form
       resetForm();
       
-      // On mobile, close the form after saving
+      // Op mobiel, sluit het formulier na opslaan
       if (window.innerWidth < 768) {
         setShowForm(false);
       }
@@ -215,17 +190,19 @@ export default function ProjectenPage() {
     setLongDescription(project.longDescription || '');
     setTags(project.tags?.join(', ') || '');
     
-    // Convert projectDate to the correct format for date input field (YYYY-MM-DD)
+    // Converteer de projectDate naar het juiste formaat voor het date-inputveld (YYYY-MM-DD)
     if (project.projectDate) {
       try {
         const date = new Date(project.projectDate);
+        // Controleer of het een geldige datum is
         if (!isNaN(date.getTime())) {
+          // Converteer naar YYYY-MM-DD formaat voor het HTML date input element
           setProjectDate(date.toISOString().split('T')[0]);
         } else {
           setProjectDate('');
         }
       } catch (error) {
-        console.error("Error processing date:", error);
+        console.error("Fout bij het verwerken van de datum:", error);
         setProjectDate('');
       }
     } else {
@@ -237,25 +214,25 @@ export default function ProjectenPage() {
     // Reset file inputs
     setImageFile(null);
     setImagePreview(null);
-    setDocumentFiles([]);
-    setDocumentPreviews([]);
+    setDocumentFile(null);
+    setDocumentName('');
     
-    // If project has image, show preview
+    // Als het project een afbeelding heeft, toon een preview
     if (project.image && project.image.data) {
       setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
     }
     
-    // If project has documents, show filenames
-    if (project.documents && project.documents.length > 0) {
-      setDocumentPreviews(project.documents.map(doc => doc.filename));
+    // Als het project een document heeft, toon de bestandsnaam
+    if (project.document && project.document.filename) {
+      setDocumentName(project.document.filename);
     }
     
-    // Always show form when editing and scroll to top
+    // Altijd het formulier tonen bij bewerken en naar boven scrollen
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Function to delete a project
+  // Functie voor verwijderen van een project
   const handleDeleteClick = (projectId: string) => {
     if (!projectId) {
       console.error('Invalid project ID');
@@ -278,10 +255,10 @@ export default function ProjectenPage() {
         throw new Error(errorData.error || 'Fout bij verwijderen van project');
       }
       
-      // Remove project from local state
+      // Verwijder het project uit de lokale state
       setProjects(projects.filter(p => p._id !== projectToDelete));
       
-      // Reset form if the deleted project is currently being edited
+      // Reset formulier indien het verwijderde project momenteel wordt bewerkt
       if (currentProject?._id === projectToDelete) {
         resetForm();
       }
@@ -302,51 +279,6 @@ export default function ProjectenPage() {
     setProjectToDelete(null);
   };
 
-  // Handle pin/unpin functionality
-  const handlePinToggle = async (projectId: string) => {
-    try {
-      const project = projects.find(p => p._id === projectId);
-      if (!project) return;
-
-      const currentlyPinned = projects.filter(p => p.pinned).length;
-      
-      // If trying to pin and already at limit, show error
-      if (!project.pinned && currentlyPinned >= 3) {
-        setError('Je kunt maximaal 3 projecten vastpinnen');
-        setTimeout(() => setError(''), 3000);
-        return;
-      }
-
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...project,
-          pinned: !project.pinned
-        })
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Fout bij bijwerken van project');
-      }
-
-      const updatedProject = await res.json();
-      
-      // Update projects list
-      setProjects(projects.map(p => 
-        p._id === updatedProject._id ? updatedProject : p
-      ));
-      
-      setSuccessMessage(project.pinned ? 'Project losgepind' : 'Project vastgepind');
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error: any) {
-      console.error('Error toggling pin:', error);
-      setError(error.message || 'Er is een fout opgetreden bij het vastpinnen');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
   // Render check for administrators
   if (session?.user?.role !== 'beheerder' && session?.user?.role !== 'developer') {
     return (
@@ -359,23 +291,11 @@ export default function ProjectenPage() {
     );
   }
 
-  // Get pinned count for display
-  const pinnedCount = projects.filter(p => p.pinned).length;
-
   return (
     <div className="text-gray-800 p-4">
       <h2 className="text-xl sm:text-3xl font-bold mb-4 flex items-center gap-2">
         <FolderPlus size={24} /> Projecten
       </h2>
-
-      {/* Pinned Projects Info */}
-      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-        <p className="text-sm text-blue-700">
-          <Pin size={16} className="inline mr-1" />
-          Vastgepinde projecten: {pinnedCount}/3 
-          {pinnedCount > 0 && <span className="ml-2 text-xs">(Deze verschijnen bovenaan op de hoofdpagina)</span>}
-        </p>
-      </div>
 
       {/* Error Message */}
       {error && (
@@ -494,49 +414,27 @@ export default function ProjectenPage() {
             </div>
           </div>
 
-          {/* Updated Documents Section */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Documenten (Optioneel - Max 3)
-              <span className="text-xs text-gray-500 ml-2">({documentFiles.length}/3)</span>
-            </label>
+            <label className="block text-sm font-medium mb-1">Document (Optioneel)</label>
             <div className="flex flex-col gap-3">
-              {documentFiles.length < 3 && (
-                <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
-                  <Upload size={18} />
-                  <span>Kies document(en)</span>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx"
-                    onChange={handleDocumentChange}
-                    className="hidden"
-                    multiple
-                  />
-                </label>
-              )}
+              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                <Upload size={18} />
+                <span>Kies een document</span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleDocumentChange}
+                  className="hidden"
+                />
+              </label>
               
-              {documentPreviews.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-gray-500">Geselecteerde documenten:</p>
-                  {documentPreviews.map((filename, index) => (
-                    <div key={index} className="flex items-center justify-between gap-2 text-sm border border-gray-200 p-2 rounded">
-                      <div className="flex items-center gap-2">
-                        <FileText size={18} className="text-blue-600" />
-                        <span className="truncate">{filename}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeDocument(index)}
-                        className="text-red-500 hover:text-red-700 flex-shrink-0"
-                        title="Document verwijderen"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  ))}
+              {documentName ? (
+                <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
+                  <FileText size={18} className="text-blue-600" />
+                  <span>{documentName}</span>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">Nog geen documenten geselecteerd</p>
+                <p className="text-sm text-gray-500">Nog geen document geselecteerd</p>
               )}
             </div>
           </div>
@@ -577,19 +475,10 @@ export default function ProjectenPage() {
           <p className="text-gray-500 text-center py-4">Geen projecten gevonden.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects
-              .sort((a, b) => {
-                // Sort pinned projects first
-                if (a.pinned && !b.pinned) return -1;
-                if (!a.pinned && b.pinned) return 1;
-                return new Date(b.projectDate).getTime() - new Date(a.projectDate).getTime();
-              })
-              .map((project) => (
+            {projects.map((project) => (
               <div 
                 key={project._id} 
-                className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition hover:shadow-md ${
-                  project.pinned ? 'ring-2 ring-blue-200 bg-blue-50' : ''
-                }`}
+                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition hover:shadow-md"
               >
                 {/* Project image thumbnail with responsive aspect ratio */}
                 {project.image && (
@@ -606,17 +495,6 @@ export default function ProjectenPage() {
                   <h3 className="font-semibold text-lg break-words pr-8">{project.title}</h3>
                   
                   <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => handlePinToggle(project._id!)}
-                      className={`transition-colors ${
-                        project.pinned 
-                          ? 'text-blue-600 hover:text-blue-800' 
-                          : 'text-gray-400 hover:text-blue-600'
-                      }`}
-                      title={project.pinned ? 'Project lospinnen' : 'Project vastpinnen'}
-                    >
-                      {project.pinned ? <Pin size={18} /> : <PinOff size={18} />}
-                    </button>
                     <button
                       onClick={() => handleEditProject(project)}
                       className="text-blue-600 hover:text-blue-800"
@@ -657,21 +535,14 @@ export default function ProjectenPage() {
                   </div>
                 )}
                 
-                {/* Updated Documents Display */}
-                {project.documents && project.documents.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    <p className="text-xs text-gray-500 font-medium">Documenten:</p>
-                    {project.documents.map((doc, index) => (
-                      <a
-                        key={index}
-                        href={`data:${doc.contentType};base64,${doc.data}`}
-                        download={doc.filename}
-                        className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 block"
-                      >
-                        <Download size={14} /> {doc.filename}
-                      </a>
-                    ))}
-                  </div>
+                {project.document && (
+                  <a
+                    href={`data:${project.document.contentType};base64,${project.document.data}`}
+                    download={project.document.filename}
+                    className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 mt-2"
+                  >
+                    <Download size={14} /> Download Document
+                  </a>
                 )}
               </div>
             ))}
