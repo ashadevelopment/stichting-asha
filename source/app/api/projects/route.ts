@@ -43,10 +43,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check if trying to pin and if pin limit is reached
+    if (body.pinned) {
+      const pinnedCount = await Project.countDocuments({ pinned: true });
+      if (pinnedCount >= 3) {
+        return NextResponse.json(
+          { error: "Je kunt maximaal 3 projecten vastpinnen" },
+          { status: 400 }
+        );
+      }
+    }
+
     const projectData = {
       ...body,
       author: session.user.name || "Anoniem",
       projectDate: body.projectDate || new Date(),
+      pinned: body.pinned || false,
     };
 
     const project = await Project.create(projectData);
@@ -91,6 +103,20 @@ export async function PUT(req: NextRequest) {
         { error: "Project ID, titel en beschrijving zijn verplicht" },
         { status: 400 }
       );
+    }
+
+    // Check if trying to pin and if pin limit is reached
+    if (body.pinned) {
+      const pinnedCount = await Project.countDocuments({ 
+        pinned: true, 
+        _id: { $ne: body.id } // Exclude current project from count
+      });
+      if (pinnedCount >= 3) {
+        return NextResponse.json(
+          { error: "Je kunt maximaal 3 projecten vastpinnen" },
+          { status: 400 }
+        );
+      }
     }
 
     const project = await Project.findByIdAndUpdate(body.id, { $set: body }, { new: true });

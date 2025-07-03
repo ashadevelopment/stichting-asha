@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload } from 'lucide-react';
+import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload, Pin, PinOff } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -279,6 +279,51 @@ export default function ProjectenPage() {
     setProjectToDelete(null);
   };
 
+  // Handle pin/unpin functionality
+  const handlePinToggle = async (projectId: string) => {
+    try {
+      const project = projects.find(p => p._id === projectId);
+      if (!project) return;
+
+      const currentlyPinned = projects.filter(p => p.pinned).length;
+      
+      // If trying to pin and already at limit, show error
+      if (!project.pinned && currentlyPinned >= 3) {
+        setError('Je kunt maximaal 3 projecten vastpinnen');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...project,
+          pinned: !project.pinned
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Fout bij bijwerken van project');
+      }
+
+      const updatedProject = await res.json();
+      
+      // Update projects list
+      setProjects(projects.map(p => 
+        p._id === updatedProject._id ? updatedProject : p
+      ));
+      
+      setSuccessMessage(project.pinned ? 'Project losgepind' : 'Project vastgepind');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error: any) {
+      console.error('Error toggling pin:', error);
+      setError(error.message || 'Er is een fout opgetreden bij het vastpinnen');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   // Render check for administrators
   if (session?.user?.role !== 'beheerder' && session?.user?.role !== 'developer') {
     return (
@@ -291,11 +336,23 @@ export default function ProjectenPage() {
     );
   }
 
+  // Get pinned count for display
+  const pinnedCount = projects.filter(p => p.pinned).length;
+
   return (
     <div className="text-gray-800 p-4">
       <h2 className="text-xl sm:text-3xl font-bold mb-4 flex items-center gap-2">
         <FolderPlus size={24} /> Projecten
       </h2>
+
+      {/* Pinned Projects Info */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+        <p className="text-sm text-blue-700">
+          <Pin size={16} className="inline mr-1" />
+          Vastgepinde projecten: {pinnedCount}/3 
+          {pinnedCount > 0 && <span className="ml-2 text-xs">(Deze verschijnen bovenaan op de hoofdpagina)</span>}
+        </p>
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -475,10 +532,19 @@ export default function ProjectenPage() {
           <p className="text-gray-500 text-center py-4">Geen projecten gevonden.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
+            {projects
+              .sort((a, b) => {
+                // Sort pinned projects first
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.projectDate).getTime() - new Date(a.projectDate).getTime();
+              })
+              .map((project) => (
               <div 
                 key={project._id} 
-                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition hover:shadow-md"
+                className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition hover:shadow-md ${
+                  project.pinned ? 'ring-2 ring-blue-200 bg-blue-50' : ''
+                }`}
               >
                 {/* Project image thumbnail with responsive aspect ratio */}
                 {project.image && (
@@ -495,6 +561,17 @@ export default function ProjectenPage() {
                   <h3 className="font-semibold text-lg break-words pr-8">{project.title}</h3>
                   
                   <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handlePinToggle(project._id!)}
+                      className={`transition-colors ${
+                        project.pinned 
+                          ? 'text-blue-600 hover:text-blue-800' 
+                          : 'text-gray-400 hover:text-blue-600'
+                      }`}
+                      title={project.pinned ? 'Project lospinnen' : 'Project vastpinnen'}
+                    >
+                      {project.pinned ? <Pin size={18} /> : <PinOff size={18} />}
+                    </button>
                     <button
                       onClick={() => handleEditProject(project)}
                       className="text-blue-600 hover:text-blue-800"

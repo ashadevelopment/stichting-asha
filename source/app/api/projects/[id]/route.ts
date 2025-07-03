@@ -66,6 +66,20 @@ export async function PUT(req: NextRequest) {
       )
     }
     
+    // Check if trying to pin and if pin limit is reached
+    if (body.pinned) {
+      const pinnedCount = await Project.countDocuments({ 
+        pinned: true, 
+        _id: { $ne: id } // Exclude current project from count
+      });
+      if (pinnedCount >= 3) {
+        return NextResponse.json(
+          { error: "Je kunt maximaal 3 projecten vastpinnen" },
+          { status: 400 }
+        );
+      }
+    }
+    
     const updatedProject = await Project.findByIdAndUpdate(
       id,
       body,

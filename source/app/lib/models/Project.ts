@@ -35,7 +35,11 @@ const ProjectSchema = new Schema(
     },
     tags: [{
       type: String
-    }]
+    }],
+    pinned: {
+      type: Boolean,
+      default: false
+    }
   },
   { timestamps: true }
 )

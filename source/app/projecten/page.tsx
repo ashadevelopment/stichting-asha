@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Tag, Calendar, FileText } from 'lucide-react';
+import { Tag, Calendar, FileText, Pin } from 'lucide-react';
 
 interface Project {
   _id: string;
@@ -23,6 +23,7 @@ interface Project {
   projectDate: string;
   author: string;
   tags?: string[];
+  pinned?: boolean;
 }
 
 export default function Projecten() {
@@ -53,6 +54,16 @@ export default function Projecten() {
 
     fetchProjects();
   }, []);
+
+  // Sort projects: pinned first, then by date
+  const sortedProjects = [...projects].sort((a, b) => {
+    // Sort pinned projects first
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    
+    // Then sort by date (newest first)
+    return new Date(b.projectDate).getTime() - new Date(a.projectDate).getTime();
+  });
 
   // Modal handlers
   const openProjectModal = (project: Project) => {
@@ -91,12 +102,21 @@ export default function Projecten() {
           <p className="text-center text-gray-500">Momenteel geen projecten beschikbaar.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project) => (
+            {sortedProjects.map((project) => (
               <div
                 key={project._id}
-                className="bg-white shadow-lg rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105"
+                className={`bg-white shadow-lg rounded-lg overflow-hidden cursor-pointer transition-all hover:scale-105 relative ${
+                  project.pinned ? 'ring-2 ring-blue-400 shadow-blue-200' : ''
+                }`}
                 onClick={() => openProjectModal(project)}
               >
+                {/* Pinned indicator */}
+                {project.pinned && (
+                  <div className="absolute top-2 right-2 z-10 bg-blue-600 text-white p-2 rounded-full shadow-lg">
+                    <Pin size={16} />
+                  </div>
+                )}
+
                 {project.image && project.image.data && (
                   <div className="h-56 overflow-hidden">
                     <img 
@@ -107,7 +127,9 @@ export default function Projecten() {
                   </div>
                 )}
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#1E2A78] break-words min-h-[4rem]">{project.title}</h3>
+                  <h3 className="text-xl font-semibold text-[#1E2A78] break-words min-h-[4rem]">
+                    {project.title}
+                  </h3>
                   <div className="flex items-center text-gray-500 text-sm mt-2">
                     <Calendar size={16} className="mr-2 shrink-0" />
                     <span className="truncate">
@@ -143,9 +165,16 @@ export default function Projecten() {
         >
           {/* Header with Close Button - sticky for mobile */}
           <div className="sticky top-0 z-10 bg-white border-b p-4 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-[#1E2A78] break-words pr-8">
-              {selectedProject.title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-[#1E2A78] break-words pr-8">
+                {selectedProject.title}
+              </h2>
+              {selectedProject.pinned && (
+                <div className="bg-blue-600 text-white p-1 rounded-full">
+                  <Pin size={14} />
+                </div>
+              )}
+            </div>
             
             {/* Close Button */}
             <button 

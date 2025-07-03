@@ -22,17 +22,24 @@ export interface FileData {
 }
 
 export interface Project {
-  _id?: string
-  title: string
-  description: string
-  longDescription?: string
-  /** now optional */
-  image?: FileData
-  /** now optional */
-  document?: FileData
-  projectDate: string
-  author: string
-  tags: string[]
+  _id?: string;
+  title: string;
+  description: string;
+  longDescription?: string;
+  image?: {
+    filename: string;
+    contentType: string;
+    data: string;
+  };
+  document?: {
+    filename: string;
+    contentType: string;
+    data: string;
+  };
+  projectDate: string;
+  author: string;
+  tags?: string[];
+  pinned?: boolean; // Add this line
 }
 
 
