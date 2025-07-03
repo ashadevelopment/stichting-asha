@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../lib/authOptions";
 import { getMediaModel } from "../../lib/models/Media";
 import dbConnect from "../../lib/mongodb";
-import ActivityModel from "../../lib/models/Activity";
 
 // Helper function to create thumbnail
 function createThumbnail(base64Data: string, contentType: string): Promise<string> {
@@ -162,14 +161,6 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     await dbConnect();
-    await ActivityModel.create({
-      type: 'create',
-      entityType: 'media',
-      entityId: newMedia._id,
-      entityName: title,
-      performedBy: session.user?.email || 'Unknown',
-      performedByName: session.user?.name || 'Unknown'
-    });
 
     return NextResponse.json({ 
       message: 'Media uploaded successfully',

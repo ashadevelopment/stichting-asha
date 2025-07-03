@@ -8,7 +8,7 @@ import Activity from '../models/Activity';
 export type ActionType = 'create' | 'update' | 'delete' | 'details';
 
 // Define entity types
-export type EntityType = 'user' | 'volunteer' | 'project' | 'media' | 'event' | 'notice' | 'contactSettings' | 'details';
+export type EntityType = 'user' | 'volunteer' | 'project' | 'event' | 'notice' | 'contactSettings' | 'details';
 
 // Define the handler function type
 type ApiHandler = (req: NextRequest) => Promise<NextResponse>;
