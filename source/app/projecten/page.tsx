@@ -90,7 +90,7 @@ export default function Projecten() {
         {projects.length === 0 ? (
           <p className="text-center text-gray-500">Momenteel geen projecten beschikbaar.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {projects.map((project) => (
               <div
                 key={project._id}
@@ -98,7 +98,7 @@ export default function Projecten() {
                 onClick={() => openProjectModal(project)}
               >
                 {project.image && project.image.data && (
-                  <div className="h-48 overflow-hidden">
+                  <div className="h-56 overflow-hidden">
                     <img 
                       src={`data:${project.image.contentType};base64,${project.image.data}`} 
                       alt={project.title} 
@@ -107,7 +107,7 @@ export default function Projecten() {
                   </div>
                 )}
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold text-[#1E2A78] break-words min-h-[3.5rem]">{project.title}</h3>
+                  <h3 className="text-xl font-semibold text-[#1E2A78] break-words min-h-[4rem]">{project.title}</h3>
                   <div className="flex items-center text-gray-500 text-sm mt-2">
                     <Calendar size={16} className="mr-2 shrink-0" />
                     <span className="truncate">
@@ -138,7 +138,7 @@ export default function Projecten() {
         onClick={closeProjectModal}
       >
         <div 
-          className="bg-white rounded-xl max-w-2xl w-full mx-auto my-auto overflow-y-auto relative flex flex-col max-h-[90vh]"
+          className="bg-white rounded-xl max-w-2xl w-full mx-auto my-auto overflow-y-auto relative flex flex-col max-h-[300vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header with Close Button - sticky for mobile */}
@@ -172,7 +172,7 @@ export default function Projecten() {
 
           {/* Project Image */}
           {selectedProject.image && selectedProject.image.data && (
-            <div className="w-full h-48 md:h-64 overflow-hidden">
+            <div className="w-full h-64 md:h-80 overflow-hidden">
               <img 
                 src={`data:${selectedProject.image.contentType};base64,${selectedProject.image.data}`}
                 alt={selectedProject.title} 
