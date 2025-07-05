@@ -1,4 +1,3 @@
-// lib/models/Project.ts
 import mongoose, { Schema } from "mongoose"
 
 const ProjectSchema = new Schema(
@@ -12,24 +11,30 @@ const ProjectSchema = new Schema(
       type: String,
       required: true
     },
+    longDescription: {
+      type: String
+    },
     image: {
       filename: String,
       contentType: String,
-      data: Buffer
+      data: String  // Base64 encoded
     },
-    documents: [{
+    document: {
       filename: String,
       contentType: String,
-      data: Buffer
-    }],
+      data: String  // Base64 encoded
+    },
     projectDate: {
-      type: Date,
-      default: Date.now
+      type: mongoose.Schema.Types.Mixed,
+      default: () => new Date()
     },
     author: {
       type: String,
       required: true
     },
+    tags: [{
+      type: String
+    }],
     pinned: {
       type: Boolean,
       default: false

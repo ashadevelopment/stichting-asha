@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Tag, Calendar, FileText, Pin, Download, File, ChevronDown, ChevronUp } from 'lucide-react';
+import { Tag, Calendar, FileText, Pin } from 'lucide-react';
 
 interface Project {
   _id: string;
@@ -15,11 +15,11 @@ interface Project {
     contentType: string;
     data: string;
   };
-  documents?: Array<{
+  document?: {
     filename: string;
     contentType: string;
     data: string;
-  }>;
+  };
   projectDate: string;
   author: string;
   tags?: string[];
@@ -31,7 +31,6 @@ export default function Projecten() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAllDocuments, setShowAllDocuments] = useState(false);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -69,49 +68,10 @@ export default function Projecten() {
   // Modal handlers
   const openProjectModal = (project: Project) => {
     setSelectedProject(project);
-    setShowAllDocuments(false); // Reset document view when opening modal
   };
 
   const closeProjectModal = () => {
     setSelectedProject(null);
-    setShowAllDocuments(false);
-  };
-
-  // Get file icon based on content type
-  const getFileIcon = (contentType: string) => {
-    if (contentType.includes('pdf')) return '📄';
-    if (contentType.includes('word') || contentType.includes('document')) return '📝';
-    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '📊';
-    if (contentType.includes('powerpoint') || contentType.includes('presentation')) return '📈';
-    return '📁';
-  };
-
-  // Handle individual document download
-  const handleDocumentDownload = (e: React.MouseEvent, doc: { filename: string; contentType: string; data: string }) => {
-    e.stopPropagation();
-    
-    const link = document.createElement('a');
-    link.href = `data:${doc.contentType};base64,${doc.data}`;
-    link.download = doc.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Handle download click on card
-  const handleCardDownload = (e: React.MouseEvent, project: Project) => {
-    e.stopPropagation(); // Prevent card click from opening modal
-    
-    if (project.documents && project.documents.length > 0) {
-      // Download the first document
-      const doc = project.documents[0];
-      const link = document.createElement('a');
-      link.href = `data:${doc.contentType};base64,${doc.data}`;
-      link.download = doc.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
   };
 
   // If loading, show loading state
@@ -186,28 +146,6 @@ export default function Projecten() {
                     </span>
                   </div>
                   <p className="text-gray-600 mt-2 line-clamp-3">{project.description}</p>
-                  
-                  {/* Document indicator and download button */}
-                  {project.documents && project.documents.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center text-gray-500 text-sm">
-                          <File size={16} className="mr-2" />
-                          <span>
-                            {project.documents.length} document{project.documents.length !== 1 ? 'en' : ''}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => handleCardDownload(e, project)}
-                        className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-md text-sm transition-colors w-full justify-center"
-                        title={`Download ${project.documents[0].filename}`}
-                      >
-                        <Download size={16} className="mr-2" />
-                        Download Document{project.documents.length > 1 ? 's' : ''}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
@@ -222,7 +160,7 @@ export default function Projecten() {
         onClick={closeProjectModal}
       >
         <div 
-          className="bg-white rounded-xl max-w-2xl w-full mx-auto my-auto overflow-y-auto relative flex flex-col max-h-[90vh]"
+          className="bg-white rounded-xl max-w-2xl w-full mx-auto my-auto overflow-y-auto relative flex flex-col max-h-[300vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header with Close Button - sticky for mobile */}
@@ -319,80 +257,17 @@ export default function Projecten() {
               </div>
             )}
 
-            {/* Documents Section */}
-            {selectedProject.documents && selectedProject.documents.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-[#1E2A78] flex items-center gap-2">
-                    <FileText size={20} />
-                    Project Documenten
-                    <span className="text-sm font-normal text-gray-500">
-                      ({selectedProject.documents.length})
-                    </span>
-                  </h3>
-                  
-                  {selectedProject.documents.length > 2 && (
-                    <button
-                      onClick={() => setShowAllDocuments(!showAllDocuments)}
-                      className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-                    >
-                      {showAllDocuments ? (
-                        <>
-                          <ChevronUp size={16} />
-                          Toon minder
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown size={16} />
-                          Toon alle ({selectedProject.documents.length})
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  {selectedProject.documents
-                    .slice(0, showAllDocuments ? undefined : 2)
-                    .map((doc, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <span className="text-2xl">{getFileIcon(doc.contentType)}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {doc.filename}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {doc.contentType.includes('pdf') ? 'PDF Document' :
-                               doc.contentType.includes('word') ? 'Word Document' :
-                               doc.contentType.includes('excel') ? 'Excel Spreadsheet' :
-                               doc.contentType.includes('powerpoint') ? 'PowerPoint Presentation' :
-                               'Document'}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => handleDocumentDownload(e, doc)}
-                          className="ml-3 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition-colors"
-                          title={`Download ${doc.filename}`}
-                        >
-                          <Download size={16} />
-                        </button>
-                      </div>
-                    ))}
-                </div>
-
-                {/* Download All Button for multiple documents */}
-                {selectedProject.documents.length > 1 && (
-                  <div className="mt-4 pt-3 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-2">
-                      Klik op individuele documenten om ze te downloaden
-                    </p>
-                  </div>
-                )}
+            {/* Document Download */}
+            {selectedProject.document && selectedProject.document.data && (
+              <div className="mt-4">
+                <a
+                  href={`data:${selectedProject.document.contentType};base64,${selectedProject.document.data}`}
+                  download={selectedProject.document.filename}
+                  className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md"
+                >
+                  <FileText size={20} className="mr-2" />
+                  Download Project Document
+                </a>
               </div>
             )}
           </div>

@@ -31,15 +31,15 @@ export interface Project {
     contentType: string;
     data: string;
   };
-  documents?: Array<{
+  document?: {
     filename: string;
     contentType: string;
     data: string;
-  }>;
+  };
   projectDate: string;
   author: string;
   tags?: string[];
-  pinned?: boolean;
+  pinned?: boolean; // Add this line
 }
 
 // Uitbreiden van NextAuth Session type om de rol toe te voegen

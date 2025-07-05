@@ -28,7 +28,6 @@ const UserSchema = new Schema({
   },
 });
 
-// 👇 Add this!
 UserSchema.set('toJSON', { virtuals: true });
 UserSchema.set('toObject', { virtuals: true });
 

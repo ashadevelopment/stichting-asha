@@ -1,164 +1,152 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, Trash2, X, File, Image, Pin, PinOff, Edit2, Save, XCircle } from 'lucide-react';
+import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload, Pin, PinOff } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import ConfirmationDialog from '../../../components/ConfirmationDialog';
+import { Project } from '../../lib/types';
 
-interface Project {
-  _id: string;
-  title: string;
-  description: string;
-  author: string;
-  projectDate: string;
-  pinned: boolean;
-  tags: string[];
-  image?: {
-    filename: string;
-    contentType: string;
-    data: string;
-  };
-  documents?: Array<{
-    filename: string;
-    contentType: string;
-    data: string;
-  }>;
-  createdAt: string;
+interface FileData {
+  filename: string;
+  contentType: string;
+  data: string;
 }
-
-const availableTags = [
-  'Gemeenschap',
-  'Onderwijs',
-  'Cultuur',
-  'Politiek',
-  'Sport',
-  'Zorg',
-  'Milieu',
-  'Economie',
-  'Jeugd',
-  'Senioren',
-  'Kunst',
-  'Evenementen'
-];
 
 export default function ProjectenPage() {
   const { data: session } = useSession();
-  const [projects, setProjects] = useState<Project[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [pinned, setPinned] = useState(false);
+  const [longDescription, setLongDescription] = useState('');
+  const [tags, setTags] = useState('');
   const [projectDate, setProjectDate] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentName, setDocumentName] = useState<string>('');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingProject, setEditingProject] = useState<string | null>(null);
-  const [editData, setEditData] = useState<{
-    title: string;
-    description: string;
-    projectDate: string;
-    tags: string[];
-    pinned: boolean;
-  }>({
-    title: '',
-    description: '',
-    projectDate: '',
-    tags: [],
-    pinned: false
-  });
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showForm, setShowForm] = useState(true);
 
-  // Confirmation dialogs
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  // Confirmation Dialog State
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false);
-  const [fileToDelete, setFileToDelete] = useState<{
-    projectId: string;
-    type: 'image' | 'document';
-    index?: number;
-    filename?: string;
-  } | null>(null);
 
   useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch('/api/projects');
+        
+        if (!res.ok) {
+          throw new Error('Fout bij ophalen van projecten');
+        }
+        
+        const data = await res.json();
+        setProjects(data);
+      } catch (err: any) {
+        console.error('Fout bij ophalen projecten:', err);
+        setError(err.message || 'Er is een fout opgetreden');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchProjects();
   }, []);
-
-  const fetchProjects = async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch('/api/projects');
-      
-      if (!res.ok) {
-        throw new Error('Fout bij ophalen van projecten');
-      }
-      
-      const data = await res.json();
-      setProjects(data);
-    } catch (err: any) {
-      setError(err.message || 'Er is een fout opgetreden');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setPinned(false);
+    setLongDescription('');
+    setTags('');
     setProjectDate('');
-    setSelectedTags([]);
     setImageFile(null);
-    setDocumentFiles([]);
-    setError('');
-    setSuccessMessage('');
+    setImagePreview(null);
+    setDocumentFile(null);
+    setDocumentName('');
+    setIsEditing(false);
+    setCurrentProject(null);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocumentFile(file);
+      setDocumentName(file.name);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setSuccessMessage('');
     
-    if (!title.trim()) {
-      setError('Titel is verplicht');
-      return;
-    }
-    
-    if (!description.trim()) {
-      setError('Beschrijving is verplicht');
-      return;
+    let imageData: FileData | undefined
+    let documentData: FileData | undefined
+
+    if (imageFile) {
+      const bytes = await imageFile.arrayBuffer()
+      imageData = {
+        filename: imageFile.name,
+        contentType: imageFile.type,
+        data: Buffer.from(bytes).toString('base64'),
+      }
     }
 
-    if (!projectDate) {
-      setError('Projectdatum is verplicht');
-      return;
+    if (documentFile) {
+      const bytes = await documentFile.arrayBuffer()
+      documentData = {
+        filename: documentFile.name,
+        contentType: documentFile.type,
+        data: Buffer.from(bytes).toString('base64'),
+      }
     }
 
-    if (documentFiles.length > 3) {
-      setError('Maximaal 3 documenten toegestaan');
-      return;
+    // Build up your payload, only spreading in the optional fields if they exist
+    const projectData: Project = {
+      title,
+      description,
+      longDescription,
+      projectDate: projectDate
+        ? new Date(projectDate).toISOString()
+        : new Date().toISOString(),
+      author: session?.user?.name || 'Onbekend',
+      tags: tags.split(',').map((t) => t.trim()),
+      // these two lines will only add the property if it's defined
+      ...(imageData && { image: imageData }),
+      ...(documentData && { document: documentData }),
     }
 
     try {
-      const formData = new FormData();
-      formData.append('title', title.trim());
-      formData.append('description', description.trim());
-      formData.append('projectDate', projectDate);
-      formData.append('pinned', pinned.toString());
-      formData.append('tags', JSON.stringify(selectedTags));
+      const url = isEditing && currentProject?._id 
+        ? `/api/projects/${currentProject._id}` 
+        : '/api/projects';
       
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
-      
-      documentFiles.forEach((file) => {
-        formData.append('documents', file);
-      });
+      const method = isEditing ? 'PUT' : 'POST';
 
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        body: formData,
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projectData)
       });
 
       if (!res.ok) {
@@ -167,75 +155,98 @@ export default function ProjectenPage() {
       }
 
       const savedProject = await res.json();
-      setProjects(prev => [savedProject, ...prev]);
-      setSuccessMessage('Project succesvol aangemaakt');
-      resetForm();
-      setShowForm(false);
-      setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Update projects list
+      if (isEditing) {
+        setProjects(projects.map(p => 
+          p._id === savedProject._id ? savedProject : p
+        ));
+        setSuccessMessage('Project succesvol bijgewerkt');
+      } else {
+        setProjects([savedProject, ...projects]);
+        setSuccessMessage('Project succesvol toegevoegd');
+      }
       
-    } catch (err: any) {
-      setError(err.message || 'Er is een fout opgetreden');
+      // Laat het succesbercht 3 seconden zien
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+      // Reset form
+      resetForm();
+      
+      // Op mobiel, sluit het formulier na opslaan
+      if (window.innerWidth < 768) {
+        setShowForm(false);
+      }
+    } catch (error: any) {
+      console.error('Error saving project:', error);
+      setError(error.message || 'Er is een fout opgetreden bij het opslaan van het project');
     }
   };
 
   const handleEditProject = (project: Project) => {
-    setEditingProject(project._id);
-    setEditData({
-      title: project.title,
-      description: project.description,
-      projectDate: project.projectDate || '',
-      tags: project.tags || [],
-      pinned: project.pinned
-    });
-  };
-
-  const handleSaveEdit = async (projectId: string) => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editData),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Fout bij bijwerken van project');
+    setCurrentProject(project);
+    setTitle(project.title);
+    setDescription(project.description);
+    setLongDescription(project.longDescription || '');
+    setTags(project.tags?.join(', ') || '');
+    
+    // Converteer de projectDate naar het juiste formaat voor het date-inputveld (YYYY-MM-DD)
+    if (project.projectDate) {
+      try {
+        const date = new Date(project.projectDate);
+        // Controleer of het een geldige datum is
+        if (!isNaN(date.getTime())) {
+          // Converteer naar YYYY-MM-DD formaat voor het HTML date input element
+          setProjectDate(date.toISOString().split('T')[0]);
+        } else {
+          setProjectDate('');
+        }
+      } catch (error) {
+        console.error("Fout bij het verwerken van de datum:", error);
+        setProjectDate('');
       }
-
-      const updatedProject = await res.json();
-      setProjects(prev => prev.map(p => p._id === projectId ? updatedProject : p));
-      setEditingProject(null);
-      setSuccessMessage('Project succesvol bijgewerkt');
-      setTimeout(() => setSuccessMessage(''), 3000);
-
-    } catch (err: any) {
-      setError(err.message || 'Er is een fout opgetreden');
+    } else {
+      setProjectDate('');
     }
+    
+    setIsEditing(true);
+    
+    // Reset file inputs
+    setImageFile(null);
+    setImagePreview(null);
+    setDocumentFile(null);
+    setDocumentName('');
+    
+    // Als het project een afbeelding heeft, toon een preview
+    if (project.image && project.image.data) {
+      setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
+    }
+    
+    // Als het project een document heeft, toon de bestandsnaam
+    if (project.document && project.document.filename) {
+      setDocumentName(project.document.filename);
+    }
+    
+    // Altijd het formulier tonen bij bewerken en naar boven scrollen
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCancelEdit = () => {
-    setEditingProject(null);
-    setEditData({
-      title: '',
-      description: '',
-      projectDate: '',
-      tags: [],
-      pinned: false
-    });
-  };
-
-  const handleDeleteProject = (projectId: string) => {
+  // Functie voor verwijderen van een project
+  const handleDeleteClick = (projectId: string) => {
+    if (!projectId) {
+      console.error('Invalid project ID');
+      return;
+    }
     setProjectToDelete(projectId);
-    setIsProjectDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const confirmDeleteProject = async () => {
+  const confirmDelete = async () => {
     if (!projectToDelete) return;
     
     try {
-      const res = await fetch(`/api/projects?id=${projectToDelete}`, {
+      const res = await fetch(`/api/projects/${projectToDelete}`, {
         method: 'DELETE'
       });
       
@@ -244,553 +255,386 @@ export default function ProjectenPage() {
         throw new Error(errorData.error || 'Fout bij verwijderen van project');
       }
       
-      setProjects(prev => prev.filter(p => p._id !== projectToDelete));
+      // Verwijder het project uit de lokale state
+      setProjects(projects.filter(p => p._id !== projectToDelete));
+      
+      // Reset formulier indien het verwijderde project momenteel wordt bewerkt
+      if (currentProject?._id === projectToDelete) {
+        resetForm();
+      }
+      
       setSuccessMessage('Project succesvol verwijderd');
       setTimeout(() => setSuccessMessage(''), 3000);
-      
-    } catch (error: any) {
-      setError(error.message || 'Er is een fout opgetreden');
-    } finally {
-      setIsProjectDialogOpen(false);
+      setIsDialogOpen(false);
       setProjectToDelete(null);
+    } catch (error: any) {
+      console.error('Error deleting project:', error);
+      setError(error.message || 'Er is een fout opgetreden bij het verwijderen van het project');
+      setIsDialogOpen(false);
     }
   };
 
-  const handleDeleteFile = (projectId: string, type: 'image' | 'document', index?: number, filename?: string) => {
-    setFileToDelete({ projectId, type, index, filename });
-    setIsFileDialogOpen(true);
+  const cancelDelete = () => {
+    setIsDialogOpen(false);
+    setProjectToDelete(null);
   };
 
-  const confirmDeleteFile = async () => {
-    if (!fileToDelete) return;
-    
+  // Handle pin/unpin functionality
+  const handlePinToggle = async (projectId: string) => {
     try {
-      const params = new URLSearchParams({
-        type: fileToDelete.type,
-        ...(fileToDelete.index !== undefined && { index: fileToDelete.index.toString() })
-      });
+      const project = projects.find(p => p._id === projectId);
+      if (!project) return;
+
+      const currentlyPinned = projects.filter(p => p.pinned).length;
       
-      const res = await fetch(`/api/projects/${fileToDelete.projectId}/file?${params}`, {
-        method: 'DELETE'
+      // If trying to pin and already at limit, show error
+      if (!project.pinned && currentlyPinned >= 3) {
+        setError('Je kunt maximaal 3 projecten vastpinnen');
+        setTimeout(() => setError(''), 3000);
+        return;
+      }
+
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...project,
+          pinned: !project.pinned
+        })
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Fout bij verwijderen van bestand');
+        throw new Error(errorData.error || 'Fout bij bijwerken van project');
       }
+
+      const updatedProject = await res.json();
       
       // Update projects list
-      setProjects(prevProjects => 
-        prevProjects.map(project => {
-          if (project._id === fileToDelete.projectId) {
-            const updatedProject = { ...project };
-            
-            if (fileToDelete.type === 'image') {
-              delete updatedProject.image;
-            } else if (fileToDelete.type === 'document' && fileToDelete.index !== undefined) {
-              if (updatedProject.documents) {
-                updatedProject.documents = updatedProject.documents.filter((_, i) => i !== fileToDelete.index);
-                if (updatedProject.documents.length === 0) {
-                  delete updatedProject.documents;
-                }
-              }
-            }
-            
-            return updatedProject;
-          }
-          return project;
-        })
-      );
-      
-      setSuccessMessage(`${fileToDelete.type === 'image' ? 'Afbeelding' : 'Document'} succesvol verwijderd`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-      
-    } catch (error: any) {
-      setError(error.message || 'Er is een fout opgetreden');
-    } finally {
-      setIsFileDialogOpen(false);
-      setFileToDelete(null);
-    }
-  };
-
-  const handleTogglePin = async (projectId: string, currentPinned: boolean) => {
-    try {
-      const res = await fetch(`/api/projects/${projectId}/pin`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ pinned: !currentPinned }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Fout bij wijzigen pin status');
-      }
-
-      setProjects(prev => prev.map(p => 
-        p._id === projectId ? { ...p, pinned: !currentPinned } : p
+      setProjects(projects.map(p => 
+        p._id === updatedProject._id ? updatedProject : p
       ));
-
-      setSuccessMessage(!currentPinned ? 'Project vastgepind' : 'Project losgemaakt');
+      
+      setSuccessMessage(project.pinned ? 'Project losgepind' : 'Project vastgepind');
       setTimeout(() => setSuccessMessage(''), 3000);
-
     } catch (error: any) {
-      setError(error.message || 'Er is een fout opgetreden');
+      console.error('Error toggling pin:', error);
+      setError(error.message || 'Er is een fout opgetreden bij het vastpinnen');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
-  const handleTagToggle = (tag: string, isEditMode: boolean = false) => {
-    if (isEditMode) {
-      setEditData(prev => ({
-        ...prev,
-        tags: prev.tags.includes(tag)
-          ? prev.tags.filter(t => t !== tag)
-          : [...prev.tags, tag]
-      }));
-    } else {
-      setSelectedTags(prev => 
-        prev.includes(tag) 
-          ? prev.filter(t => t !== tag)
-          : [...prev, tag]
-      );
-    }
-  };
-
-  const getFileIcon = (contentType: string) => {
-    if (contentType.includes('pdf')) return '📄';
-    if (contentType.includes('word') || contentType.includes('document')) return '📝';
-    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '📊';
-    if (contentType.includes('powerpoint') || contentType.includes('presentation')) return '📊';
-    return '📁';
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'dd MMM yyyy', { locale: nl });
-    } catch {
-      return dateString;
-    }
-  };
-
-  if (!session?.user || !session.user.role || !["beheerder", "developer"].includes(session.user.role)) {
+  // Render check for administrators
+  if (session?.user?.role !== 'beheerder' && session?.user?.role !== 'developer') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Toegang geweigerd</h1>
-          <p>Je moet ingelogd zijn als beheerder om deze pagina te bekijken.</p>
-        </div>
+      <div className="text-gray-800 p-4">
+        <h2 className="text-xl sm:text-3xl font-bold mb-4 flex items-center gap-2">
+          <FolderPlus size={24} /> Projecten
+        </h2>
+        <p className="text-red-500">Je hebt geen toegang tot deze pagina.</p>
       </div>
     );
   }
 
+  // Get pinned count for display
+  const pinnedCount = projects.filter(p => p.pinned).length;
+
   return (
     <div className="text-gray-800 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-0">
-            Projecten Beheer
-          </h1>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <FolderPlus size={20} />
-            {showForm ? 'Verberg Formulier' : 'Nieuw Project'}
-          </button>
+      <h2 className="text-xl sm:text-3xl font-bold mb-4 flex items-center gap-2">
+        <FolderPlus size={24} /> Projecten
+      </h2>
+
+      {/* Pinned Projects Info */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+        <p className="text-sm text-blue-700">
+          <Pin size={16} className="inline mr-1" />
+          Vastgepinde projecten: {pinnedCount}/3 
+          {pinnedCount > 0 && <span className="ml-2 text-xs">(Deze verschijnen bovenaan op de hoofdpagina)</span>}
+        </p>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4">
+          {error}
         </div>
+      )}
 
-        {/* Messages */}
-        {successMessage && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {successMessage}
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md mb-4">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Toggle Form Button - Only visible on small screens */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 text-sm mb-2"
+        >
+          <FolderPlus size={18} />
+          {showForm ? 'Verberg formulier' : isEditing ? 'Project bewerken' : 'Nieuw project toevoegen'}
+        </button>
+      </div>
+
+      {/* Project Form */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200 max-w-3xl space-y-4 sm:space-y-6 mb-6 sm:mb-10">
+          <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">
+            {isEditing ? 'Project bewerken' : 'Nieuw project toevoegen'}
+          </h3>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1">Projectnaam</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Bijv: Website Redesign"
+              className="w-full border border-gray-200 px-3 py-2 rounded text-sm"
+              required
+            />
           </div>
-        )}
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-            <button
-              onClick={() => setError('')}
-              className="ml-4 text-red-500 hover:text-red-700"
-            >
-              ×
-            </button>
+          <div>
+            <label className="block text-sm font-medium mb-1">Beschrijving</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Beschrijf het project hier..."
+              className="w-full border border-gray-200 px-3 py-2 rounded text-sm h-28 resize-none"
+              required
+            />
           </div>
-        )}
 
-        {/* Project Form */}
-        {showForm && (
-          <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow mb-8">
-            <h2 className="text-xl font-semibold mb-4">Nieuw Project Toevoegen</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Title */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">
-                  Titel *
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Uitgebreide Beschrijving (Optioneel)</label>
+            <textarea
+              value={longDescription}
+              onChange={(e) => setLongDescription(e.target.value)}
+              placeholder="Meer details over het project..."
+              className="w-full border border-gray-200 px-3 py-2 rounded text-sm h-28 resize-none"
+            />
+          </div>
 
-              {/* Description */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">
-                  Beschrijving *
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Tags (komma gescheiden)</label>
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="Bijv: cultuur, festival, gemeenschap"
+                className="w-full border border-gray-200 px-3 py-2 rounded text-sm"
+              />
+            </div>
 
-              {/* Project Date */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Projectdatum *
-                </label>
-                <input
-                  type="date"
-                  value={projectDate}
-                  onChange={(e) => setProjectDate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Projectdatum</label>
+              <input
+                type="date"
+                value={projectDate}
+                onChange={(e) => setProjectDate(e.target.value)}
+                className="w-full border border-gray-200 px-3 py-2 rounded text-sm"
+              />
+            </div>
+          </div>
 
-              {/* Pin checkbox */}
-              <div className="flex items-center">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={pinned}
-                    onChange={(e) => setPinned(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm font-medium">Project vastpinnen</span>
-                </label>
-              </div>
-
-              {/* Tags */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-2">
-                  Tags
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleTagToggle(tag)}
-                      className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                        selectedTags.includes(tag)
-                          ? 'bg-blue-500 text-white border-blue-500'
-                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Afbeelding
-                </label>
+          <div>
+            <label className="block text-sm font-medium mb-1">Afbeelding (Optioneel)</label>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                <ImagePlus size={18} />
+                <span>Kies een afbeelding</span>
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={handleImageChange}
+                  className="hidden"
                 />
-              </div>
+              </label>
+              
+              {imagePreview ? (
+                <div className="border border-gray-200 p-2 rounded">
+                  <p className="text-xs text-gray-500 mb-2">Voorbeeld:</p>
+                  <img 
+                    src={imagePreview} 
+                    alt="Afbeelding voorbeeld" 
+                    className="max-h-48 object-contain rounded" 
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Nog geen afbeelding geselecteerd</p>
+              )}
+            </div>
+          </div>
 
-              {/* Documents Upload */}
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Documenten (max 3)
-                </label>
+          <div>
+            <label className="block text-sm font-medium mb-1">Document (Optioneel)</label>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                <Upload size={18} />
+                <span>Kies een document</span>
                 <input
                   type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.txt,.xlsx,.pptx"
-                  onChange={(e) => setDocumentFiles(Array.from(e.target.files || []))}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx"
+                  onChange={handleDocumentChange}
+                  className="hidden"
                 />
-                {documentFiles.length > 0 && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    {documentFiles.length} document(en) geselecteerd
+              </label>
+              
+              {documentName ? (
+                <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
+                  <FileText size={18} className="text-blue-600" />
+                  <span>{documentName}</span>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Nog geen document geselecteerd</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <button
+              type="submit"
+              className="order-2 sm:order-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+            >
+              {isEditing ? 'Project Bijwerken' : 'Project Toevoegen'}
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => {
+                resetForm();
+                if (window.innerWidth < 768) {
+                  setShowForm(false);
+                }
+              }}
+              className="order-1 sm:order-2 bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm"
+            >
+              {isEditing ? 'Annuleren' : 'Reset'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Projects List */}
+      <div className="space-y-4">
+        <h3 className="text-lg sm:text-xl font-semibold mb-2">Bestaande Projecten</h3>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : projects.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">Geen projecten gevonden.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projects
+              .sort((a, b) => {
+                // Sort pinned projects first
+                if (a.pinned && !b.pinned) return -1;
+                if (!a.pinned && b.pinned) return 1;
+                return new Date(b.projectDate).getTime() - new Date(a.projectDate).getTime();
+              })
+              .map((project) => (
+              <div 
+                key={project._id} 
+                className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition hover:shadow-md ${
+                  project.pinned ? 'ring-2 ring-blue-200 bg-blue-50' : ''
+                }`}
+              >
+                {/* Project image thumbnail with responsive aspect ratio */}
+                {project.image && (
+                  <div className="relative pb-[56.25%] mb-3 overflow-hidden rounded-md">
+                    <img 
+                      src={`data:${project.image.contentType};base64,${project.image.data}`}
+                      alt={project.title} 
+                      className="absolute top-0 left-0 w-full h-full object-cover"
+                    />
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex gap-4 mt-6">
-              <button
-                type="submit"
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FolderPlus size={20} />
-                Project Toevoegen
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  resetForm();
-                  setShowForm(false);
-                }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Annuleren
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Projects List */}
-        <div className="space-y-4">
-          <h3 className="text-lg sm:text-xl font-semibold mb-2">
-            Projecten ({projects.length})
-          </h3>
-          
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : projects.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Geen projecten gevonden.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects.map((project) => (
-                <div 
-                  key={project._id} 
-                  className={`bg-white border rounded-lg p-4 shadow-sm transition hover:shadow-md ${
-                    project.pinned ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'
-                  }`}
-                >
-                  {/* Header with actions */}
-                  <div className="flex justify-between items-start mb-3">
-                    {editingProject === project._id ? (
-                      <input
-                        type="text"
-                        value={editData.title}
-                        onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-                        className="font-semibold text-lg border-b border-gray-300 focus:outline-none focus:border-blue-500 flex-1 mr-2"
-                      />
-                    ) : (
-                      <h3 className="font-semibold text-lg break-words pr-2">{project.title}</h3>
-                    )}
-                    
-                    <div className="flex gap-2 flex-shrink-0">
-                      {editingProject === project._id ? (
-                        <>
-                          <button
-                            onClick={() => handleSaveEdit(project._id)}
-                            className="text-green-600 hover:text-green-800 p-1"
-                            title="Opslaan"
-                          >
-                            <Save size={20} />
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="text-gray-600 hover:text-gray-800 p-1"
-                            title="Annuleren"
-                          >
-                            <XCircle size={20} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleEditProject(project)}
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                            title="Bewerken"
-                          >
-                            <Edit2 size={20} />
-                          </button>
-                          <button
-                            onClick={() => handleTogglePin(project._id, project.pinned)}
-                            className={`p-1 rounded ${
-                              project.pinned 
-                                ? 'text-yellow-600 hover:text-yellow-800' 
-                                : 'text-gray-400 hover:text-gray-600'
-                            }`}
-                            title={project.pinned ? 'Losmaken' : 'Vastpinnen'}
-                          >
-                            {project.pinned ? <Pin size={20} /> : <PinOff size={20} />}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProject(project._id)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Verwijder project"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-lg break-words pr-8">{project.title}</h3>
+                  
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handlePinToggle(project._id!)}
+                      className={`transition-colors ${
+                        project.pinned 
+                          ? 'text-blue-600 hover:text-blue-800' 
+                          : 'text-gray-400 hover:text-blue-600'
+                      }`}
+                      title={project.pinned ? 'Project lospinnen' : 'Project vastpinnen'}
+                    >
+                      {project.pinned ? <Pin size={18} /> : <PinOff size={18} />}
+                    </button>
+                    <button
+                      onClick={() => handleEditProject(project)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Bewerk project"
+                    >
+                      <FileText size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(project._id!)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Verwijder project"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-
-                  {/* Project Info */}
-                  <div className="space-y-2 mb-4">
-                    {editingProject === project._id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          value={editData.description}
-                          onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
-                          rows={3}
-                        />
-                        <input
-                          type="date"
-                          value={editData.projectDate}
-                          onChange={(e) => setEditData(prev => ({ ...prev, projectDate: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded text-sm"
-                        />
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={editData.pinned}
-                            onChange={(e) => setEditData(prev => ({ ...prev, pinned: e.target.checked }))}
-                            className="rounded"
-                          />
-                          <span className="text-sm">Vastpinnen</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-gray-600">{project.description}</p>
-                        <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                          <span>Door: {project.author}</span>
-                          <span>•</span>
-                          <span>
-                            {project.projectDate ? formatDate(project.projectDate) : formatDate(project.createdAt)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Tags */}
-                  {editingProject === project._id ? (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium mb-2">Tags</label>
-                      <div className="flex flex-wrap gap-1">
-                        {availableTags.map(tag => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => handleTagToggle(tag, true)}
-                            className={`px-2 py-1 rounded-full text-xs border transition-colors ${
-                              editData.tags.includes(tag)
-                                ? 'bg-blue-500 text-white border-blue-500'
-                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                            }`}
-                          >
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    project.tags && project.tags.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-1">
-                          {project.tags.map(tag => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  )}
-
-                  {/* Image */}
-                  {project.image && (
-                    <div className="mb-4">
-                      <div className="relative group">
-                        <img
-                          src={`data:${project.image.contentType};base64,${project.image.data}`}
-                          alt={project.title}
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <button
-                          onClick={() => handleDeleteFile(project._id, 'image')}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Verwijder afbeelding"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Documents */}
-                  {project.documents && project.documents.length > 0 && (
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-gray-700">
-                        Documenten ({project.documents.length})
-                      </h4>
-                      <div className="space-y-1">
-                        {project.documents.map((doc, index) => (
-                          <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-lg">{getFileIcon(doc.contentType)}</span>
-                              <span className="text-sm truncate">{doc.filename}</span>
-                            </div>
-                            <button
-                              onClick={() => handleDeleteFile(project._id, 'document', index, doc.filename)}
-                              className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
-                              title="Verwijder document"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Confirmation Dialogs */}
-        <ConfirmationDialog
-          isOpen={isProjectDialogOpen}
-          onCancel={() => setIsProjectDialogOpen(false)}
-          onConfirm={confirmDeleteProject}
-          title="Project verwijderen"
-          message="Weet je zeker dat je dit project wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden."
-        />
-
-        <ConfirmationDialog
-          isOpen={isFileDialogOpen}
-          onCancel={() => setIsFileDialogOpen(false)}
-          onConfirm={confirmDeleteFile}
-          title={`${fileToDelete?.type === 'image' ? 'Afbeelding' : 'Document'} verwijderen`}
-          message={`Weet je zeker dat je ${fileToDelete?.type === 'image' ? 'deze afbeelding' : 'dit document'} wilt verwijderen?`}
-        />
+                
+                <p className="text-sm text-gray-700 mb-2 line-clamp-2">{project.description}</p>
+                
+                <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                  <Calendar size={14} />
+                  <span>
+                    {format(new Date(project.projectDate), 'd MMM yyyy', { locale: nl })}
+                  </span>
+                </div>
+                
+                {project.tags && project.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {project.tags.map((tag) => (
+                      <span 
+                        key={tag} 
+                        className="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded-full flex items-center"
+                      >
+                        <Tag size={10} className="inline mr-1" />
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {project.document && (
+                  <a
+                    href={`data:${project.document.contentType};base64,${project.document.data}`}
+                    download={project.document.filename}
+                    className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 mt-2"
+                  >
+                    <Download size={14} /> Download Document
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Confirmation Dialog for Deleting Project */}
+      <ConfirmationDialog 
+        isOpen={isDialogOpen}
+        title="Project Verwijderen"
+        message="Weet u zeker dat u dit project wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
