@@ -4,36 +4,6 @@ import { authOptions } from "../../lib/authOptions";
 import { getMediaModel } from "../../lib/models/Media";
 import dbConnect from "../../lib/mongodb";
 
-// Helper function to create thumbnail
-function createThumbnail(base64Data: string, contentType: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!base64Data || !contentType.startsWith('image/')) {
-      resolve('');
-      return;
-    }
-
-    try {
-      // For now, just return a cropped version of the original
-      // In production, you might want to use a proper image processing library
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        canvas.width = 200;
-        canvas.height = 200;
-        ctx?.drawImage(img, 0, 0, 200, 200);
-        resolve(canvas.toDataURL(contentType, 0.7));
-      };
-      
-      img.onerror = () => resolve('');
-      img.src = `data:${contentType};base64,${base64Data}`;
-    } catch (error) {
-      resolve('');
-    }
-  });
-}
-
 // GET - Fetch media with pagination and size limits
 export async function GET(request: NextRequest) {
   try {
