@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, Trash2, X, File, Image, Pin, PinOff } from 'lucide-react';
+import { FolderPlus, Trash2, X, File, Image, Pin, PinOff, Edit2, Save, XCircle } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -14,6 +14,7 @@ interface Project {
   author: string;
   projectDate: string;
   pinned: boolean;
+  tags: string[];
   image?: {
     filename: string;
     contentType: string;
@@ -27,18 +28,49 @@ interface Project {
   createdAt: string;
 }
 
+const availableTags = [
+  'Gemeenschap',
+  'Onderwijs',
+  'Cultuur',
+  'Politiek',
+  'Sport',
+  'Zorg',
+  'Milieu',
+  'Economie',
+  'Jeugd',
+  'Senioren',
+  'Kunst',
+  'Evenementen'
+];
+
 export default function ProjectenPage() {
   const { data: session } = useSession();
   const [projects, setProjects] = useState<Project[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [pinned, setPinned] = useState(false);
+  const [projectDate, setProjectDate] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [editData, setEditData] = useState<{
+    title: string;
+    description: string;
+    projectDate: string;
+    tags: string[];
+    pinned: boolean;
+  }>({
+    title: '',
+    description: '',
+    projectDate: '',
+    tags: [],
+    pinned: false
+  });
 
   // Confirmation dialogs
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
@@ -77,6 +109,8 @@ export default function ProjectenPage() {
     setTitle('');
     setDescription('');
     setPinned(false);
+    setProjectDate('');
+    setSelectedTags([]);
     setImageFile(null);
     setDocumentFiles([]);
     setError('');
@@ -96,6 +130,11 @@ export default function ProjectenPage() {
       return;
     }
 
+    if (!projectDate) {
+      setError('Projectdatum is verplicht');
+      return;
+    }
+
     if (documentFiles.length > 3) {
       setError('Maximaal 3 documenten toegestaan');
       return;
@@ -105,7 +144,9 @@ export default function ProjectenPage() {
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('description', description.trim());
+      formData.append('projectDate', projectDate);
       formData.append('pinned', pinned.toString());
+      formData.append('tags', JSON.stringify(selectedTags));
       
       if (imageFile) {
         formData.append('image', imageFile);
@@ -135,6 +176,54 @@ export default function ProjectenPage() {
     } catch (err: any) {
       setError(err.message || 'Er is een fout opgetreden');
     }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project._id);
+    setEditData({
+      title: project.title,
+      description: project.description,
+      projectDate: project.projectDate || '',
+      tags: project.tags || [],
+      pinned: project.pinned
+    });
+  };
+
+  const handleSaveEdit = async (projectId: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Fout bij bijwerken van project');
+      }
+
+      const updatedProject = await res.json();
+      setProjects(prev => prev.map(p => p._id === projectId ? updatedProject : p));
+      setEditingProject(null);
+      setSuccessMessage('Project succesvol bijgewerkt');
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+    } catch (err: any) {
+      setError(err.message || 'Er is een fout opgetreden');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProject(null);
+    setEditData({
+      title: '',
+      description: '',
+      projectDate: '',
+      tags: [],
+      pinned: false
+    });
   };
 
   const handleDeleteProject = (projectId: string) => {
@@ -181,7 +270,7 @@ export default function ProjectenPage() {
         ...(fileToDelete.index !== undefined && { index: fileToDelete.index.toString() })
       });
       
-      const res = await fetch(`/api/projects/${fileToDelete.projectId}/files?${params}`, {
+      const res = await fetch(`/api/projects/${fileToDelete.projectId}/file?${params}`, {
         method: 'DELETE'
       });
       
@@ -251,12 +340,37 @@ export default function ProjectenPage() {
     }
   };
 
+  const handleTagToggle = (tag: string, isEditMode: boolean = false) => {
+    if (isEditMode) {
+      setEditData(prev => ({
+        ...prev,
+        tags: prev.tags.includes(tag)
+          ? prev.tags.filter(t => t !== tag)
+          : [...prev.tags, tag]
+      }));
+    } else {
+      setSelectedTags(prev => 
+        prev.includes(tag) 
+          ? prev.filter(t => t !== tag)
+          : [...prev, tag]
+      );
+    }
+  };
+
   const getFileIcon = (contentType: string) => {
     if (contentType.includes('pdf')) return '📄';
     if (contentType.includes('word') || contentType.includes('document')) return '📝';
     if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '📊';
     if (contentType.includes('powerpoint') || contentType.includes('presentation')) return '📊';
     return '📁';
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'dd MMM yyyy', { locale: nl });
+    } catch {
+      return dateString;
+    }
   };
 
   if (!session?.user || !session.user.role || !["beheerder", "developer"].includes(session.user.role)) {
@@ -340,8 +454,22 @@ export default function ProjectenPage() {
                 />
               </div>
 
+              {/* Project Date */}
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Projectdatum *
+                </label>
+                <input
+                  type="date"
+                  value={projectDate}
+                  onChange={(e) => setProjectDate(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
               {/* Pin checkbox */}
-              <div className="md:col-span-2">
+              <div className="flex items-center">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -351,6 +479,29 @@ export default function ProjectenPage() {
                   />
                   <span className="text-sm font-medium">Project vastpinnen</span>
                 </label>
+              </div>
+
+              {/* Tags */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">
+                  Tags
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleTagToggle(tag)}
+                      className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                        selectedTags.includes(tag)
+                          ? 'bg-blue-500 text-white border-blue-500'
+                          : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Image Upload */}
@@ -431,42 +582,146 @@ export default function ProjectenPage() {
                     project.pinned ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'
                   }`}
                 >
-                  {/* Header with pin and delete */}
+                  {/* Header with actions */}
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-semibold text-lg break-words pr-2">{project.title}</h3>
+                    {editingProject === project._id ? (
+                      <input
+                        type="text"
+                        value={editData.title}
+                        onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
+                        className="font-semibold text-lg border-b border-gray-300 focus:outline-none focus:border-blue-500 flex-1 mr-2"
+                      />
+                    ) : (
+                      <h3 className="font-semibold text-lg break-words pr-2">{project.title}</h3>
+                    )}
+                    
                     <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleTogglePin(project._id, project.pinned)}
-                        className={`p-1 rounded ${
-                          project.pinned 
-                            ? 'text-yellow-600 hover:text-yellow-800' 
-                            : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                        title={project.pinned ? 'Losmaken' : 'Vastpinnen'}
-                      >
-                        {project.pinned ? <Pin size={20} /> : <PinOff size={20} />}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProject(project._id)}
-                        className="text-red-500 hover:text-red-700 p-1"
-                        title="Verwijder project"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      {editingProject === project._id ? (
+                        <>
+                          <button
+                            onClick={() => handleSaveEdit(project._id)}
+                            className="text-green-600 hover:text-green-800 p-1"
+                            title="Opslaan"
+                          >
+                            <Save size={20} />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-gray-600 hover:text-gray-800 p-1"
+                            title="Annuleren"
+                          >
+                            <XCircle size={20} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleEditProject(project)}
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="Bewerken"
+                          >
+                            <Edit2 size={20} />
+                          </button>
+                          <button
+                            onClick={() => handleTogglePin(project._id, project.pinned)}
+                            className={`p-1 rounded ${
+                              project.pinned 
+                                ? 'text-yellow-600 hover:text-yellow-800' 
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                            title={project.pinned ? 'Losmaken' : 'Vastpinnen'}
+                          >
+                            {project.pinned ? <Pin size={20} /> : <PinOff size={20} />}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(project._id)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Verwijder project"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   {/* Project Info */}
                   <div className="space-y-2 mb-4">
-                    <p className="text-sm text-gray-600">{project.description}</p>
-                    <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                      <span>Door: {project.author}</span>
-                      <span>•</span>
-                      <span>
-                        {format(new Date(project.createdAt), 'dd MMM yyyy', { locale: nl })}
-                      </span>
-                    </div>
+                    {editingProject === project._id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editData.description}
+                          onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
+                          className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
+                          rows={3}
+                        />
+                        <input
+                          type="date"
+                          value={editData.projectDate}
+                          onChange={(e) => setEditData(prev => ({ ...prev, projectDate: e.target.value }))}
+                          className="w-full p-2 border border-gray-300 rounded text-sm"
+                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={editData.pinned}
+                            onChange={(e) => setEditData(prev => ({ ...prev, pinned: e.target.checked }))}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Vastpinnen</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600">{project.description}</p>
+                        <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                          <span>Door: {project.author}</span>
+                          <span>•</span>
+                          <span>
+                            {project.projectDate ? formatDate(project.projectDate) : formatDate(project.createdAt)}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
+
+                  {/* Tags */}
+                  {editingProject === project._id ? (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Tags</label>
+                      <div className="flex flex-wrap gap-1">
+                        {availableTags.map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => handleTagToggle(tag, true)}
+                            className={`px-2 py-1 rounded-full text-xs border transition-colors ${
+                              editData.tags.includes(tag)
+                                ? 'bg-blue-500 text-white border-blue-500'
+                                : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    project.tags && project.tags.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex flex-wrap gap-1">
+                          {project.tags.map(tag => (
+                            <span
+                              key={tag}
+                              className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  )}
 
                   {/* Image */}
                   {project.image && (

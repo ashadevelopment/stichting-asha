@@ -1,4 +1,4 @@
-// app/api/projects/[id]/files/route.ts
+// app/api/projects/[id]/file/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../../lib/mongodb";
 import Project from "../../../../lib/models/Project";
