@@ -12,30 +12,24 @@ const ProjectSchema = new Schema(
       type: String,
       required: true
     },
-    longDescription: {
-      type: String
-    },
     image: {
       filename: String,
       contentType: String,
-      data: String  // Base64 encoded
+      data: Buffer
     },
-    document: {
+    documents: [{
       filename: String,
       contentType: String,
-      data: String  // Base64 encoded
-    },
+      data: Buffer
+    }],
     projectDate: {
-      type: mongoose.Schema.Types.Mixed,
-      default: () => new Date()
+      type: Date,
+      default: Date.now
     },
     author: {
       type: String,
       required: true
     },
-    tags: [{
-      type: String
-    }],
     pinned: {
       type: Boolean,
       default: false
