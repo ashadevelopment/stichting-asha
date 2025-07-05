@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload } from 'lucide-react';
+import { FolderPlus, FileText, Download, Tag, Calendar, Trash2, ImagePlus, Upload, X, File } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -23,8 +23,7 @@ export default function ProjectenPage() {
   const [projectDate, setProjectDate] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [documentName, setDocumentName] = useState<string>('');
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -68,8 +67,7 @@ export default function ProjectenPage() {
     setProjectDate('');
     setImageFile(null);
     setImagePreview(null);
-    setDocumentFile(null);
-    setDocumentName('');
+    setDocumentFiles([]);
     setIsEditing(false);
     setCurrentProject(null);
   };
@@ -88,11 +86,31 @@ export default function ProjectenPage() {
   };
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setDocumentFile(file);
-      setDocumentName(file.name);
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      const remainingSlots = 3 - documentFiles.length;
+      
+      if (newFiles.length > remainingSlots) {
+        setError(`Je kunt maximaal ${remainingSlots} document(en) meer toevoegen.`);
+        return;
+      }
+      
+      setDocumentFiles(prev => [...prev, ...newFiles]);
+      setError('');
     }
+  };
+
+  const removeDocument = (index: number) => {
+    setDocumentFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getFileIcon = (contentType: string) => {
+    if (contentType.includes('pdf')) return '📄';
+    if (contentType.includes('word') || contentType.includes('document')) return '📝';
+    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '📊';
+    if (contentType.includes('powerpoint') || contentType.includes('presentation')) return '📊';
+    return '📁';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,28 +118,31 @@ export default function ProjectenPage() {
     setError('');
     setSuccessMessage('');
     
-    let imageData: FileData | undefined
-    let documentData: FileData | undefined
+    let imageData: FileData | undefined;
+    let documentsData: FileData[] = [];
 
     if (imageFile) {
-      const bytes = await imageFile.arrayBuffer()
+      const bytes = await imageFile.arrayBuffer();
       imageData = {
         filename: imageFile.name,
         contentType: imageFile.type,
         data: Buffer.from(bytes).toString('base64'),
-      }
+      };
     }
 
-    if (documentFile) {
-      const bytes = await documentFile.arrayBuffer()
-      documentData = {
-        filename: documentFile.name,
-        contentType: documentFile.type,
-        data: Buffer.from(bytes).toString('base64'),
-      }
+    if (documentFiles.length > 0) {
+      documentsData = await Promise.all(
+        documentFiles.map(async (file) => {
+          const bytes = await file.arrayBuffer();
+          return {
+            filename: file.name,
+            contentType: file.type,
+            data: Buffer.from(bytes).toString('base64'),
+          };
+        })
+      );
     }
 
-    // Build up your payload, only spreading in the optional fields if they exist
     const projectData: Project = {
       title,
       description,
@@ -131,10 +152,9 @@ export default function ProjectenPage() {
         : new Date().toISOString(),
       author: session?.user?.name || 'Onbekend',
       tags: tags.split(',').map((t) => t.trim()),
-      // these two lines will only add the property if it's defined
       ...(imageData && { image: imageData }),
-      ...(documentData && { document: documentData }),
-    }
+      ...(documentsData.length > 0 && { documents: documentsData }),
+    };
 
     try {
       const url = isEditing && currentProject?._id 
@@ -190,13 +210,11 @@ export default function ProjectenPage() {
     setLongDescription(project.longDescription || '');
     setTags(project.tags?.join(', ') || '');
     
-    // Converteer de projectDate naar het juiste formaat voor het date-inputveld (YYYY-MM-DD)
+    // Convert projectDate to correct format for date input field
     if (project.projectDate) {
       try {
         const date = new Date(project.projectDate);
-        // Controleer of het een geldige datum is
         if (!isNaN(date.getTime())) {
-          // Converteer naar YYYY-MM-DD formaat voor het HTML date input element
           setProjectDate(date.toISOString().split('T')[0]);
         } else {
           setProjectDate('');
@@ -214,25 +232,18 @@ export default function ProjectenPage() {
     // Reset file inputs
     setImageFile(null);
     setImagePreview(null);
-    setDocumentFile(null);
-    setDocumentName('');
+    setDocumentFiles([]);
     
-    // Als het project een afbeelding heeft, toon een preview
+    // Show image preview if project has image
     if (project.image && project.image.data) {
       setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
     }
     
-    // Als het project een document heeft, toon de bestandsnaam
-    if (project.document && project.document.filename) {
-      setDocumentName(project.document.filename);
-    }
-    
-    // Altijd het formulier tonen bij bewerken en naar boven scrollen
+    // Always show form when editing and scroll to top
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Functie voor verwijderen van een project
   const handleDeleteClick = (projectId: string) => {
     if (!projectId) {
       console.error('Invalid project ID');
@@ -255,10 +266,8 @@ export default function ProjectenPage() {
         throw new Error(errorData.error || 'Fout bij verwijderen van project');
       }
       
-      // Verwijder het project uit de lokale state
       setProjects(projects.filter(p => p._id !== projectToDelete));
       
-      // Reset formulier indien het verwijderde project momenteel wordt bewerkt
       if (currentProject?._id === projectToDelete) {
         resetForm();
       }
@@ -415,26 +424,52 @@ export default function ProjectenPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Document (Optioneel)</label>
+            <label className="block text-sm font-medium mb-1">
+              Documenten (Optioneel - Max 3)
+              <span className="text-xs text-gray-500 ml-2">
+                ({documentFiles.length}/3)
+              </span>
+            </label>
             <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
-                <Upload size={18} />
-                <span>Kies een document</span>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx"
-                  onChange={handleDocumentChange}
-                  className="hidden"
-                />
-              </label>
+              {documentFiles.length < 3 && (
+                <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                  <Upload size={18} />
+                  <span>Voeg document toe</span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                    onChange={handleDocumentChange}
+                    multiple
+                    className="hidden"
+                  />
+                </label>
+              )}
               
-              {documentName ? (
-                <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
-                  <FileText size={18} className="text-blue-600" />
-                  <span>{documentName}</span>
+              {documentFiles.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500">Geselecteerde documenten:</p>
+                  {documentFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between gap-2 text-sm border border-gray-200 p-3 rounded">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="text-lg">{getFileIcon(file.type)}</span>
+                        <span className="truncate">{file.name}</span>
+                        <span className="text-xs text-gray-500 shrink-0">
+                          ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeDocument(index)}
+                        className="text-red-500 hover:text-red-700 p-1 rounded"
+                        title="Verwijder document"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">Nog geen document geselecteerd</p>
+                <p className="text-sm text-gray-500">Nog geen documenten geselecteerd</p>
               )}
             </div>
           </div>
@@ -480,7 +515,7 @@ export default function ProjectenPage() {
                 key={project._id} 
                 className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm transition hover:shadow-md"
               >
-                {/* Project image thumbnail with responsive aspect ratio */}
+                {/* Project image thumbnail */}
                 {project.image && (
                   <div className="relative pb-[56.25%] mb-3 overflow-hidden rounded-md">
                     <img 
@@ -535,14 +570,30 @@ export default function ProjectenPage() {
                   </div>
                 )}
                 
-                {project.document && (
-                  <a
-                    href={`data:${project.document.contentType};base64,${project.document.data}`}
-                    download={project.document.filename}
-                    className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 mt-2"
-                  >
-                    <Download size={14} /> Download Document
-                  </a>
+                {/* Documents display */}
+                {project.documents && project.documents.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <File size={14} className="text-gray-500" />
+                      <span className="text-xs text-gray-500">
+                        {project.documents.length} document{project.documents.length !== 1 ? 'en' : ''}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {project.documents.map((doc, index) => (
+                        <a
+                          key={index}
+                          href={`data:${doc.contentType};base64,${doc.data}`}
+                          download={doc.filename}
+                          className="inline-flex items-center text-xs text-blue-600 hover:underline gap-1 block truncate"
+                          title={doc.filename}
+                        >
+                          <span>{getFileIcon(doc.contentType)}</span>
+                          <span className="truncate">{doc.filename}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             ))}
