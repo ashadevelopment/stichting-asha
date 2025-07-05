@@ -83,65 +83,132 @@ export async function POST(req: NextRequest) {
 }
 
 // PUT update project (admins only)
-export async function PUT(req: NextRequest) {
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const session = await getServerSession(authOptions);
-
-    // Ensure session exists and role is defined
-    if (!session?.user || !session.user.role || !["beheerder", "developer"].includes(session.user.role)) {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || !session.user || 
+        (session.user.role !== 'beheerder' && session.user.role !== 'developer')) {
       return NextResponse.json(
-        { error: "Geen toegang. Alleen beheerders kunnen projecten bijwerken." },
+        { error: "Geen toegang. Alleen beheerders kunnen projecten bijwerken." }, 
         { status: 403 }
-      );
+      )
     }
-
-    await dbConnect();
-    const body = await req.json();
-
-    if (!body.id || !body.title || !body.description) {
-      return NextResponse.json(
-        { error: "Project ID, titel en beschrijving zijn verplicht" },
-        { status: 400 }
-      );
+    
+    await dbConnect()
+    
+    // Parse FormData instead of JSON
+    const formData = await req.formData()
+    
+    // Extract form fields
+    const title = formData.get('title') as string
+    const description = formData.get('description') as string
+    const longDescription = formData.get('longDescription') as string
+    const tags = formData.get('tags') as string
+    const projectDate = formData.get('projectDate') as string
+    
+    // Extract files
+    const imageFile = formData.get('image') as File | null
+    const documentFiles = formData.getAll('documents') as File[]
+    
+    // Validate required fields
+    if (!title?.trim()) {
+      return NextResponse.json({ error: "Titel is verplicht" }, { status: 400 })
     }
-
-    // Check if trying to pin and if pin limit is reached
-    if (body.pinned) {
-      const pinnedCount = await Project.countDocuments({ 
-        pinned: true, 
-        _id: { $ne: body.id } // Exclude current project from count
-      });
-      if (pinnedCount >= 3) {
-        return NextResponse.json(
-          { error: "Je kunt maximaal 3 projecten vastpinnen" },
-          { status: 400 }
-        );
+    
+    if (!description?.trim()) {
+      return NextResponse.json({ error: "Beschrijving is verplicht" }, { status: 400 })
+    }
+    
+    if (!projectDate) {
+      return NextResponse.json({ error: "Projectdatum is verplicht" }, { status: 400 })
+    }
+    
+    // Find the project
+    const project = await Project.findById(params.id)
+    
+    if (!project) {
+      return NextResponse.json({ error: "Project niet gevonden" }, { status: 404 })
+    }
+    
+    // Update basic fields
+    project.title = title.trim()
+    project.description = description.trim()
+    project.longDescription = longDescription?.trim() || ''
+    project.projectDate = new Date(projectDate)
+    
+    // Handle tags
+    if (tags) {
+      project.tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+    } else {
+      project.tags = []
+    }
+    
+    // Handle image upload
+    if (imageFile && imageFile.size > 0) {
+      const imageBuffer = Buffer.from(await imageFile.arrayBuffer())
+      project.image = {
+        filename: imageFile.name,
+        contentType: imageFile.type,
+        data: imageBuffer
       }
     }
-
-    const project = await Project.findByIdAndUpdate(body.id, { $set: body }, { new: true });
-    if (!project) {
-      return NextResponse.json({ error: "Project niet gevonden" }, { status: 404 });
+    
+    // Handle document uploads
+    if (documentFiles && documentFiles.length > 0) {
+      const documents = []
+      
+      for (const file of documentFiles) {
+        if (file.size > 0) {
+          const buffer = Buffer.from(await file.arrayBuffer())
+          documents.push({
+            filename: file.name,
+            contentType: file.type,
+            data: buffer
+          })
+        }
+      }
+      
+      // Add new documents to existing ones (or replace if you prefer)
+      if (documents.length > 0) {
+        if (project.documents) {
+          project.documents.push(...documents)
+        } else {
+          project.documents = documents
+        }
+      }
     }
-
-    await recordActivity({
-      type: "update",
-      entityType: "project",
-      entityId: project._id.toString(),
-      entityName: project.title,
-      performedBy: session.user.id || "unknown",
-      performedByName: session.user.name || "Onbekend",
-    });
-
-    return NextResponse.json(project);
-  } catch (err: any) {
-    console.error("Error updating project:", err);
-    return NextResponse.json(
-      { error: "Fout bij bijwerken van project", details: err.message },
-      { status: 500 }
-    );
+    
+    // Save the updated project
+    await project.save()
+    
+    return NextResponse.json({
+      _id: project._id,
+      title: project.title,
+      description: project.description,
+      longDescription: project.longDescription,
+      tags: project.tags,
+      projectDate: project.projectDate,
+      image: project.image ? {
+        filename: project.image.filename,
+        contentType: project.image.contentType,
+        data: project.image.data.toString('base64')
+      } : undefined,
+      documents: project.documents?.map((doc: any ) => ({
+        filename: doc.filename,
+        contentType: doc.contentType,
+        data: doc.data.toString('base64')
+      })),
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt
+    })
+    
+  } catch (err) {
+    console.error("Error updating project:", err)
+    return NextResponse.json({ error: "Fout bij bijwerken van project" }, { status: 500 })
   }
 }
+
 
 export async function DELETE(req: NextRequest) {
   try {
