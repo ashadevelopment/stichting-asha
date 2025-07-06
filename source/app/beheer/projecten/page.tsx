@@ -23,8 +23,10 @@ export default function ProjectenPage() {
   const [projectDate, setProjectDate] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [documentName, setDocumentName] = useState<string>('');
+
+  const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const [documentNames, setDocumentNames] = useState<string[]>([]);
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
@@ -35,7 +37,8 @@ export default function ProjectenPage() {
 
   // New state for tracking deletions
   const [deleteImage, setDeleteImage] = useState(false);
-  const [deleteDocument, setDeleteDocument] = useState(false);
+  const [deleteDocuments, setDeleteDocuments] = useState<boolean[]>([false, false, false]);
+
 
   // Confirmation Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -72,13 +75,14 @@ export default function ProjectenPage() {
     setProjectDate('');
     setImageFile(null);
     setImagePreview(null);
-    setDocumentFile(null);
-    setDocumentName('');
+    setDocumentFiles([]);
+    setDocumentNames([]);
     setIsEditing(false);
     setCurrentProject(null);
     // Reset deletion flags
     setDeleteImage(false);
-    setDeleteDocument(false);
+    setDeleteDocuments([false, false, false]);
+
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,12 +99,20 @@ export default function ProjectenPage() {
     }
   };
 
-  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      setDocumentFile(file);
-      setDocumentName(file.name);
-      setDeleteDocument(false); // Reset deletion flag when new file is selected
+      const newFiles = [...documentFiles];
+      const newNames = [...documentNames];
+      const newDeleteFlags = [...deleteDocuments];
+      
+      newFiles[index] = file;
+      newNames[index] = file.name;
+      newDeleteFlags[index] = false;
+      
+      setDocumentFiles(newFiles);
+      setDocumentNames(newNames);
+      setDeleteDocuments(newDeleteFlags);
     }
   };
 
@@ -114,12 +126,21 @@ export default function ProjectenPage() {
   };
 
   // Handle document deletion
-  const handleDeleteDocument = () => {
-    setDocumentFile(null);
-    setDocumentName('');
-    if (isEditing && currentProject?.document) {
-      setDeleteDocument(true); // Mark for deletion
+  const handleDeleteDocument = (index: number) => {
+    const newFiles = [...documentFiles];
+    const newNames = [...documentNames];
+    const newDeleteFlags = [...deleteDocuments];
+    
+    newFiles[index] = undefined as any;
+    newNames[index] = '';
+    
+    if (isEditing && currentProject?.documents?.[index]) {
+      newDeleteFlags[index] = true;
     }
+    
+    setDocumentFiles(newFiles);
+    setDocumentNames(newNames);
+    setDeleteDocuments(newDeleteFlags);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,7 +149,7 @@ export default function ProjectenPage() {
     setSuccessMessage('');
     
     let imageData: FileData | undefined | null = undefined;
-    let documentData: FileData | undefined | null = undefined;
+    let documentsData: any[] = [];
 
     // Handle image logic
     if (imageFile) {
@@ -148,20 +169,22 @@ export default function ProjectenPage() {
     }
 
     // Handle document logic
-    if (documentFile) {
-      // New document file uploaded
-      const bytes = await documentFile.arrayBuffer();
-      documentData = {
-        filename: documentFile.name,
-        contentType: documentFile.type,
-        data: Buffer.from(bytes).toString('base64'),
-      };
-    } else if (deleteDocument) {
-      // Mark document for deletion
-      documentData = null;
-    } else if (isEditing && currentProject?.document) {
-      // Keep existing document
-      documentData = currentProject.document;
+    for (let i = 0; i < 3; i++) {
+      if (documentFiles[i]) {
+        // New document file uploaded
+        const bytes = await documentFiles[i].arrayBuffer();
+        documentsData[i] = {
+          filename: documentFiles[i].name,
+          contentType: documentFiles[i].type,
+          data: Buffer.from(bytes).toString('base64'),
+        };
+      } else if (deleteDocuments[i]) {
+        // Mark document for deletion - don't add to array
+        continue;
+      } else if (isEditing && currentProject?.documents?.[i]) {
+        // Keep existing document
+        documentsData[i] = currentProject.documents[i];
+      }
     }
 
     // Build project data
@@ -182,9 +205,7 @@ export default function ProjectenPage() {
     }
 
     // Add document data (including null for deletion)
-    if (documentData !== undefined) {
-      projectData.document = documentData;
-    }
+    projectData.documents = documentsData.filter(doc => doc !== undefined);
 
     try {
       const url = isEditing && currentProject?._id 
@@ -264,10 +285,10 @@ export default function ProjectenPage() {
     // Reset file inputs and deletion flags
     setImageFile(null);
     setImagePreview(null);
-    setDocumentFile(null);
-    setDocumentName('');
+    setDocumentFiles([]);
+    setDocumentNames(['', '', '']);
     setDeleteImage(false);
-    setDeleteDocument(false);
+    setDeleteDocuments([false, false, false]);
     
     // If the project has an image, show a preview
     if (project.image && project.image.data) {
@@ -275,8 +296,14 @@ export default function ProjectenPage() {
     }
     
     // If the project has a document, show the filename
-    if (project.document && project.document.filename) {
-      setDocumentName(project.document.filename);
+    if (project.documents && project.documents.length > 0) {
+      const names = ['', '', ''];
+      project.documents.forEach((doc, index) => {
+        if (index < 3) {
+          names[index] = doc.filename || '';
+        }
+      });
+      setDocumentNames(names);
     }
     
     // Always show form when editing and scroll to top
@@ -542,45 +569,49 @@ export default function ProjectenPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Document (Optioneel)</label>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
-                  <Upload size={18} />
-                  <span>Kies een document</span>
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx"
-                    onChange={handleDocumentChange}
-                    className="hidden"
-                  />
-                </label>
-                
-                {(documentName || (isEditing && currentProject?.document && !deleteDocument)) && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteDocument}
-                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded transition w-fit"
-                    title="Verwijder document"
-                  >
-                    <Trash2 size={18} />
-                    <span>Verwijder</span>
-                  </button>
-                )}
-              </div>
-              
-              {documentName && !deleteDocument ? (
-                <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
-                  <FileText size={18} className="text-blue-600" />
-                  <span>{documentName}</span>
+            <label className="block text-sm font-medium mb-1">Documenten (Maximaal 3)</label>
+            <div className="space-y-3">
+              {[0, 1, 2].map((index) => (
+                <div key={index} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                      <Upload size={18} />
+                      <span>Kies document {index + 1}</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={(e) => handleDocumentChange(e, index)}
+                        className="hidden"
+                      />
+                    </label>
+                    
+                    {(documentNames[index] || (isEditing && currentProject?.documents?.[index] && !deleteDocuments[index])) && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDocument(index)}
+                        className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded transition w-fit"
+                        title="Verwijder document"
+                      >
+                        <Trash2 size={18} />
+                        <span>Verwijder</span>
+                      </button>
+                    )}
+                  </div>
+                  
+                  {documentNames[index] && !deleteDocuments[index] ? (
+                    <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
+                      <FileText size={18} className="text-blue-600" />
+                      <span>{documentNames[index]}</span>
+                    </div>
+                  ) : deleteDocuments[index] ? (
+                    <div className="border border-red-200 p-2 rounded bg-red-50">
+                      <p className="text-xs text-red-600">Document {index + 1} wordt verwijderd bij opslaan</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">Nog geen document {index + 1} geselecteerd</p>
+                  )}
                 </div>
-              ) : deleteDocument ? (
-                <div className="border border-red-200 p-2 rounded bg-red-50">
-                  <p className="text-xs text-red-600 mb-2">Document wordt verwijderd bij opslaan</p>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Nog geen document geselecteerd</p>
-              )}
+              ))}
             </div>
           </div>
 
@@ -699,15 +730,19 @@ export default function ProjectenPage() {
                     ))}
                   </div>
                 )}
-                
-                {project.document && (
-                  <a
-                    href={`data:${project.document.contentType};base64,${project.document.data}`}
-                    download={project.document.filename}
-                    className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 mt-2"
-                  >
-                    <Download size={14} /> Download Document
-                  </a>
+
+                {project.documents && project.documents.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {project.documents.map((doc, index) => (
+                      
+                        key={index}
+                        href={`/api/projects/${project._id}/file?type=document&index=${index}`}
+                        className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 block"
+                      >
+                        <Download size={14} /> {doc.filename}
+                      </a>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}

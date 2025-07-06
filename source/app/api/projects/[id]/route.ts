@@ -66,6 +66,14 @@ export async function PUT(req: NextRequest) {
       )
     }
     
+    // Validate documents array doesn't exceed 3
+    if (body.documents && body.documents.length > 3) {
+      return NextResponse.json(
+        { error: "Maximaal 3 documenten per project toegestaan" },
+        { status: 400 }
+      );
+    }
+    
     // Check if trying to pin and if pin limit is reached
     if (body.pinned) {
       const pinnedCount = await Project.countDocuments({ 

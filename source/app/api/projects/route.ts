@@ -43,6 +43,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate documents array doesn't exceed 3
+    if (body.documents && body.documents.length > 3) {
+      return NextResponse.json(
+        { error: "Maximaal 3 documenten per project toegestaan" },
+        { status: 400 }
+      );
+    }
+
     // Check if trying to pin and if pin limit is reached
     if (body.pinned) {
       const pinnedCount = await Project.countDocuments({ pinned: true });
@@ -59,6 +67,7 @@ export async function POST(req: NextRequest) {
       author: session.user.name || "Anoniem",
       projectDate: body.projectDate || new Date(),
       pinned: body.pinned || false,
+      documents: body.documents || []
     };
 
     const project = await Project.create(projectData);
@@ -101,6 +110,14 @@ export async function PUT(req: NextRequest) {
     if (!body.id || !body.title || !body.description) {
       return NextResponse.json(
         { error: "Project ID, titel en beschrijving zijn verplicht" },
+        { status: 400 }
+      );
+    }
+
+    // Validate documents array doesn't exceed 3
+    if (body.documents && body.documents.length > 3) {
+      return NextResponse.json(
+        { error: "Maximaal 3 documenten per project toegestaan" },
         { status: 400 }
       );
     }

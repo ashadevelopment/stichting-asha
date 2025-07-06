@@ -19,11 +19,11 @@ const ProjectSchema = new Schema(
       contentType: String,
       data: String  // Base64 encoded
     },
-    document: {
+    documents: [{
       filename: String,
       contentType: String,
       data: String  // Base64 encoded
-    },
+    }],
     projectDate: {
       type: mongoose.Schema.Types.Mixed,
       default: () => new Date()

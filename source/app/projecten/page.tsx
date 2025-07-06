@@ -15,11 +15,11 @@ interface Project {
     contentType: string;
     data: string;
   };
-  document?: {
+  documents?: {
     filename: string;
     contentType: string;
     data: string;
-  };
+  }[];
   projectDate: string;
   author: string;
   tags?: string[];
@@ -257,17 +257,22 @@ export default function Projecten() {
               </div>
             )}
 
-            {/* Document Download */}
-            {selectedProject.document && selectedProject.document.data && (
+            {/* Document Downloads */}
+            {selectedProject.documents && selectedProject.documents.length > 0 && (
               <div className="mt-4">
-                <a
-                  href={`data:${selectedProject.document.contentType};base64,${selectedProject.document.data}`}
-                  download={selectedProject.document.filename}
-                  className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md"
-                >
-                  <FileText size={20} className="mr-2" />
-                  Download Project Document
-                </a>
+                <h4 className="text-lg font-semibold text-[#1E2A78] mb-2">Project Documenten</h4>
+                <div className="space-y-2">
+                  {selectedProject.documents.map((doc, index) => (
+                    
+                      key={index}
+                      href={`/api/projects/${selectedProject._id}/file?type=document&index=${index}`}
+                      className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md mr-2 mb-2"
+                    >
+                      <FileText size={20} className="mr-2" />
+                      {doc.filename}
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </div>
