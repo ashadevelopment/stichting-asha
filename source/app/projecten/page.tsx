@@ -263,7 +263,7 @@ export default function Projecten() {
                 <h4 className="text-lg font-semibold text-[#1E2A78] mb-2">Project Documenten</h4>
                 <div className="space-y-2">
                   {selectedProject.documents.map((doc, index) => (
-                    
+                    <a
                       key={index}
                       href={`/api/projects/${selectedProject._id}/file?type=document&index=${index}`}
                       className="inline-flex items-center bg-blue-50 text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md mr-2 mb-2"

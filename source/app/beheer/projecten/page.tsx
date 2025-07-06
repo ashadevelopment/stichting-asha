@@ -734,12 +734,13 @@ export default function ProjectenPage() {
                 {project.documents && project.documents.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {project.documents.map((doc, index) => (
-                      
+                      <a
                         key={index}
                         href={`/api/projects/${project._id}/file?type=document&index=${index}`}
-                        className="inline-flex items-center text-sm text-blue-600 hover:underline gap-2 block"
+                        className="flex items-center text-sm text-blue-600 hover:underline gap-2 p-2 border border-gray-200 rounded bg-gray-50 hover:bg-blue-50 transition-colors"
                       >
-                        <Download size={14} /> {doc.filename}
+                        <Download size={14} className="flex-shrink-0" />
+                        <span className="truncate min-w-0">{doc.filename}</span>
                       </a>
                     ))}
                   </div>
