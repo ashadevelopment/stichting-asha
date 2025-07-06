@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../lib/mongodb';
 import Activity from '../../lib/models/Activity';
+import User from '../../lib/models/User';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../lib/authOptions';
 
@@ -24,11 +25,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get activities with expanded details
+    // Get activities with populated user information
     console.log(`Fetching up to ${limit} activities...`);
     const activities = await Activity.find()
       .sort({ createdAt: -1 })
-      .limit(limit);
+      .limit(limit)
+      .populate('performedBy', 'firstName lastName name')
+      .exec();
     
     console.log(`Found ${activities.length} activities`);
     
@@ -39,7 +42,19 @@ export async function GET(request: NextRequest) {
       // Convert ObjectIds to strings
       plainObj._id = plainObj._id.toString();
       plainObj.entityId = plainObj.entityId.toString();
-      plainObj.performedBy = plainObj.performedBy.toString();
+      plainObj.performedBy = plainObj.performedBy._id.toString();
+      
+      // Get the user's full name
+      const user = activity.performedBy as any;
+      if (user && user.firstName && user.lastName) {
+        plainObj.performedByName = `${user.firstName} ${user.lastName}`;
+      } else if (user && user.name) {
+        plainObj.performedByName = user.name;
+      } else if (user && user.firstName) {
+        plainObj.performedByName = user.firstName;
+      } else {
+        plainObj.performedByName = 'Onbekende gebruiker';
+      }
       
       return plainObj;
     });

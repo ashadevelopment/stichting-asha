@@ -48,6 +48,9 @@ export default function DashboardPage() {
     role: ''
   });
 
+  // Add debug state
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+
   // Function to check if user has access to activities
   const hasActivityAccess = () => {
     const userRole = userDetails.role || (session?.user && 'role' in session.user ? session.user.role : '');
@@ -57,18 +60,37 @@ export default function DashboardPage() {
   // Fetch user details whenever session changes
   useEffect(() => {
     async function fetchUserData() {
-      console.log('Session data:', session); // Debug log
+      console.log('=== DEBUG SESSION DATA ===');
+      console.log('Full session object:', JSON.stringify(session, null, 2));
+      console.log('Session user:', session?.user);
+      console.log('Session user ID:', session?.user?.id);
+      console.log('Session user role:', session?.user?.role);
+      console.log('Session user firstName:', session?.user?.firstName);
+      console.log('Session user lastName:', session?.user?.lastName);
+      
+      // Set debug info for display
+      setDebugInfo({
+        sessionExists: !!session,
+        sessionUser: session?.user,
+        sessionUserId: session?.user?.id,
+        sessionUserRole: session?.user?.role,
+        sessionFirstName: session?.user?.firstName,
+        sessionLastName: session?.user?.lastName
+      });
       
       if (session?.user?.id) {
         try {
-          console.log('Fetching user details for ID:', session.user.id);
+          console.log('=== FETCHING USER DETAILS ===');
+          console.log('Making API call to:', `/api/users/details?userId=${session.user.id}`);
           
           const response = await fetch(`/api/users/details?userId=${session.user.id}`);
           console.log('API Response status:', response.status);
+          console.log('API Response headers:', response.headers);
           
           if (response.ok) {
             const userData = await response.json();
-            console.log('User data from API:', userData);
+            console.log('=== USER DATA FROM API ===');
+            console.log('User data:', JSON.stringify(userData, null, 2));
             
             setUserDetails({
               firstName: userData.firstName || '',
@@ -77,36 +99,45 @@ export default function DashboardPage() {
               role: userData.role || session?.user?.role || ''
             });
           } else {
-            console.log('API call failed, using fallback');
-            console.log('Session user object:', session.user);
+            console.log('=== API CALL FAILED ===');
+            const errorText = await response.text();
+            console.log('Error response:', errorText);
             
             // Fallback to session data
+            console.log('=== USING SESSION FALLBACK ===');
             const nameParts = session.user.name?.split(' ') || ['', ''];
-            console.log('Name parts:', nameParts);
+            console.log('Name parts from session.user.name:', nameParts);
             
-            setUserDetails({
+            const fallbackData = {
               firstName: (session.user.firstName as string) || nameParts[0] || '',
               lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
               email: session.user.email || '',
               role: session.user.role || ''
-            });
+            };
+            
+            console.log('Fallback data:', fallbackData);
+            setUserDetails(fallbackData);
           }
         } catch (error) {
-          console.error('Error fetching user details:', error);
-          console.log('Using session fallback due to error');
-          console.log('Session user:', session.user);
+          console.error('=== ERROR FETCHING USER DETAILS ===');
+          console.error('Error:', error);
           
           // Emergency fallback
-          setUserDetails({
+          const emergencyFallback = {
             firstName: session.user.name || '',
             lastName: '',
             email: session.user.email || '',
             role: session.user.role || ''
-          });
+          };
+          
+          console.log('Emergency fallback data:', emergencyFallback);
+          setUserDetails(emergencyFallback);
         }
       } else {
-        console.log('No session user ID found');
-        console.log('Full session:', session);
+        console.log('=== NO SESSION USER ID ===');
+        console.log('Session exists:', !!session);
+        console.log('Session user exists:', !!session?.user);
+        console.log('Session user object:', session?.user);
       }
     }
     
@@ -212,31 +243,57 @@ export default function DashboardPage() {
 
   // Updated function to get the user's full name with proper type handling
   const getUserFullName = () => {
+    console.log('=== GET USER FULL NAME ===');
+    console.log('userDetails:', userDetails);
+    console.log('session?.user:', session?.user);
+    
     // First try from our fetched userDetails
     if (userDetails.firstName && userDetails.lastName) {
-      return `${userDetails.firstName} ${userDetails.lastName}`;
+      const fullName = `${userDetails.firstName} ${userDetails.lastName}`;
+      console.log('Using userDetails firstName + lastName:', fullName);
+      return fullName;
     } 
     else if (userDetails.firstName) {
+      console.log('Using userDetails firstName only:', userDetails.firstName);
       return userDetails.firstName;
     }
     // Then try from session, with type assertions
     else if (session?.user && 'firstName' in session.user && 'lastName' in session.user &&
              session.user.firstName && session.user.lastName) {
-      return `${session.user.firstName} ${session.user.lastName}`;
+      const fullName = `${session.user.firstName} ${session.user.lastName}`;
+      console.log('Using session firstName + lastName:', fullName);
+      return fullName;
     } 
     else if (session?.user && 'firstName' in session.user && session.user.firstName) {
+      console.log('Using session firstName only:', session.user.firstName);
       return session.user.firstName as string;
     }
     else if (session?.user?.name) {
+      console.log('Using session name:', session.user.name);
       return session.user.name;
     }
     else {
+      console.log('Using fallback: Beheerder');
       return 'Beheerder';
     }
   };
 
   return (
     <div className="p-4 sm:p-6">
+      {/* Debug Information - Remove this in production */}
+      <div className="bg-yellow-50 border border-yellow-200 p-4 mb-6 rounded-lg">
+        <h3 className="font-bold text-yellow-800 mb-2">Debug Information:</h3>
+        <div className="text-sm text-yellow-700 space-y-1">
+          <p><strong>Session exists:</strong> {debugInfo?.sessionExists ? 'Yes' : 'No'}</p>
+          <p><strong>Session User ID:</strong> {debugInfo?.sessionUserId || 'None'}</p>
+          <p><strong>Session User Role:</strong> {debugInfo?.sessionUserRole || 'None'}</p>
+          <p><strong>Session FirstName:</strong> {debugInfo?.sessionFirstName || 'None'}</p>
+          <p><strong>Session LastName:</strong> {debugInfo?.sessionLastName || 'None'}</p>
+          <p><strong>UserDetails:</strong> {JSON.stringify(userDetails)}</p>
+          <p><strong>Final Full Name:</strong> {getUserFullName()}</p>
+        </div>
+      </div>
+
       {/* Welkomstkaart met profielfoto en naam */}
       <div className="bg-white p-4 sm:p-6 mb-6">
         <div className="flex flex-col sm:flex-row items-center gap-4">
