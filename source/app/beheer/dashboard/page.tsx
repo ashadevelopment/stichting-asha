@@ -57,11 +57,19 @@ export default function DashboardPage() {
   // Fetch user details whenever session changes
   useEffect(() => {
     async function fetchUserData() {
+      console.log('Session data:', session); // Debug log
+      
       if (session?.user?.id) {
         try {
+          console.log('Fetching user details for ID:', session.user.id);
+          
           const response = await fetch(`/api/users/details?userId=${session.user.id}`);
+          console.log('API Response status:', response.status);
+          
           if (response.ok) {
             const userData = await response.json();
+            console.log('User data from API:', userData);
+            
             setUserDetails({
               firstName: userData.firstName || '',
               lastName: userData.lastName || '',
@@ -69,8 +77,13 @@ export default function DashboardPage() {
               role: userData.role || session?.user?.role || ''
             });
           } else {
+            console.log('API call failed, using fallback');
+            console.log('Session user object:', session.user);
+            
             // Fallback to session data
             const nameParts = session.user.name?.split(' ') || ['', ''];
+            console.log('Name parts:', nameParts);
+            
             setUserDetails({
               firstName: (session.user.firstName as string) || nameParts[0] || '',
               lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
@@ -80,7 +93,20 @@ export default function DashboardPage() {
           }
         } catch (error) {
           console.error('Error fetching user details:', error);
+          console.log('Using session fallback due to error');
+          console.log('Session user:', session.user);
+          
+          // Emergency fallback
+          setUserDetails({
+            firstName: session.user.name || '',
+            lastName: '',
+            email: session.user.email || '',
+            role: session.user.role || ''
+          });
         }
+      } else {
+        console.log('No session user ID found');
+        console.log('Full session:', session);
       }
     }
     

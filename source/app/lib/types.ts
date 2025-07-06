@@ -48,6 +48,8 @@ declare module "next-auth" {
     user: {
       id?: string;
       role?: string;
+      firstName?: string | null;
+      lastName?: string | null;
     } & DefaultSession["user"];
   }
   

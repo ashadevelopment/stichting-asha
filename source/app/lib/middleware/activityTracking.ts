@@ -79,7 +79,7 @@ export async function withActivityTracking(
       // Get user information from the session
       const session = await getServerSession(authOptions) as Session | null;
       const userId = session?.user?.id || 'system';
-      const userName = session?.user?.name || 'System';
+      const userName = session?.user?.firstName || 'System';
       
       // Record the activity
       await recordActivity({
