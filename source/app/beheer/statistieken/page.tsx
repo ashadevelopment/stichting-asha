@@ -85,7 +85,6 @@ interface StatsData {
   };
 }
 
-// Updated session interface to match dashboard
 interface SessionUser {
   id?: string;
   name?: string | null;
@@ -101,158 +100,78 @@ interface CustomSession {
 }
 
 export default function StatisticsPage() {
-  const { data: session } = useSession() as { data: CustomSession | null }
+  const { data: session, status } = useSession() as { data: CustomSession | null, status: string }
   const [stats, setStats] = useState<StatsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
-  
-  // Add state for user details (similar to dashboard)
   const [userDetails, setUserDetails] = useState({
     firstName: '',
     lastName: '',
     email: '',
     role: ''
-  });
+  })
+  const [userDataLoaded, setUserDataLoaded] = useState(false)
 
-  // Fetch user details whenever session changes (similar to dashboard)
+  // Function to get user role from either userDetails or session
+  const getUserRole = () => {
+    return userDetails.role || session?.user?.role || ''
+  }
+
+  // Function to check if user has access to statistics
+  const hasStatsAccess = () => {
+    const userRole = getUserRole()
+    return userRole === 'beheerder' || userRole === 'developer'
+  }
+
+  // Fetch user details when session is available
   useEffect(() => {
     async function fetchUserData() {
-      console.log('=== STATS PAGE: DEBUG SESSION DATA ===');
-      console.log('Full session object:', JSON.stringify(session, null, 2));
-      console.log('Session user:', session?.user);
-      console.log('Session user role:', session?.user?.role);
+      if (status === 'loading') return
       
-      if (session?.user?.id) {
-        try {
-          const response = await fetch(`/api/users/details?userId=${session.user.id}`);
-          
-          if (response.ok) {
-            const userData = await response.json();
-            console.log('STATS PAGE: User data from API:', userData);
-            
-            setUserDetails({
-              firstName: userData.firstName || '',
-              lastName: userData.lastName || '',
-              email: userData.email || '',
-              role: userData.role || session?.user?.role || ''
-            });
-          } else {
-            console.log('STATS PAGE: API call failed, using session fallback');
-            // Fallback to session data
-            const nameParts = session.user.name?.split(' ') || ['', ''];
-            
-            setUserDetails({
-              firstName: (session.user.firstName as string) || nameParts[0] || '',
-              lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
-              email: session.user.email || '',
-              role: session.user.role || ''
-            });
-          }
-        } catch (error) {
-          console.error('STATS PAGE: Error fetching user details:', error);
-          
-          // Emergency fallback
+      if (!session?.user?.id) {
+        setUserDataLoaded(true)
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/users/details?userId=${session.user.id}`)
+        
+        if (response.ok) {
+          const userData = await response.json()
           setUserDetails({
-            firstName: session.user.name || '',
-            lastName: '',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            email: userData.email || '',
+            role: userData.role || session?.user?.role || ''
+          })
+        } else {
+          // Fallback to session data
+          const nameParts = session.user.name?.split(' ') || ['', '']
+          setUserDetails({
+            firstName: (session.user.firstName as string) || nameParts[0] || '',
+            lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
             email: session.user.email || '',
             role: session.user.role || ''
-          });
+          })
         }
+      } catch (error) {
+        console.error('Error fetching user details:', error)
+        // Emergency fallback
+        setUserDetails({
+          firstName: session.user.name || '',
+          lastName: '',
+          email: session.user.email || '',
+          role: session.user.role || ''
+        })
+      } finally {
+        setUserDataLoaded(true)
       }
     }
     
-    fetchUserData();
-  }, [session]);
-
-  // Updated function to check if user has access to statistics
-  const hasStatsAccess = () => {
-  // Check both userDetails and session for role
-  const userRole = userDetails.role || session?.user?.role;
-  console.log('STATS PAGE: Checking access with role:', userRole);
-  console.log('STATS PAGE: userDetails:', userDetails);
-  console.log('STATS PAGE: session?.user:', session?.user);
-  
-  const hasAccess = userRole === 'beheerder' || userRole === 'developer';
-  console.log('STATS PAGE: Access granted:', hasAccess);
-  
-  return hasAccess;
-}
-
-// Updated useEffect for loading data
-useEffect(() => {
-  console.log('STATS PAGE: useEffect triggered');
-  console.log('STATS PAGE: userDetails.role:', userDetails.role);
-  console.log('STATS PAGE: session?.user?.role:', session?.user?.role);
-  
-  // Only fetch if we have user details loaded and user has access
-  if (userDetails.role || session?.user?.role) {
-    console.log('STATS PAGE: Role found, checking access...');
-    if (hasStatsAccess()) {
-      console.log('STATS PAGE: Access granted, fetching stats...');
-      fetchStats();
-    } else {
-      console.log('STATS PAGE: Access denied, stopping loading...');
-      setIsLoading(false);
-      setError('Je hebt geen toegang tot statistieken');
-    }
-  } else {
-    console.log('STATS PAGE: No role found yet, waiting...');
-  }
-}, [timeRange, userDetails.role, session?.user?.role]);
-
-// Updated loading condition
-if (!session) {
-  console.log('STATS PAGE: No session found');
-  return (
-    <div className="p-4 sm:p-6">
-      <div className="flex justify-center items-center h-64">
-        <div className="w-8 h-8 border-4 border-t-[#1E2A78] border-gray-200 rounded-full animate-spin"></div>
-      </div>
-    </div>
-  );
-}
-
-// Show loading while we're still determining access
-if (isLoading && (!userDetails.role && !session?.user?.role)) {
-  console.log('STATS PAGE: Still loading user data');
-  return (
-    <div className="p-4 sm:p-6">
-      <div className="flex justify-center items-center h-64">
-        <div className="w-8 h-8 border-4 border-t-[#1E2A78] border-gray-200 rounded-full animate-spin"></div>
-      </div>
-    </div>
-  );
-}
-
-// Updated access denied message
-if (!hasStatsAccess() && !isLoading) {
-  console.log('STATS PAGE: Access denied - showing error message');
-  return (
-    <div className="p-4 sm:p-6">
-      <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-        <h3 className="font-bold text-red-800 mb-2">Toegang Geweigerd</h3>
-        <p className="text-red-700">Je hebt geen toestemming om statistieken te bekijken.</p>
-        <p className="text-red-600 text-sm mt-2">
-          Huidige rol: {userDetails.role || session?.user?.role || 'Onbekend'}
-        </p>
-        <p className="text-red-600 text-sm mt-1">
-          Vereiste rollen: beheerder of developer
-        </p>
-        <div className="mt-4">
-          <Link 
-            href="/beheer/dashboard" 
-            className="text-[#1E2A78] hover:underline"
-          >
-            ← Terug naar dashboard
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
+    fetchUserData()
+  }, [session, status])
 
   // Fetch statistics data from API
   const fetchStats = async () => {
@@ -289,25 +208,22 @@ if (!hasStatsAccess() && !isLoading) {
     }
   }
 
-  // Load data on mount and when time range changes
+  // Load data when user data is loaded and user has access
   useEffect(() => {
-    // Only fetch if we have user details loaded and user has access
-    if (userDetails.role || session?.user?.role) {
-      if (hasStatsAccess()) {
-        fetchStats()
-      } else {
-        setIsLoading(false)
-      }
+    if (userDataLoaded && hasStatsAccess()) {
+      fetchStats()
+    } else if (userDataLoaded && !hasStatsAccess()) {
+      setIsLoading(false)
     }
-  }, [timeRange, userDetails.role, session?.user?.role])
+  }, [timeRange, userDataLoaded])
 
-  // Auto-refresh every 5 minutes
+  // Auto-refresh every 5 minutes (only if user has access)
   useEffect(() => {
-    if (hasStatsAccess()) {
+    if (userDataLoaded && hasStatsAccess()) {
       const interval = setInterval(fetchStats, 5 * 60 * 1000)
       return () => clearInterval(interval)
     }
-  }, [timeRange, userDetails.role, session?.user?.role])
+  }, [timeRange, userDataLoaded])
 
   // Chart configurations
   const getChartOptions = (title: string) => ({
@@ -358,8 +274,8 @@ if (!hasStatsAccess() && !isLoading) {
     return `${minutes}m ${remainingSeconds}s`
   }
 
-  // Show loading while we're still determining access
-  if (!session || (!userDetails.role && !session?.user?.role)) {
+  // Show loading while session is loading or user data is being fetched
+  if (status === 'loading' || !userDataLoaded) {
     return (
       <div className="p-4 sm:p-6">
         <div className="flex justify-center items-center h-64">
@@ -369,6 +285,24 @@ if (!hasStatsAccess() && !isLoading) {
     )
   }
 
+  // Show error if no session
+  if (status === 'unauthenticated' || !session) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+          <h3 className="font-bold text-red-800 mb-2">Niet Ingelogd</h3>
+          <p className="text-red-700">Je moet ingelogd zijn om statistieken te bekijken.</p>
+          <div className="mt-4">
+            <Link href="/beheer/dashboard" className="text-[#1E2A78] hover:underline">
+              ← Terug naar dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show access denied if user doesn't have permission
   if (!hasStatsAccess()) {
     return (
       <div className="p-4 sm:p-6">
@@ -376,8 +310,16 @@ if (!hasStatsAccess() && !isLoading) {
           <h3 className="font-bold text-red-800 mb-2">Toegang Geweigerd</h3>
           <p className="text-red-700">Je hebt geen toestemming om statistieken te bekijken.</p>
           <p className="text-red-600 text-sm mt-2">
-            Huidige rol: {userDetails.role || session?.user?.role || 'Onbekend'}
+            Huidige rol: {getUserRole() || 'Onbekend'}
           </p>
+          <p className="text-red-600 text-sm mt-1">
+            Vereiste rollen: beheerder of developer
+          </p>
+          <div className="mt-4">
+            <Link href="/beheer/dashboard" className="text-[#1E2A78] hover:underline">
+              ← Terug naar dashboard
+            </Link>
+          </div>
         </div>
       </div>
     )
