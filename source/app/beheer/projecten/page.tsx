@@ -33,6 +33,10 @@ export default function ProjectenPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [showForm, setShowForm] = useState(true);
 
+  // New state for tracking deletions
+  const [deleteImage, setDeleteImage] = useState(false);
+  const [deleteDocument, setDeleteDocument] = useState(false);
+
   // Confirmation Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -72,12 +76,16 @@ export default function ProjectenPage() {
     setDocumentName('');
     setIsEditing(false);
     setCurrentProject(null);
+    // Reset deletion flags
+    setDeleteImage(false);
+    setDeleteDocument(false);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
+      setDeleteImage(false); // Reset deletion flag when new file is selected
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -92,6 +100,25 @@ export default function ProjectenPage() {
     if (file) {
       setDocumentFile(file);
       setDocumentName(file.name);
+      setDeleteDocument(false); // Reset deletion flag when new file is selected
+    }
+  };
+
+  // Handle image deletion
+  const handleDeleteImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (isEditing && currentProject?.image) {
+      setDeleteImage(true); // Mark for deletion
+    }
+  };
+
+  // Handle document deletion
+  const handleDeleteDocument = () => {
+    setDocumentFile(null);
+    setDocumentName('');
+    if (isEditing && currentProject?.document) {
+      setDeleteDocument(true); // Mark for deletion
     }
   };
 
@@ -100,29 +127,45 @@ export default function ProjectenPage() {
     setError('');
     setSuccessMessage('');
     
-    let imageData: FileData | undefined
-    let documentData: FileData | undefined
+    let imageData: FileData | undefined | null = undefined;
+    let documentData: FileData | undefined | null = undefined;
 
+    // Handle image logic
     if (imageFile) {
-      const bytes = await imageFile.arrayBuffer()
+      // New image file uploaded
+      const bytes = await imageFile.arrayBuffer();
       imageData = {
         filename: imageFile.name,
         contentType: imageFile.type,
         data: Buffer.from(bytes).toString('base64'),
-      }
+      };
+    } else if (deleteImage) {
+      // Mark image for deletion
+      imageData = null;
+    } else if (isEditing && currentProject?.image) {
+      // Keep existing image
+      imageData = currentProject.image;
     }
 
+    // Handle document logic
     if (documentFile) {
-      const bytes = await documentFile.arrayBuffer()
+      // New document file uploaded
+      const bytes = await documentFile.arrayBuffer();
       documentData = {
         filename: documentFile.name,
         contentType: documentFile.type,
         data: Buffer.from(bytes).toString('base64'),
-      }
+      };
+    } else if (deleteDocument) {
+      // Mark document for deletion
+      documentData = null;
+    } else if (isEditing && currentProject?.document) {
+      // Keep existing document
+      documentData = currentProject.document;
     }
 
-    // Build up your payload, only spreading in the optional fields if they exist
-    const projectData: Project = {
+    // Build project data
+    const projectData: any = {
       title,
       description,
       longDescription,
@@ -131,9 +174,16 @@ export default function ProjectenPage() {
         : new Date().toISOString(),
       author: session?.user?.name || 'Onbekend',
       tags: tags.split(',').map((t) => t.trim()),
-      // these two lines will only add the property if it's defined
-      ...(imageData && { image: imageData }),
-      ...(documentData && { document: documentData }),
+    };
+
+    // Add image data (including null for deletion)
+    if (imageData !== undefined) {
+      projectData.image = imageData;
+    }
+
+    // Add document data (including null for deletion)
+    if (documentData !== undefined) {
+      projectData.document = documentData;
     }
 
     try {
@@ -167,13 +217,13 @@ export default function ProjectenPage() {
         setSuccessMessage('Project succesvol toegevoegd');
       }
       
-      // Laat het succesbercht 3 seconden zien
+      // Show success message for 3 seconds
       setTimeout(() => setSuccessMessage(''), 3000);
 
       // Reset form
       resetForm();
       
-      // Op mobiel, sluit het formulier na opslaan
+      // On mobile, close form after saving
       if (window.innerWidth < 768) {
         setShowForm(false);
       }
@@ -190,19 +240,19 @@ export default function ProjectenPage() {
     setLongDescription(project.longDescription || '');
     setTags(project.tags?.join(', ') || '');
     
-    // Converteer de projectDate naar het juiste formaat voor het date-inputveld (YYYY-MM-DD)
+    // Convert projectDate to the right format for the date input field (YYYY-MM-DD)
     if (project.projectDate) {
       try {
         const date = new Date(project.projectDate);
-        // Controleer of het een geldige datum is
+        // Check if it's a valid date
         if (!isNaN(date.getTime())) {
-          // Converteer naar YYYY-MM-DD formaat voor het HTML date input element
+          // Convert to YYYY-MM-DD format for HTML date input element
           setProjectDate(date.toISOString().split('T')[0]);
         } else {
           setProjectDate('');
         }
       } catch (error) {
-        console.error("Fout bij het verwerken van de datum:", error);
+        console.error("Error processing date:", error);
         setProjectDate('');
       }
     } else {
@@ -211,28 +261,30 @@ export default function ProjectenPage() {
     
     setIsEditing(true);
     
-    // Reset file inputs
+    // Reset file inputs and deletion flags
     setImageFile(null);
     setImagePreview(null);
     setDocumentFile(null);
     setDocumentName('');
+    setDeleteImage(false);
+    setDeleteDocument(false);
     
-    // Als het project een afbeelding heeft, toon een preview
+    // If the project has an image, show a preview
     if (project.image && project.image.data) {
       setImagePreview(`data:${project.image.contentType};base64,${project.image.data}`);
     }
     
-    // Als het project een document heeft, toon de bestandsnaam
+    // If the project has a document, show the filename
     if (project.document && project.document.filename) {
       setDocumentName(project.document.filename);
     }
     
-    // Altijd het formulier tonen bij bewerken en naar boven scrollen
+    // Always show form when editing and scroll to top
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Functie voor verwijderen van een project
+  // Function for deleting a project
   const handleDeleteClick = (projectId: string) => {
     if (!projectId) {
       console.error('Invalid project ID');
@@ -255,10 +307,10 @@ export default function ProjectenPage() {
         throw new Error(errorData.error || 'Fout bij verwijderen van project');
       }
       
-      // Verwijder het project uit de lokale state
+      // Remove project from local state
       setProjects(projects.filter(p => p._id !== projectToDelete));
       
-      // Reset formulier indien het verwijderde project momenteel wordt bewerkt
+      // Reset form if the deleted project is currently being edited
       if (currentProject?._id === projectToDelete) {
         resetForm();
       }
@@ -457,13 +509,10 @@ export default function ProjectenPage() {
                   />
                 </label>
                 
-                {imagePreview && (
+                {(imagePreview || (isEditing && currentProject?.image && !deleteImage)) && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setImageFile(null);
-                      setImagePreview(null);
-                    }}
+                    onClick={handleDeleteImage}
                     className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded transition w-fit"
                     title="Verwijder afbeelding"
                   >
@@ -473,7 +522,7 @@ export default function ProjectenPage() {
                 )}
               </div>
               
-              {imagePreview ? (
+              {imagePreview && !deleteImage ? (
                 <div className="border border-gray-200 p-2 rounded">
                   <p className="text-xs text-gray-500 mb-2">Voorbeeld:</p>
                   <img 
@@ -481,6 +530,10 @@ export default function ProjectenPage() {
                     alt="Afbeelding voorbeeld" 
                     className="max-h-48 object-contain rounded" 
                   />
+                </div>
+              ) : deleteImage ? (
+                <div className="border border-red-200 p-2 rounded bg-red-50">
+                  <p className="text-xs text-red-600 mb-2">Afbeelding wordt verwijderd bij opslaan</p>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">Nog geen afbeelding geselecteerd</p>
@@ -503,13 +556,10 @@ export default function ProjectenPage() {
                   />
                 </label>
                 
-                {(documentName || documentFile) && (
+                {(documentName || (isEditing && currentProject?.document && !deleteDocument)) && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setDocumentFile(null);
-                      setDocumentName('');
-                    }}
+                    onClick={handleDeleteDocument}
                     className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded transition w-fit"
                     title="Verwijder document"
                   >
@@ -519,10 +569,14 @@ export default function ProjectenPage() {
                 )}
               </div>
               
-              {documentName ? (
+              {documentName && !deleteDocument ? (
                 <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
                   <FileText size={18} className="text-blue-600" />
                   <span>{documentName}</span>
+                </div>
+              ) : deleteDocument ? (
+                <div className="border border-red-200 p-2 rounded bg-red-50">
+                  <p className="text-xs text-red-600 mb-2">Document wordt verwijderd bij opslaan</p>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">Nog geen document geselecteerd</p>
