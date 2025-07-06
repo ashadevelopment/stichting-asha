@@ -445,16 +445,33 @@ export default function ProjectenPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Afbeelding (Optioneel)</label>
             <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
-                <ImagePlus size={18} />
-                <span>Kies een afbeelding</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                  <ImagePlus size={18} />
+                  <span>Kies een afbeelding</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+                
+                {imagePreview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview(null);
+                    }}
+                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded transition w-fit"
+                    title="Verwijder afbeelding"
+                  >
+                    <Trash2 size={18} />
+                    <span>Verwijder</span>
+                  </button>
+                )}
+              </div>
               
               {imagePreview ? (
                 <div className="border border-gray-200 p-2 rounded">
@@ -474,16 +491,33 @@ export default function ProjectenPage() {
           <div>
             <label className="block text-sm font-medium mb-1">Document (Optioneel)</label>
             <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
-                <Upload size={18} />
-                <span>Kies een document</span>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx"
-                  onChange={handleDocumentChange}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded cursor-pointer transition w-fit">
+                  <Upload size={18} />
+                  <span>Kies een document</span>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx"
+                    onChange={handleDocumentChange}
+                    className="hidden"
+                  />
+                </label>
+                
+                {(documentName || documentFile) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDocumentFile(null);
+                      setDocumentName('');
+                    }}
+                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded transition w-fit"
+                    title="Verwijder document"
+                  >
+                    <Trash2 size={18} />
+                    <span>Verwijder</span>
+                  </button>
+                )}
+              </div>
               
               {documentName ? (
                 <div className="flex items-center gap-2 text-sm border border-gray-200 p-2 rounded">
