@@ -37,6 +37,7 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
       '/beheer/fotoboek',
       '/beheer/nieuwsbrief',
       '/beheer/handleiding',
+      '/beheer/stats',
     ],
     developer: [
       '/beheer/dashboard',
@@ -95,7 +96,7 @@ export default function BeheerLayout({ children }: { children: ReactNode }) {
     // Get the allowed routes for current user role
     const allowedRoutes = routePermissions[userRole] || routePermissions.user
     
-    // Check if current pathname is allowed
+    
     if (pathname && !allowedRoutes.includes(pathname)) {
       // If not allowed, redirect to dashboard or another safe route
       router.push('/beheer/dashboard')
