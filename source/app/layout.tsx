@@ -3,6 +3,8 @@ import { Roboto, Poppins } from "next/font/google";
 import "./globals.css";
 import { SessionWrapper } from "../components/SessionWrapper";
 import { Header } from "../components/Header";
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const RobotoFont = Roboto({
   variable: "--font-roboto",
@@ -36,7 +38,8 @@ export default function RootLayout({
         <SessionWrapper>
           <Header  className="relative w-full shadow-md z-50" />
           <main className="p-0">{children}</main>
-    
+          <Analytics />
+          <SpeedInsights />
         </SessionWrapper>
       </body>
     </html>
