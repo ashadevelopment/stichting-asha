@@ -7,7 +7,7 @@ export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
 
   // Block non-beheerders from /admin
-  if (url.pathname.startsWith("/admin") && token?.role !== "beheerder") {
+  if (url.pathname.startsWith("/beheer") && token?.role !== "beheerder") {
     url.pathname = "/";
     return NextResponse.redirect(url);
   }
@@ -16,5 +16,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/beheer/:path*"],
 };

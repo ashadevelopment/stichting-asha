@@ -85,9 +85,15 @@ interface StatsData {
   };
 }
 
+// Updated session interface to match dashboard
 interface SessionUser {
   id?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
   role?: string;
+  firstName?: string | null;
+  lastName?: string | null;
 }
 
 interface CustomSession {
@@ -101,10 +107,72 @@ export default function StatisticsPage() {
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  
+  // Add state for user details (similar to dashboard)
+  const [userDetails, setUserDetails] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: ''
+  });
 
-  // Check if user has access to statistics
+  // Fetch user details whenever session changes (similar to dashboard)
+  useEffect(() => {
+    async function fetchUserData() {
+      console.log('=== STATS PAGE: DEBUG SESSION DATA ===');
+      console.log('Full session object:', JSON.stringify(session, null, 2));
+      console.log('Session user:', session?.user);
+      console.log('Session user role:', session?.user?.role);
+      
+      if (session?.user?.id) {
+        try {
+          const response = await fetch(`/api/users/details?userId=${session.user.id}`);
+          
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('STATS PAGE: User data from API:', userData);
+            
+            setUserDetails({
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              email: userData.email || '',
+              role: userData.role || session?.user?.role || ''
+            });
+          } else {
+            console.log('STATS PAGE: API call failed, using session fallback');
+            // Fallback to session data
+            const nameParts = session.user.name?.split(' ') || ['', ''];
+            
+            setUserDetails({
+              firstName: (session.user.firstName as string) || nameParts[0] || '',
+              lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
+              email: session.user.email || '',
+              role: session.user.role || ''
+            });
+          }
+        } catch (error) {
+          console.error('STATS PAGE: Error fetching user details:', error);
+          
+          // Emergency fallback
+          setUserDetails({
+            firstName: session.user.name || '',
+            lastName: '',
+            email: session.user.email || '',
+            role: session.user.role || ''
+          });
+        }
+      }
+    }
+    
+    fetchUserData();
+  }, [session]);
+
+  // Updated function to check if user has access to statistics
   const hasStatsAccess = () => {
-    return session?.user?.role === 'beheerder' || session?.user?.role === 'developer'
+    // Check both userDetails and session for role
+    const userRole = userDetails.role || session?.user?.role;
+    console.log('STATS PAGE: Checking access with role:', userRole);
+    return userRole === 'beheerder' || userRole === 'developer';
   }
 
   // Fetch statistics data from API
@@ -144,12 +212,15 @@ export default function StatisticsPage() {
 
   // Load data on mount and when time range changes
   useEffect(() => {
-    if (hasStatsAccess()) {
-      fetchStats()
-    } else {
-      setIsLoading(false)
+    // Only fetch if we have user details loaded and user has access
+    if (userDetails.role || session?.user?.role) {
+      if (hasStatsAccess()) {
+        fetchStats()
+      } else {
+        setIsLoading(false)
+      }
     }
-  }, [timeRange, session])
+  }, [timeRange, userDetails.role, session?.user?.role])
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -157,7 +228,7 @@ export default function StatisticsPage() {
       const interval = setInterval(fetchStats, 5 * 60 * 1000)
       return () => clearInterval(interval)
     }
-  }, [timeRange, session])
+  }, [timeRange, userDetails.role, session?.user?.role])
 
   // Chart configurations
   const getChartOptions = (title: string) => ({
@@ -208,12 +279,26 @@ export default function StatisticsPage() {
     return `${minutes}m ${remainingSeconds}s`
   }
 
+  // Show loading while we're still determining access
+  if (!session || (!userDetails.role && !session?.user?.role)) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="w-8 h-8 border-4 border-t-[#1E2A78] border-gray-200 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    )
+  }
+
   if (!hasStatsAccess()) {
     return (
       <div className="p-4 sm:p-6">
         <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
           <h3 className="font-bold text-red-800 mb-2">Toegang Geweigerd</h3>
           <p className="text-red-700">Je hebt geen toestemming om statistieken te bekijken.</p>
+          <p className="text-red-600 text-sm mt-2">
+            Huidige rol: {userDetails.role || session?.user?.role || 'Onbekend'}
+          </p>
         </div>
       </div>
     )
