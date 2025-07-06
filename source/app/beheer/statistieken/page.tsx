@@ -169,11 +169,90 @@ export default function StatisticsPage() {
 
   // Updated function to check if user has access to statistics
   const hasStatsAccess = () => {
-    // Check both userDetails and session for role
-    const userRole = userDetails.role || session?.user?.role;
-    console.log('STATS PAGE: Checking access with role:', userRole);
-    return userRole === 'beheerder' || userRole === 'developer';
+  // Check both userDetails and session for role
+  const userRole = userDetails.role || session?.user?.role;
+  console.log('STATS PAGE: Checking access with role:', userRole);
+  console.log('STATS PAGE: userDetails:', userDetails);
+  console.log('STATS PAGE: session?.user:', session?.user);
+  
+  const hasAccess = userRole === 'beheerder' || userRole === 'developer';
+  console.log('STATS PAGE: Access granted:', hasAccess);
+  
+  return hasAccess;
+}
+
+// Updated useEffect for loading data
+useEffect(() => {
+  console.log('STATS PAGE: useEffect triggered');
+  console.log('STATS PAGE: userDetails.role:', userDetails.role);
+  console.log('STATS PAGE: session?.user?.role:', session?.user?.role);
+  
+  // Only fetch if we have user details loaded and user has access
+  if (userDetails.role || session?.user?.role) {
+    console.log('STATS PAGE: Role found, checking access...');
+    if (hasStatsAccess()) {
+      console.log('STATS PAGE: Access granted, fetching stats...');
+      fetchStats();
+    } else {
+      console.log('STATS PAGE: Access denied, stopping loading...');
+      setIsLoading(false);
+      setError('Je hebt geen toegang tot statistieken');
+    }
+  } else {
+    console.log('STATS PAGE: No role found yet, waiting...');
   }
+}, [timeRange, userDetails.role, session?.user?.role]);
+
+// Updated loading condition
+if (!session) {
+  console.log('STATS PAGE: No session found');
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="flex justify-center items-center h-64">
+        <div className="w-8 h-8 border-4 border-t-[#1E2A78] border-gray-200 rounded-full animate-spin"></div>
+      </div>
+    </div>
+  );
+}
+
+// Show loading while we're still determining access
+if (isLoading && (!userDetails.role && !session?.user?.role)) {
+  console.log('STATS PAGE: Still loading user data');
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="flex justify-center items-center h-64">
+        <div className="w-8 h-8 border-4 border-t-[#1E2A78] border-gray-200 rounded-full animate-spin"></div>
+      </div>
+    </div>
+  );
+}
+
+// Updated access denied message
+if (!hasStatsAccess() && !isLoading) {
+  console.log('STATS PAGE: Access denied - showing error message');
+  return (
+    <div className="p-4 sm:p-6">
+      <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+        <h3 className="font-bold text-red-800 mb-2">Toegang Geweigerd</h3>
+        <p className="text-red-700">Je hebt geen toestemming om statistieken te bekijken.</p>
+        <p className="text-red-600 text-sm mt-2">
+          Huidige rol: {userDetails.role || session?.user?.role || 'Onbekend'}
+        </p>
+        <p className="text-red-600 text-sm mt-1">
+          Vereiste rollen: beheerder of developer
+        </p>
+        <div className="mt-4">
+          <Link 
+            href="/beheer/dashboard" 
+            className="text-[#1E2A78] hover:underline"
+          >
+            ← Terug naar dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
   // Fetch statistics data from API
   const fetchStats = async () => {

@@ -3,9 +3,10 @@
 import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import ProfilePictureManager from '../../../components/ProfilePictureManager'
-import { User, Home, BarChart2, Activity } from 'lucide-react'
+import { Users, Globe, BarChart3, ChevronRight, Activity } from 'lucide-react'
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
+import Link from 'next/link'
 
 interface ActivityItem {
   _id: string;
@@ -312,56 +313,64 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Dashboardtegels */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Snelkoppeling: Gebruikers */}
-        <div 
-          className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group" 
-          onClick={() => window.location.href = '/beheer/gebruikers'}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Gebruikers Card */}
+        <Link 
+          href="/beheer/gebruikers" 
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 hover:border-[#1E2A78]"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-blue-100 p-2 rounded-full">
-              <User size={24} className="text-blue-600 group-hover:text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Users className="text-blue-600" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#1E2A78]">Gebruikers</h3>
+                <p className="text-sm text-gray-600">Beheer gebruikers, wijzig rollen, en bekijk gebruikersgegevens.</p>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold group-hover:text-white">Gebruikers</h2>
+            <ChevronRight className="text-gray-400" size={20} />
           </div>
-          <p className="text-gray-600 text-sm group-hover:text-white">
-            Beheer gebruikers, wijzig rollen, en bekijk gebruikersgegevens.
-          </p>
-        </div>
+        </Link>
 
-        {/* Snelkoppeling: Website */}
-        <div 
-          className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group"
-          onClick={() => window.location.href = '/'}
+        {/* Website Card */}
+        <Link 
+          href="/beheer/website" 
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 hover:border-[#1E2A78]"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-green-100 p-2 rounded-full">
-              <Home size={24} className="text-green-600 group-hover:text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-green-100 p-3 rounded-full">
+                <Globe className="text-green-600" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#1E2A78]">Website</h3>
+                <p className="text-sm text-gray-600">Ga naar de voorpagina van je website om te zien hoe het eruitziet voor bezoekers.</p>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold group-hover:text-white">Website</h2>
+            <ChevronRight className="text-gray-400" size={20} />
           </div>
-          <p className="text-gray-600 text-sm group-hover:text-white">
-            Ga naar de voorpagina van je website om te zien hoe het eruitziet voor bezoekers.
-          </p>
-        </div>
-        </div>
+        </Link>
 
-        {/* Snelkoppeling: Statistieken */}
-        <div 
-          className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group"
-          onClick={() => window.location.href = '/beheer/statistieken'}
+        {/* Statistieken Card */}
+        <Link 
+          href="/beheer/statistieken" 
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 hover:border-[#1E2A78]"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-purple-100 p-2 rounded-full">
-              <BarChart2 size={24} className="text-purple-600 group-hover:text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-purple-100 p-3 rounded-full">
+                <BarChart3 className="text-purple-600" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#1E2A78]">Statistieken</h3>
+                <p className="text-sm text-gray-600">Bekijk gedetailleerde website-statistieken en bezoekersgegevens.</p>
+              </div>
             </div>
-            <h2 className="text-lg font-semibold group-hover:text-white">Statistieken</h2>
+            <ChevronRight className="text-gray-400" size={20} />
           </div>
-          <p className="text-gray-600 text-sm group-hover:text-white">
-            Bekijk gedetailleerde website-statistieken en bezoekersgegevens.
-          </p>
-        </div>
+        </Link>
+      </div>
 
       {/* Recente activiteiten - only show for beheerder and developer */}
       {hasActivityAccess() && (
