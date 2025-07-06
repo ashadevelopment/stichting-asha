@@ -280,19 +280,6 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 sm:p-6">
-      {/* Debug Information - Remove this in production */}
-      <div className="bg-yellow-50 border border-yellow-200 p-4 mb-6 rounded-lg">
-        <h3 className="font-bold text-yellow-800 mb-2">Debug Information:</h3>
-        <div className="text-sm text-yellow-700 space-y-1">
-          <p><strong>Session exists:</strong> {debugInfo?.sessionExists ? 'Yes' : 'No'}</p>
-          <p><strong>Session User ID:</strong> {debugInfo?.sessionUserId || 'None'}</p>
-          <p><strong>Session User Role:</strong> {debugInfo?.sessionUserRole || 'None'}</p>
-          <p><strong>Session FirstName:</strong> {debugInfo?.sessionFirstName || 'None'}</p>
-          <p><strong>Session LastName:</strong> {debugInfo?.sessionLastName || 'None'}</p>
-          <p><strong>UserDetails:</strong> {JSON.stringify(userDetails)}</p>
-          <p><strong>Final Full Name:</strong> {getUserFullName()}</p>
-        </div>
-      </div>
 
       {/* Welkomstkaart met profielfoto en naam */}
       <div className="bg-white p-4 sm:p-6 mb-6">
@@ -358,10 +345,12 @@ export default function DashboardPage() {
             Ga naar de voorpagina van je website om te zien hoe het eruitziet voor bezoekers.
           </p>
         </div>
+        </div>
 
         {/* Snelkoppeling: Statistieken */}
         <div 
           className="bg-white p-4 sm:p-6 rounded-lg shadow-md transition-transform hover:scale-[1.02] hover:bg-[#1E2A78] cursor-pointer group"
+          onClick={() => window.location.href = '/beheer/statistieken'}
         >
           <div className="flex items-center gap-3 mb-3">
             <div className="bg-purple-100 p-2 rounded-full">
@@ -370,10 +359,9 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold group-hover:text-white">Statistieken</h2>
           </div>
           <p className="text-gray-600 text-sm group-hover:text-white">
-            Bekijk site-activiteit en bezoekersstatistieken (binnenkort beschikbaar).
+            Bekijk gedetailleerde website-statistieken en bezoekersgegevens.
           </p>
         </div>
-      </div>
 
       {/* Recente activiteiten - only show for beheerder and developer */}
       {hasActivityAccess() && (
