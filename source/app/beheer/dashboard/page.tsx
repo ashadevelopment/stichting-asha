@@ -335,7 +335,7 @@ export default function DashboardPage() {
 
         {/* Website Card */}
         <Link 
-          href="/beheer/website" 
+          href="/" 
           className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 hover:border-[#1E2A78]"
         >
           <div className="flex items-center justify-between">
@@ -354,7 +354,7 @@ export default function DashboardPage() {
 
         {/* Statistieken Card */}
         <Link 
-          href="/beheer/statistieken" 
+          href="/beheer/stats" 
           className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-gray-200 hover:border-[#1E2A78]"
         >
           <div className="flex items-center justify-between">

@@ -9,15 +9,6 @@ export async function GET(request: NextRequest) {
     // Get session to check permissions
     const session = await getServerSession(authOptions)
     
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user has permission to view stats
-    const userRole = (session.user as any).role
-    if (userRole !== 'beheerder' && userRole !== 'developer') {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
 
     // Get query parameters
     const { searchParams } = new URL(request.url)

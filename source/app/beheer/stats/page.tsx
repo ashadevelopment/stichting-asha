@@ -112,62 +112,82 @@ export default function StatisticsPage() {
     email: '',
     role: ''
   })
-  const [userDataLoaded, setUserDataLoaded] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Function to get user role from either userDetails or session
   const getUserRole = () => {
+    // First try userDetails (from API), then fallback to session
     return userDetails.role || session?.user?.role || ''
-  }
-
-  // Function to check if user has access to statistics
-  const hasStatsAccess = () => {
-    const userRole = getUserRole()
-    return userRole === 'beheerder' || userRole === 'developer'
   }
 
   // Fetch user details when session is available
   useEffect(() => {
     async function fetchUserData() {
-      if (status === 'loading') return
+      console.log('=== FETCHING USER DATA ===')
+      console.log('Session status:', status)
+      console.log('Session user:', session?.user)
+      console.log('Session user role:', session?.user?.role)
       
-      if (!session?.user?.id) {
-        setUserDataLoaded(true)
+      if (status === 'loading') {
+        console.log('Session still loading, waiting...')
+        return
+      }
+      
+      if (!session?.user) {
+        console.log('No session user, marking as initialized')
+        setIsInitialized(true)
         return
       }
 
-      try {
-        const response = await fetch(`/api/users/details?userId=${session.user.id}`)
-        
-        if (response.ok) {
-          const userData = await response.json()
+      // If we have a role from session, use it immediately as fallback
+      if (session.user.role) {
+        console.log('Using session role as immediate fallback:', session.user.role)
+        setUserDetails(prev => ({
+          ...prev,
+          role: session?.user?.role || ''
+        }))
+      }
+
+      // Try to fetch more detailed user data from API
+      if (session.user.id) {
+        try {
+          console.log('Fetching user details from API...')
+          const response = await fetch(`/api/users/details?userId=${session.user.id}`)
+          
+          if (response.ok) {
+            const userData = await response.json()
+            console.log('Got user data from API:', userData)
+            setUserDetails({
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              email: userData.email || '',
+              role: userData.role || session?.user?.role || ''
+            })
+          } else {
+            console.log('API call failed, using session fallback')
+            // Fallback to session data
+            const nameParts = session.user.name?.split(' ') || ['', '']
+            setUserDetails({
+              firstName: (session.user.firstName as string) || nameParts[0] || '',
+              lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
+              email: session.user.email || '',
+              role: session.user.role || ''
+            })
+          }
+        } catch (error) {
+          console.error('Error fetching user details:', error)
+          // Emergency fallback
           setUserDetails({
-            firstName: userData.firstName || '',
-            lastName: userData.lastName || '',
-            email: userData.email || '',
-            role: userData.role || session?.user?.role || ''
-          })
-        } else {
-          // Fallback to session data
-          const nameParts = session.user.name?.split(' ') || ['', '']
-          setUserDetails({
-            firstName: (session.user.firstName as string) || nameParts[0] || '',
-            lastName: (session.user.lastName as string) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
+            firstName: session.user.name || '',
+            lastName: '',
             email: session.user.email || '',
             role: session.user.role || ''
           })
         }
-      } catch (error) {
-        console.error('Error fetching user details:', error)
-        // Emergency fallback
-        setUserDetails({
-          firstName: session.user.name || '',
-          lastName: '',
-          email: session.user.email || '',
-          role: session.user.role || ''
-        })
-      } finally {
-        setUserDataLoaded(true)
       }
+      
+      console.log('Marking as initialized')
+      setIsInitialized(true)
     }
     
     fetchUserData()
@@ -175,6 +195,9 @@ export default function StatisticsPage() {
 
   // Fetch statistics data from API
   const fetchStats = async () => {
+    console.log('=== FETCHING STATS ===')
+    console.log('User role:', getUserRole())
+    
     setIsLoading(true)
     setError(null)
     
@@ -198,6 +221,7 @@ export default function StatisticsPage() {
       }
 
       const data = await response.json()
+      console.log('Stats data received:', data)
       setStats(data)
       setLastUpdated(new Date())
     } catch (err) {
@@ -208,22 +232,15 @@ export default function StatisticsPage() {
     }
   }
 
-  // Load data when user data is loaded and user has access
+  // Load data when component is initialized and user has access
   useEffect(() => {
-    if (userDataLoaded && hasStatsAccess()) {
-      fetchStats()
-    } else if (userDataLoaded && !hasStatsAccess()) {
-      setIsLoading(false)
-    }
-  }, [timeRange, userDataLoaded])
+    console.log('=== EFFECT: Load Stats ===')
+    console.log('Is initialized:', isInitialized)
+    console.log('Time range:', timeRange)
+    
+  }, [timeRange, isInitialized, userDetails.role]) // Added userDetails.role as dependency
 
   // Auto-refresh every 5 minutes (only if user has access)
-  useEffect(() => {
-    if (userDataLoaded && hasStatsAccess()) {
-      const interval = setInterval(fetchStats, 5 * 60 * 1000)
-      return () => clearInterval(interval)
-    }
-  }, [timeRange, userDataLoaded])
 
   // Chart configurations
   const getChartOptions = (title: string) => ({
@@ -274,12 +291,13 @@ export default function StatisticsPage() {
     return `${minutes}m ${remainingSeconds}s`
   }
 
-  // Show loading while session is loading or user data is being fetched
-  if (status === 'loading' || !userDataLoaded) {
+  // Show loading while session is loading or component is initializing
+  if (status === 'loading' || !isInitialized) {
     return (
       <div className="p-4 sm:p-6">
         <div className="flex justify-center items-center h-64">
           <div className="w-8 h-8 border-4 border-t-[#1E2A78] border-gray-200 rounded-full animate-spin"></div>
+          <p className="ml-4 text-gray-600">Laden...</p>
         </div>
       </div>
     )
@@ -292,29 +310,6 @@ export default function StatisticsPage() {
         <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
           <h3 className="font-bold text-red-800 mb-2">Niet Ingelogd</h3>
           <p className="text-red-700">Je moet ingelogd zijn om statistieken te bekijken.</p>
-          <div className="mt-4">
-            <Link href="/beheer/dashboard" className="text-[#1E2A78] hover:underline">
-              ← Terug naar dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show access denied if user doesn't have permission
-  if (!hasStatsAccess()) {
-    return (
-      <div className="p-4 sm:p-6">
-        <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
-          <h3 className="font-bold text-red-800 mb-2">Toegang Geweigerd</h3>
-          <p className="text-red-700">Je hebt geen toestemming om statistieken te bekijken.</p>
-          <p className="text-red-600 text-sm mt-2">
-            Huidige rol: {getUserRole() || 'Onbekend'}
-          </p>
-          <p className="text-red-600 text-sm mt-1">
-            Vereiste rollen: beheerder of developer
-          </p>
           <div className="mt-4">
             <Link href="/beheer/dashboard" className="text-[#1E2A78] hover:underline">
               ← Terug naar dashboard
